@@ -4,6 +4,7 @@ import LoginPage from "@pages/auth/LoginPage";
 import RegisterPage from "@pages/auth/RegisterPage";
 import DashboardPage from "@pages/dashboard/DashboardPage";
 import SchedulePage from "@pages/dashboard/SchedulePage";
+import UsersPage   from  "@pages/dashboard/UsersPage";
 
 
 import { PublicRoute } from "./PublicRoute";
@@ -49,7 +50,7 @@ const router = createBrowserRouter([
       },
       {
         path: "users",
-        element: <div className="p-8"><h1 className="text-2xl font-bold">Quản lý người dùng</h1></div>,
+        element: <UsersPage />,
       },
       {
         path: "schedule",
