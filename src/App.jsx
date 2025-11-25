@@ -1,6 +1,5 @@
-import './App.css'
-import AppRoutes from './routes/AppRoute.jsx'
-import { AuthProvider } from '@contexts/AuthContext'
+// src/App.jsx
+import AppRoutes from "./routes";
 
 function App() {
   return (

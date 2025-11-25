@@ -9,7 +9,7 @@ const DashboardPage = () => {
         <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
         <p className="text-gray-600 mt-2">Chào mừng bạn trở lại! Đây là tổng quan hệ thống.</p>
       </div>
-      
+     
     </div>
   );
 };
