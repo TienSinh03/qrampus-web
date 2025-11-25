@@ -7,6 +7,7 @@ import { CirclePlus, Trash2, LockKeyhole, CloudUpload} from "lucide-react";
 const UsersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
+  const [checked, setChecked] = useState(false)
 
   const totalPages = 5;
 
@@ -16,7 +17,14 @@ const UsersPage = () => {
       <p>Trang này dành cho việc quản lý người dùng trong hệ thống.</p>
 
       <div className="container m-auto px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
+        <div className="
+          grid 
+          grid-cols-1 
+          sm:grid-cols-2 
+          lg:grid-cols-12 
+          gap-4 
+          items-center
+        ">
 
           {/* Search */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-5">
@@ -26,38 +34,43 @@ const UsersPage = () => {
             />
           </div>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-7">
-            <div className="flex flex-wrap justify-center md:justify-end gap-2">
+            <div className="
+              flex 
+              flex-wrap 
+              gap-2 
+              justify-center 
+              md:justify-end
+            ">
 
-              <button className="h-12 px-6 bg-emerald-50 text-emerald-600 font-medium rounded-md border-black transition hover:bg-emerald-100">
-                <CirclePlus className="inline-block w-5 h-5 mr-2" />
-                Thêm nhân sự
+              <button className="btn-primary">
+                <CirclePlus className="w-5 h-5" /> Thêm nhân sự
               </button>
 
-              <button className="h-12 px-6 bg-emerald-50 text-emerald-600 font-medium rounded-md transition hover:bg-emerald-100">
-                <Trash2 className="inline-block w-5 h-5 mr-2" />
-                Xóa nhân sự
+              <button className="btn-danger">
+                <Trash2 className="w-5 h-5" /> Xóa nhân sự
+              </button>
+              
+              <button className="btn-warning">
+                <LockKeyhole className="w-5 h-5" /> Khóa tài khoản
               </button>
 
-              <button className="h-12 px-6 bg-emerald-50 text-emerald-600 font-medium rounded-md transition hover:bg-emerald-100">
-                <LockKeyhole className="inline-block w-5 h-5 mr-2" />
-                Khóa tài khoản
-              </button>
-
-              <button onClick={() => setOpenUpload(true)} className="h-12 px-6 bg-emerald-50 text-emerald-600 font-medium rounded-md">
-                <CloudUpload className="inline-block w-5 h-5 mr-2" />
+              <button 
+                onClick={() => setOpenUpload(true)} 
+                className="btn-info"
+              >
+                <CloudUpload className="w-5 h-5" />
                 Upload nhân sự
               </button>
-    
-
-              {/* Modal upload */}
-              <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
-
             </div>
           </div>
         </div>
+
+        {/* MODAL */}
+        <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
       </div>
+
 
 
       {/* TABLE */}
@@ -75,7 +88,18 @@ const UsersPage = () => {
 
             {/* Example Row */}
             <tr>
-              <td className="h-10 px-4 text-sm border-t">1</td>
+              <td className="h-10 px-4 text-sm border-t">
+
+                <input
+                  className="peer h-4 w-4 cursor-pointer appearance-none rounded border-2 border-slate-500 bg-white transition-colors checked:border-emerald-500 checked:bg-emerald-500 checked:hover:border-emerald-600 checked:hover:bg-emerald-600 focus:outline-none checked:focus:border-emerald-700 checked:focus:bg-emerald-700 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50"
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => setChecked(!checked)}
+                  id="id-c01"
+                />
+
+
+              </td>
               <td className="h-10 px-4 text-sm border-t">Ayub Salas</td>
               <td className="h-10 px-4 text-sm border-t">Designer</td>
               <td className="h-10 px-4 text-sm border-t">Carroll Group</td>
