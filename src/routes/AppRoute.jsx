@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
 import LoginPage from "@pages/auth/LoginPage";
 import RegisterPage from "@pages/auth/RegisterPage";
 import DashboardPage from "@pages/dashboard/DashboardPage";
+import SchedulePage from "@pages/dashboard/SchedulePage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -51,7 +52,7 @@ const router = createBrowserRouter([
       },
       {
         path: "schedule",
-        element: <div className="p-8"><h1 className="text-2xl font-bold">Lịch</h1></div>,
+        element:  <SchedulePage />,
       },
       {
         path: "reports",

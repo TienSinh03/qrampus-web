@@ -10,6 +10,7 @@ const DashboardPage = () => {
         <p className="text-gray-600 mt-2">Chào mừng bạn trở lại! Đây là tổng quan hệ thống.</p>
       </div>
       
+      
     </div>
   );
 };
