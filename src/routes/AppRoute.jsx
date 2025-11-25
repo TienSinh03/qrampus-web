@@ -5,6 +5,7 @@ import RegisterPage from "@pages/auth/RegisterPage";
 import DashboardPage from "@pages/dashboard/DashboardPage";
 import SchedulePage from "@pages/dashboard/SchedulePage";
 
+
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
 
