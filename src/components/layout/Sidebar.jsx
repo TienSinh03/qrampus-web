@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   LayoutDashboard, 
   Users, 
@@ -14,14 +15,15 @@ import {
 import { useAuth } from '@contexts/AuthContext';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { logout, user } = useAuth();
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Users, label: 'Người dùng', path: '/dashboard/users' },
-    { icon: Calendar, label: 'Lịch trình', path: '/dashboard/schedule' },
-    { icon: BarChart3, label: 'Báo cáo', path: '/dashboard/reports' },
+    { icon: LayoutDashboard, label: t('sidebar.dashboard'), path: '/dashboard' },
+    { icon: Users, label: t('sidebar.users'), path: '/dashboard/users' },
+    { icon: Calendar, label: t('sidebar.schedule'), path: '/dashboard/schedule' },
+    { icon: BarChart3, label: t('sidebar.reports'), path: '/dashboard/reports' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -110,7 +112,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               className="flex items-center space-x-3 w-full px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-200"
             >
               <LogOut className="w-5 h-5" />
-              <span className="font-medium">Đăng xuất</span>
+              <span className="font-medium">{t('common.logout')}</span>
             </button>
           </div>
         </div>

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import Pagination from "../../components/common/Pagination";
 import Search from "../../components/common/Search";
 import ModalUpload from "../../components/common/ModalUpload";
 import { CirclePlus, Trash2, LockKeyhole, CloudUpload, Eye, MoreVertical, PencilLine, Users, UserCheck, UserX, UserPlus } from "lucide-react";
 import StatsCard from "../../components/common/StatsCard";
 const UsersPage = () => {
+  const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
@@ -138,7 +140,7 @@ const UsersPage = () => {
             {/* Search */}
             <div className="col-span-4 md:col-span-4 lg:col-span-6">
               <Search
-                placeholder="Tìm kiếm người dùng..."
+                placeholder={t('users.searchPlaceholder')}
                 onSearch={(query) => console.log("Searching for:", query)}
               />
             </div>
@@ -147,15 +149,15 @@ const UsersPage = () => {
             <div className="col-span-4 md:col-span-4 lg:col-span-6">
               <div className="flex justify-end gap-3 flex-wrap">
                 <button className="btn-primary">
-                  <CirclePlus className="w-4 h-4" /> Add User
+                  <CirclePlus className="w-4 h-4" /> {t('users.addUser')}
                 </button>
 
                 <button className="btn-danger">
-                  <Trash2 className="w-4 h-4" /> Xóa User
+                  <Trash2 className="w-4 h-4" /> {t('users.deleteUser')}
                 </button>
 
                 <button className="btn-info" onClick={() => setOpenUpload(true)} >
-                  <CloudUpload className="w-4 h-4" /> Upload User
+                  <CloudUpload className="w-4 h-4" /> {t('users.upload')}
                 </button>
               </div>
             </div>
@@ -168,12 +170,12 @@ const UsersPage = () => {
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-100">
-              <th className="h-12 px-4">User</th>
-              <th className="h-12 px-4">Email</th>
-              <th className="h-12 px-4">Role</th>
+              <th className="h-12 px-4">{t('users.name')}</th>
+              <th className="h-12 px-4">{t('users.email')}</th>
+              <th className="h-12 px-4">{t('users.role')}</th>
               <th className="h-12 px-4">ID</th>
-              <th className="h-12 px-4">Status</th>
-              <th className="h-12 px-4">Action</th>
+              <th className="h-12 px-4">{t('users.status')}</th>
+              <th className="h-12 px-4">{t('users.actions')}</th>
             </tr>
           </thead>
 

@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import vi from "date-fns/locale/vi";
+import en from "date-fns/locale/en-US";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const locales = {
   vi: vi,
+  en: en,
 };
 
 const localizer = dateFnsLocalizer({
@@ -45,6 +48,7 @@ const initialEvents = [
 ];
 
 const SchedulePage = () => {
+  const { t, i18n } = useTranslation();
   const [events, setEvents] = useState(initialEvents);
   const [view, setView] = useState(Views.WEEK);
   const [date, setDate] = useState(new Date());
@@ -112,9 +116,9 @@ const SchedulePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Lịch làm việc</h1>
+          <h1 className="text-2xl font-bold">{t('schedulePage.title')}</h1>
           <p className="text-sm text-gray-500">
-            Quản lý lịch lịch dạy 
+            {t('schedulePage.description')}
           </p>
         </div>
 
@@ -163,7 +167,7 @@ const SchedulePage = () => {
       <div className="bg-white rounded-xl shadow p-4 h-[700px]">
         <Calendar
           localizer={localizer}
-          culture="vi"
+          culture={i18n.language}
           events={events}
           startAccessor="start"
           endAccessor="end"

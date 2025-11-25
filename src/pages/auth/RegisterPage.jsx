@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -26,16 +28,16 @@ const RegisterPage = () => {
     e.preventDefault();
     const newErrors = {};
     
-    if (!formData.fullName) newErrors.fullName = 'Họ tên không được để trống';
-    if (!formData.email) newErrors.email = 'Email không được để trống';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email không hợp lệ';
+    if (!formData.fullName) newErrors.fullName = t('errors.fullNameRequired');
+    if (!formData.email) newErrors.email = t('errors.emailRequired');
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = t('errors.emailInvalid');
     
-    if (!formData.password) newErrors.password = 'Mật khẩu không được để trống';
-    else if (formData.password.length < 6) newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    if (!formData.password) newErrors.password = t('errors.passwordRequired');
+    else if (formData.password.length < 6) newErrors.password = t('errors.passwordMinLength');
     
-    if (!formData.confirmPassword) newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu';
+    if (!formData.confirmPassword) newErrors.confirmPassword = t('errors.confirmPasswordRequired');
     else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+      newErrors.confirmPassword = t('errors.passwordMismatch');
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -54,7 +56,7 @@ const RegisterPage = () => {
     if (result.success) {
       navigate('/login');
     } else {
-      setErrors({ email: result.error || 'Đăng ký thất bại' });
+      setErrors({ email: result.error || t('errors.registerFailed') });
     }
   };
 
@@ -67,15 +69,15 @@ const RegisterPage = () => {
             <div className="flex justify-center">
               <img src="/assets/images/logo-qrampus.png" alt="Logo" className="w-16 h-16 rounded-2xl" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-800">Đăng Ký</h1>
-            <p className="text-gray-500">Tạo tài khoản mới để bắt đầu học</p>
+            <h1 className="text-3xl font-bold text-gray-800">{t('auth.registerTitle')}</h1>
+            <p className="text-gray-500">{t('auth.registerSubtitle')}</p>
           </div>
 
           {/* Form */}
           <div className="space-y-4">
             {/* Full Name Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Họ và tên</label>
+              <label className="text-sm font-medium text-gray-700">{t('auth.fullName')}</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -92,7 +94,7 @@ const RegisterPage = () => {
 
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Email</label>
+              <label className="text-sm font-medium text-gray-700">{t('auth.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -109,7 +111,7 @@ const RegisterPage = () => {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Mật khẩu</label>
+              <label className="text-sm font-medium text-gray-700">{t('auth.password')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -133,7 +135,7 @@ const RegisterPage = () => {
 
             {/* Confirm Password Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Xác nhận mật khẩu</label>
+              <label className="text-sm font-medium text-gray-700">{t('auth.confirmPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -161,7 +163,7 @@ const RegisterPage = () => {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-blue-700 transform hover:scale-[1.02] transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Đang đăng ký...' : 'Đăng Ký'}
+              {isLoading ? t('auth.registering') : t('auth.registerButton')}
             </button>
           </div>
 
@@ -170,19 +172,19 @@ const RegisterPage = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">hoặc</span>
+              <span className="px-4 bg-white text-gray-500">{t('auth.or')}</span>
             </div>
           </div>
 
           {/* Switch to Login */}
           <div className="text-center">
             <p className="text-gray-600">
-              Đã có tài khoản?{' '}
+              {t('auth.haveAccount')}{' '}
               <button
                 onClick={() => navigate('/login')}
                 className="text-purple-600 hover:text-purple-700 font-semibold"
               >
-                Đăng nhập ngay
+                {t('auth.loginNow')}
               </button>
             </p>
           </div>

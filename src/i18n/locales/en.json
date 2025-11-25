@@ -1,0 +1,94 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "logout": "Logout",
+    "settings": "Settings",
+    "search": "Search"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "fullName": "Full Name",
+    "welcomeBack": "Welcome back!",
+    "loginTitle": "Login",
+    "registerTitle": "Register",
+    "registerSubtitle": "Create a new account to get started",
+    "loginButton": "Login",
+    "registerButton": "Register",
+    "loginNow": "Login now",
+    "registerNow": "Register now",
+    "loggingIn": "Logging in...",
+    "registering": "Registering...",
+    "or": "or"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Overview",
+    "users": "Users",
+    "schedule": "Schedule",
+    "reports": "Reports",
+    "statistics": "Statistics"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "users": "User Management",
+    "schedule": "Schedule",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "users": {
+    "title": "User Management",
+    "description": "List of users in the system",
+    "addUser": "Add User",
+    "editUser": "Edit",
+    "deleteUser": "Delete",
+    "viewUser": "View Details",
+    "searchPlaceholder": "Search by name or email...",
+    "name": "Full Name",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "actions": "Actions",
+    "active": "Active",
+    "inactive": "Inactive",
+    "admin": "Administrator",
+    "teacher": "Teacher",
+    "student": "Student",
+    "upload": "Upload Users"
+  },
+  "schedulePage": {
+    "title": "Schedule",
+    "description": "Manage schedules and timetables"
+  },
+  "dashboardPage": {
+    "title": "Overview",
+    "welcomeMessage": "Welcome to the system",
+    "totalUsers": "Total Users",
+    "totalCourses": "Total Courses",
+    "totalSchedules": "Total Schedules",
+    "recentActivities": "Recent Activities"
+  },
+  "header": {
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "changePassword": "Change Password",
+    "logout": "Logout"
+  },
+  "errors": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Email is invalid",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "fullNameRequired": "Full name is required",
+    "confirmPasswordRequired": "Please confirm your password",
+    "passwordMismatch": "Passwords do not match",
+    "loginFailed": "Email or password is incorrect",
+    "registerFailed": "Registration failed"
+  }
+}

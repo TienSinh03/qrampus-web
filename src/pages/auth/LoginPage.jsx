@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -20,11 +22,11 @@ const LoginPage = () => {
     e.preventDefault();
     const newErrors = {};
     
-    if (!formData.email) newErrors.email = 'Email không được để trống';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email không hợp lệ';
+    if (!formData.email) newErrors.email = t('errors.emailRequired');
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = t('errors.emailInvalid');
     
-    if (!formData.password) newErrors.password = 'Mật khẩu không được để trống';
-    else if (formData.password.length < 6) newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    if (!formData.password) newErrors.password = t('errors.passwordRequired');
+    else if (formData.password.length < 6) newErrors.password = t('errors.passwordMinLength');
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -38,7 +40,7 @@ const LoginPage = () => {
     if (result.success) {
       navigate('/dashboard');
     } else {
-      setErrors({ password: 'Email hoặc mật khẩu không đúng' });
+      setErrors({ password: t('errors.loginFailed') });
     }
   };
 
@@ -51,14 +53,15 @@ const LoginPage = () => {
             <div className="flex justify-center">
                 <img src="/assets/images/logo-qrampus_TEXT.png" alt="Logo" className="w-50 h-16 rounded-2xl" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-800">Đăng Nhập</h1>
+            <h1 className="text-3xl font-bold text-gray-800">{t('auth.loginTitle')}</h1>
+            <p className="text-gray-500">{t('auth.welcomeBack')}</p>
           </div>
 
           {/* Form */}
           <div className="space-y-4">
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Email</label>
+              <label className="text-sm font-medium text-gray-700">{t('auth.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -75,7 +78,7 @@ const LoginPage = () => {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Mật khẩu</label>
+              <label className="text-sm font-medium text-gray-700">{t('auth.password')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -100,7 +103,7 @@ const LoginPage = () => {
             {/* Forgot Password */}
             <div className="text-right">
               <button type="button" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                Quên mật khẩu?
+                {t('auth.forgotPassword')}
               </button>
             </div>
 
@@ -110,7 +113,7 @@ const LoginPage = () => {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
+              {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
             </button>
           </div>
 
@@ -119,19 +122,19 @@ const LoginPage = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">hoặc</span>
+              <span className="px-4 bg-white text-gray-500">{t('auth.or')}</span>
             </div>
           </div>
 
           {/* Switch to Register */}
           <div className="text-center">
             <p className="text-gray-600">
-              Chưa có tài khoản?{' '}
+              {t('auth.noAccount')}{' '}
               <button
                 onClick={() => navigate('/register')}
                 className="text-blue-600 hover:text-blue-700 font-semibold"
               >
-                Đăng ký ngay
+                {t('auth.registerNow')}
               </button>
             </p>
           </div>
