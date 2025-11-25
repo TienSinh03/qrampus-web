@@ -1,13 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Pagination from "../../components/common/Pagination";
 import Search from "../../components/common/Search";
 import ModalUpload from "../../components/common/ModalUpload";
-import { CirclePlus, Trash2, LockKeyhole, CloudUpload, Eye, MoreVertical } from "lucide-react";
-
+import { CirclePlus, Trash2, LockKeyhole, CloudUpload, Eye, MoreVertical, PencilLine, Users, UserCheck, UserX, UserPlus } from "lucide-react";
+import StatsCard from "../../components/common/StatsCard";
 const UsersPage = () => {
+
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
-  const [checked, setChecked] = useState(false);
+  // const [checked, setChecked] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null);
+
+  //gọi userfetch open 
+  // useEffect(() => {
+  //   const handleClick = (e) => {
+  //     if (!e.target.closest(".dropdown-menu")) {
+  //       setOpenMenu(null);
+  //     }
+  //   };
+
+  //   document.addEventListener("click", handleClick);
+  //   return () => document.removeEventListener("click", handleClick);
+  // }, []);
+
+
+
+
+
 
   const totalPages = 5;
 
@@ -67,9 +86,50 @@ const UsersPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Quản lý người dùng</h1>
-      <p>Trang này dành cho việc quản lý người dùng trong hệ thống.</p>
+      {/* <h1 className="text-2xl font-bold">Quản lý người dùng</h1> */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
+        <StatsCard
+          title="Session"
+          value="21,459"
+          percent="(+29%)"
+          positive={true}
+          subtitle="Total User"
+          icon={<Users className="w-6 h-6 text-purple-600" />}
+          iconBg="bg-purple-100"
+        />
+
+        <StatsCard
+          title="Paid Users"
+          value="4,567"
+          percent="(+18%)"
+          positive={true}
+          subtitle="Last week analytics"
+          icon={<UserPlus className="w-6 h-6 text-rose-600" />}
+          iconBg="bg-rose-100"
+        />
+
+        <StatsCard
+          title="Active Users"
+          value="19,860"
+          percent="(-14%)"
+          positive={false}
+          subtitle="Last week analytics"
+          icon={<UserCheck className="w-6 h-6 text-green-600" />}
+          iconBg="bg-green-100"
+        />
+
+        <StatsCard
+          title="Pending Users"
+          value="237"
+          percent="(+42%)"
+          positive={true}
+          subtitle="Last week analytics"
+          icon={<UserX className="w-6 h-6 text-yellow-600" />}
+          iconBg="bg-yellow-100"
+        />
+
+      </div>
       {/* FILTERS */}
       <div className="border rounded-xl p-4 bg-white shadow-sm">
         <div className="container px-6 m-auto">
@@ -123,7 +183,7 @@ const UsersPage = () => {
                 <td className="px-4 h-14 flex items-center gap-2">
                   <img src={u.avatar_url} className="w-8 h-8 rounded-full" />
                   <div>
-                    <div className="font-medium">{u.name}</div>
+                    <div className="font-medium">{u.full_name}</div>
                     <div className="text-sm text-gray-500">{u.email.split("@")[0]}</div>
                   </div>
                 </td>
@@ -141,12 +201,31 @@ const UsersPage = () => {
                 </td>
 
                 <td className="px-4">
+
                   <div className="flex gap-3">
                     <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
                     <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
-                    <MoreVertical className="cursor-pointer w-5 h-5" />
+                    {/* More Menu */}
+                    <div className="relative">
+                      <MoreVertical className="cursor-pointer w-5 h-5" onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)} />
+
+                      {/* Dropdown */}
+                      {openMenu === u.id && (
+                        <div className="absolute mt-2 w-25 bg-white shadow-lg rounded-md border z-20">
+                          <button className="w-full text-left px-4 py-2 hover:bg-slate-100" onClick={() => console.log("Edit", u.id)}>
+                            <PencilLine className="inline w-4 h-4 mr-2" />
+                          </button>
+                          <button className="w-full text-left px-4 py-2 hover:bg-slate-100" onClick={() => console.log("Lock", u.id)}>
+                            <LockKeyhole className="inline w-4 h-4 mr-2" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
                 </td>
+
+
               </tr>
             ))}
           </tbody>
