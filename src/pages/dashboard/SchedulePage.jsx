@@ -4,7 +4,6 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import vi from "date-fns/locale/vi";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
-// Cấu hình locale cho date-fns (tiếng Việt)
 const locales = {
   vi: vi,
 };
@@ -24,21 +23,21 @@ const localizer = dateFnsLocalizer({
 const initialEvents = [
   {
     id: 1,
-    title: "Hẹn khách xem nhà Quận 7",
+    title: "Khóa luận tốt nghiệp DKHTPM17A",
     start: new Date(2025, 10, 25, 9, 0), // 25/11/2025 09:00
-    end: new Date(2025, 10, 25, 10, 0),
-    resource: { type: "meeting", note: "Khách VIP – căn 3PN" },
+    end: new Date(2025, 10, 25, 11, 40, 0),
+    resource: { type: "meeting", note: "lịch dạy khóa luận" },
   },
   {
     id: 2,
-    title: "Call tư vấn đầu tư",
+    title: "Nhập môn lập trình 404000000 DKHTPM17A",
     start: new Date(2025, 10, 26, 14, 0),
     end: new Date(2025, 10, 26, 15, 0),
     resource: { type: "call" },
   },
   {
     id: 3,
-    title: "Sự kiện mở bán dự án mới",
+    title: "......",
     start: new Date(2025, 10, 27, 8, 0),
     end: new Date(2025, 10, 27, 12, 0),
     resource: { type: "event" },
@@ -115,7 +114,7 @@ const SchedulePage = () => {
         <div>
           <h1 className="text-2xl font-bold">Lịch làm việc</h1>
           <p className="text-sm text-gray-500">
-            Quản lý lịch hẹn xem nhà, cuộc gọi và sự kiện.
+            Quản lý lịch lịch dạy 
           </p>
         </div>
 

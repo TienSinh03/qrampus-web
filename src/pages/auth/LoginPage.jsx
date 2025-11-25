@@ -49,7 +49,7 @@ const LoginPage = () => {
           {/* Logo & Title */}
           <div className="text-center space-y-2">
             <div className="flex justify-center">
-                <img src="/assets/images/logo-qrampus.png" alt="Logo" className="w-16 h-16 rounded-2xl" />
+                <img src="/assets/images/logo-qrampus_TEXT.png" alt="Logo" className="w-50 h-16 rounded-2xl" />
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Đăng Nhập</h1>
           </div>
