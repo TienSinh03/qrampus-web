@@ -4,16 +4,18 @@ import LoginPage from "@pages/auth/LoginPage";
 import RegisterPage from "@pages/auth/RegisterPage";
 import DashboardPage from "@pages/dashboard/DashboardPage";
 import SchedulePage from "@pages/dashboard/SchedulePage";
-import UsersPage   from  "@pages/dashboard/UsersPage";
-
+import UsersPage from "@pages/dashboard/UsersPage";
+import QRPage from "@pages/dashboard/QRPage";
+import StudySessionPage from "@pages/dashboard/StudySession/StudySessionPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
 
 import LayoutMain from "@components/layout/LayoutMain";
 
+// Router setup
 const router = createBrowserRouter([
-  // Dành cho các trang không cần đăng nhập
+  // Public routes (no login required)
   {
     path: "/",
     element: <Navigate to="/login" replace />,
@@ -35,7 +37,7 @@ const router = createBrowserRouter([
     ),
   },
 
-  // Dành cho các trang cần đăng nhập
+  // Private routes (requires login)
   {
     path: "/dashboard",
     element: (
@@ -54,20 +56,31 @@ const router = createBrowserRouter([
       },
       {
         path: "schedule",
-        element:  <SchedulePage />,
+        element: <SchedulePage />,
       },
       {
         path: "reports",
         element: <div className="p-8"><h1 className="text-2xl font-bold">Báo cáo</h1></div>,
       },
+      {
+        path: "qrcode",
+        element: <QRPage />,
+      },
+      {
+        path: "study-session",
+        element: <StudySessionPage />,
+      },
     ],
   },
+
+  // Catch-all route to redirect to login page
   {
     path: "*",
     element: <Navigate to="/login" replace />,
   },
 ]);
 
+// RouterProvider component to pass the router object
 const AppRoutes = () => {
   return <RouterProvider router={router} />;
 };

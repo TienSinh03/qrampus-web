@@ -1,16 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  LayoutDashboard, 
-  Users, 
-  BookOpen, 
-  Calendar, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  BookOpen,
+  Calendar,
+  Settings,
   FileText,
   BarChart3,
   Menu,
   X,
-  LogOut
+  LogOut,
+  ScanQrCode
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 
@@ -24,6 +25,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { icon: Users, label: t('sidebar.users'), path: '/dashboard/users' },
     { icon: Calendar, label: t('sidebar.schedule'), path: '/dashboard/schedule' },
     { icon: BarChart3, label: t('sidebar.reports'), path: '/dashboard/reports' },
+    { icon: ScanQrCode, label: t('sidebar.qrcode'), path: '/dashboard/qrcode' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -32,14 +34,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     <>
       {/* Overlay for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={toggleSidebar}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`
           fixed top-0 left-0 z-50 h-screen bg-white border-r border-gray-200 
           transition-transform duration-300 ease-in-out
@@ -55,7 +57,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
               <img src="/assets/images/logo-qrampus.png" alt="Logo" className="w-12 h-12 rounded-2xl" />
               <span className="text-xl font-bold text-gray-800">QRampus</span>
             </div>
-            <button 
+            <button
               onClick={toggleSidebar}
               className="lg:hidden text-gray-500 hover:text-gray-700"
             >
@@ -83,7 +85,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
-              
+
               return (
                 <Link
                   key={item.path}
@@ -91,8 +93,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   className={`
                     flex items-center space-x-3 px-4 py-3 rounded-lg
                     transition-all duration-200
-                    ${active 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
+                    ${active
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
                       : 'text-gray-700 hover:bg-gray-100'
                     }
                   `}

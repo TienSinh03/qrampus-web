@@ -33,14 +33,17 @@
     "users": "Người dùng",
     "schedule": "Lịch học",
     "reports": "Báo cáo",
-    "statistics": "Thống kê"
+    "statistics": "Thống kê",
+    "qrcode": "Điểm danh"
   },
   "sidebar": {
     "dashboard": "Trang chủ",
     "users": "Quản lý người dùng",
     "schedule": "Lịch học",
     "reports": "Báo cáo",
-    "settings": "Cài đặt"
+    "settings": "Cài đặt",    
+    "qrcode": "Điểm danh"
+
   },
   "users": {
     "title": "Quản lý người dùng",

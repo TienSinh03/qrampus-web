@@ -33,14 +33,16 @@
     "users": "Users",
     "schedule": "Schedule",
     "reports": "Reports",
-    "statistics": "Statistics"
+    "statistics": "Statistics",
+    "qrcode": "QR Attendance"
   },
   "sidebar": {
     "dashboard": "Dashboard",
     "users": "User Management",
     "schedule": "Schedule",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "qrcode": "QR Attendance"
   },
   "users": {
     "title": "User Management",
