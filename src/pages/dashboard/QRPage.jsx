@@ -429,7 +429,7 @@ const QRPage = () => {
               Vượt mức
             </button>
             <button className="rounded-full bg-gray-100 px-3 py-1 text-slate-600 hover:bg-slate-200">
-              Vượt mức
+              Không
             </button>
           </div>
 

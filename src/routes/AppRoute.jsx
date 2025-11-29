@@ -8,6 +8,7 @@ import UsersPage from "@pages/dashboard/UsersPage";
 import QRPage from "@pages/dashboard/QRPage";
 import StudySessionPage from "@pages/dashboard/StudySession/StudySessionPage";
 import ResultQRPage from "@pages/dashboard/ResultsQR/ResultQRPage";
+import ResultQRextendPage from "../pages/dashboard/ResultsQR/ResultQRextendPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -74,6 +75,10 @@ const router = createBrowserRouter([
       {
         path: "results-qr",
         element: <ResultQRPage />,
+      },
+      {
+        path: "results-qr-extend",
+        element: <ResultQRextendPage />,
       },
     ],
   },
