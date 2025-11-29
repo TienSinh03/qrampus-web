@@ -64,65 +64,59 @@ const StudySessionPage = () => {
                 </div>
 
                 {/* Tabs */}
-                {/* <div className="flex border-t border-slate-100 px-6">
-                    {["Mô tả", "Sinh viên", "Lịch học", "Điểm danh"].map((tab, idx) => (
-                        <button
-                            key={tab}
-                            className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${idx === 0
-                                ? "border-violet-500 text-violet-600"
-                                : "border-transparent text-slate-500 hover:text-slate-700"
-                                }`}
-                        >
-                            {idx === 0 && <FileImage className="w-4 h-4" />}
-                            {idx === 1 && <FileUser className="w-4 h-4" />}
-                            {idx === 2 && <Calendar className="w-4 h-4" />}
-                            {idx === 3 && <QrCode className="w-4 h-4" />}
-                            <span>{tab}</span>
-                        </button>
-                    ))}
-                </div> */}
-            </div>
-            {/* --- TABS --- */}
-            <div className="flex border-t border-slate-100 px-6">
-                <button
-                    onClick={() => setCurrentTab("description")}
-                    className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${currentTab === "description"
-                        ? "border-violet-500 text-violet-600"
-                        : "border-transparent text-slate-500"
-                        }`}
-                >
-                    <FileImage className="w-4 h-4" /> Mô tả
-                </button>
+                <div className="px-6 py-3 border-t border-slate-100 md:hidden">
+                    <select
+                        value={currentTab}
+                        onChange={(e) => setCurrentTab(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-violet-500"
+                    >
+                        <option value="description"> Mô tả</option>
+                        <option value="student">Sinh viên</option>
+                        <option value="schedule">Lịch học</option>
+                        <option value="qr">Lịch sử điểm danh</option>
+                    </select>
+                </div>
+                <div className="hidden md:flex border-t border-slate-100 px-6">
+                    <button
+                        onClick={() => setCurrentTab("description")}
+                        className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${currentTab === "description"
+                            ? "border-violet-500 text-violet-600"
+                            : "border-transparent text-slate-500"
+                            }`}
+                    >
+                        <FileImage className="w-4 h-4" /> Mô tả
+                    </button>
 
-                <button
-                    onClick={() => setCurrentTab("student")}
-                    className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${currentTab === "student"
-                        ? "border-violet-500 text-violet-600"
-                        : "border-transparent text-slate-500"
-                        }`}
-                >
-                    <FileUser className="w-4 h-4" /> Sinh viên
-                </button>
+                    <button
+                        onClick={() => setCurrentTab("student")}
+                        className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${currentTab === "student"
+                            ? "border-violet-500 text-violet-600"
+                            : "border-transparent text-slate-500"
+                            }`}
+                    >
+                        <FileUser className="w-4 h-4" /> Sinh viên
+                    </button>
 
-                <button
-                    onClick={() => setCurrentTab("schedule")}
-                    className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${currentTab === "schedule"
-                        ? "border-violet-500 text-violet-600"
-                        : "border-transparent text-slate-500"
-                        }`}
-                >
-                    <Calendar className="w-4 h-4" /> Lịch học
-                </button>
+                    <button
+                        onClick={() => setCurrentTab("schedule")}
+                        className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${currentTab === "schedule"
+                            ? "border-violet-500 text-violet-600"
+                            : "border-transparent text-slate-500"
+                            }`}
+                    >
+                        <Calendar className="w-4 h-4" /> Lịch học
+                    </button>
 
-                <button
-                    onClick={() => setCurrentTab("qr")}
-                    className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${currentTab === "qr"
-                        ? "border-violet-500 text-violet-600"
-                        : "border-transparent text-slate-500"
-                        }`}
-                >
-                    <QrCode className="w-4 h-4" /> Điểm danh
-                </button>
+                    <button
+                        onClick={() => setCurrentTab("qr")}
+                        className={`relative -mb-px mr-4 flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-medium ${currentTab === "qr"
+                            ? "border-violet-500 text-violet-600"
+                            : "border-transparent text-slate-500"
+                            }`}
+                    >
+                        <QrCode className="w-4 h-4" /> Lịch sử điểm danh
+                    </button>
+                </div>
             </div>
 
             {/* --- CONTENT --- */}

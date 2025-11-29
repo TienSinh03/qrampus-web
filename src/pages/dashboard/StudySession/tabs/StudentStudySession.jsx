@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { IdCard, Table2 } from "lucide-react";
 
 const StudentStudySession = () => {
-    const [view, setView] = useState("table"); // State to toggle between table and card view
+    const [view, setView] = useState("table");
+    const [search, setSearch] = useState("");
 
     const students = [
         {
@@ -52,76 +53,102 @@ const StudentStudySession = () => {
         },
     ];
 
+    // FILTER SEARCH
+    const filteredStudents = useMemo(() => {
+        return students.filter((s) =>
+            `${s.full_name} ${s.email} ${s.role}`
+                .toLowerCase()
+                .includes(search.toLowerCase())
+        );
+    }, [search]);
+
+    const StatusBadge = ({ status }) => {
+        const COLORS = {
+            Active: "text-green-600 bg-green-100",
+            Inactive: "text-red-600 bg-red-100",
+            Pending: "text-yellow-600 bg-yellow-100",
+        };
+        return (
+            <span className={`px-2 py-1 rounded-md text-sm font-medium ${COLORS[status]}`}>
+                {status}
+            </span>
+        );
+    };
+
     return (
         <div className="rounded-2xl bg-white p-6 shadow-sm">
-            {/* Button to toggle between Table and Card view */}
-            <div className="mb-4">
-                <div className="inline-flex rounded-md shadow-sm" role="group">
-                    {["table", "card"].map((type) => (
+            {/* Switch View + Search */}
+            <div className="mb-6 flex items-center gap-4">
+                <div className="inline-flex rounded-lg shadow-sm bg-gray-200 p-1">
+                    {[
+                        { type: "table", icon: <Table2 className="w-4 h-4 mr-2" />, label: "Table" },
+                        { type: "card", icon: <IdCard className="w-4 h-4 mr-2" />, label: "Card" },
+                    ].map((btn) => (
                         <button
-                            key={type}
-                            type="button"
-                            onClick={() => setView(type)}
-                            className={`px-4 py-2 text-sm font-medium text-white rounded-${type === "table" ? "l" : "r"}-lg border border-gray-300 transition-all duration-200 ${view === type ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-500 hover:bg-gray-600"}`}
-                            aria-current={view === type ? "page" : undefined}
+                            key={btn.type}
+                            onClick={() => setView(btn.type)}
+                            className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all ${view === btn.type
+                                    ? "bg-blue-600 text-white"
+                                    : "text-gray-700 hover:bg-gray-300"
+                                }`}
                         >
-                            {type === "table" ? (
-                                <>
-                                    <Table2 className="inline-block w-4 h-4 mr-2" />
-                                    Table View
-                                </>
-                            ) : (
-                                <>
-                                    <IdCard className="inline-block w-4 h-4 mr-2" />
-                                    Card View
-                                </>
-                            )}
+                            {btn.icon}
+                            {btn.label}
                         </button>
                     ))}
                 </div>
+
+                {/* SEARCH BAR */}
+                <input
+                    type="text"
+                    placeholder="Tìm kiếm..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg w-64 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
             </div>
 
-
-            {/* Conditionally render Table or Card view based on the 'view' state */}
-            {view === "table" ? (
+            {/* TABLE VIEW */}
+            {view === "table" && (
                 <table className="min-w-full table-auto border-collapse">
                     <thead>
-                        <tr>
-                            <th className="border-b py-2 px-4">Avatar</th>
-                            <th className="border-b py-2 px-4">#ID</th>
-                            <th className="border-b py-2 px-4">Full Name</th>
-                            <th className="border-b py-2 px-4">Email</th>
-                            <th className="border-b py-2 px-4">Role</th>
-                            <th className="border-b py-2 px-4">Status</th>
+                        <tr className="bg-gray-100">
+                            <th className="border-b py-3 px-4 text-left">Avatar</th>
+                            <th className="border-b py-3 px-4 text-left">#ID</th>
+                            <th className="border-b py-3 px-4 text-left">Full Name</th>
+                            <th className="border-b py-3 px-4 text-left">Email</th>
+                            <th className="border-b py-3 px-4 text-left">Role</th>
+                            <th className="border-b py-3 px-4 text-left">Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {students.map((student) => (
-                            <tr key={student.id} className="hover:bg-gray-100">
-                                <td className="py-2 px-4">
+                        {filteredStudents.map((student) => (
+                            <tr key={student.id} className="hover:bg-gray-50">
+                                <td className="py-3 px-4">
                                     <img
                                         src={student.avatar_url}
                                         alt={student.full_name}
                                         className="w-12 h-12 rounded-full"
                                     />
                                 </td>
-                                <td className="py-2 px-4">{student.user_id}</td>
-                                <td className="py-2 px-4">{student.full_name}</td>
-                                <td className="py-2 px-4">{student.email}</td>
-                                <td className="py-2 px-4">{student.role}</td>
-                                <td
-                                    className={`py-2 px-4 ${student.status === "Active" ? "text-green-600" : "text-red-600"}`}
-                                >
-                                    {student.status === "Active" ? "✔ Active" : "✖ Inactive"}
+                                <td className="py-3 px-4">{student.user_id}</td>
+                                <td className="py-3 px-4">{student.full_name}</td>
+                                <td className="py-3 px-4">{student.email}</td>
+                                <td className="py-3 px-4">{student.role}</td>
+                                <td className="py-3 px-4">
+                                    <StatusBadge status={student.status} />
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-            ) : (
+            )}
+
+            {/* CARD VIEW */}
+            {view === "card" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {students.map((student) => (
-                        <div key={student.id} className="bg-white p-6 rounded-lg shadow-lg">
+                    {filteredStudents.map((student) => (
+                        <div key={student.id} className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition">
                             <div className="flex items-center mb-4">
                                 <img
                                     src={student.avatar_url}
@@ -134,19 +161,16 @@ const StudentStudySession = () => {
                                 </div>
                             </div>
 
-                            <div className="mb-4">
+                            <p className="mb-2">
                                 <span className="font-semibold">#ID: </span>{student.user_id}
-                            </div>
+                            </p>
 
-                            <div className="mb-4">
+                            <p className="mb-2">
                                 <span className="font-semibold">Role: </span>{student.role}
-                            </div>
+                            </p>
 
-                            <div className="mb-4">
-                                <span className="font-semibold">Status: </span>
-                                <span className={student.status === "Active" ? "text-green-600" : "text-red-600"}>
-                                    {student.status === "Active" ? "✔ Active" : "✖ Inactive"}
-                                </span>
+                            <div className="mt-3">
+                                <StatusBadge status={student.status} />
                             </div>
                         </div>
                     ))}
