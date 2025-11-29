@@ -77,6 +77,30 @@ const UsersPage = () => {
       role: "Subscriber",
       user_id: "23456",
       status: "Pending",
+    }, {
+      id: 5,
+      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
+      full_name: "Maggy Hurran",
+      email: "mhurran4@yahoo.co.jp",
+      role: "Subscriber",
+      user_id: "23456",
+      status: "Pending",
+    }, {
+      id: 5,
+      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
+      full_name: "Maggy Hurran",
+      email: "mhurran4@yahoo.co.jp",
+      role: "Subscriber",
+      user_id: "23456",
+      status: "Pending",
+    }, {
+      id: 5,
+      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
+      full_name: "Maggy Hurran",
+      email: "mhurran4@yahoo.co.jp",
+      role: "Subscriber",
+      user_id: "23456",
+      status: "Pending",
     },
   ];
 

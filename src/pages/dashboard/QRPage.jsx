@@ -340,7 +340,10 @@ const QRPage = () => {
               </div>
               <div>
                 <h2 className="text-base font-semibold text-slate-800">
-                  42345677843
+                  <a onClick={() => navigate('/dashboard/study-session')} className="hover:underline" style={{ cursor: "pointer" }}>
+                    42345677843
+                  </a>
+
                   <button onClick={() => navigate('/dashboard/study-session')} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100">
                     <ExternalLink className="w-4 h-4" />
                   </button>
@@ -408,10 +411,10 @@ const QRPage = () => {
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-800">
-              Điểm danh mới nhất
+              Điểm danh hôm nay
             </h2>
             {/* mở ra danh sách KQ hôm đó */}
-            <button className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100">
+            <button onClick={() => navigate('/dashboard/results-qr')} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100">
               <ExternalLink className="w-4 h-4" />
             </button>
           </div>
