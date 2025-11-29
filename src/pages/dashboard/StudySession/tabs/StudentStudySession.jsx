@@ -1,9 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { IdCard, Table2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 
 const StudentStudySession = () => {
     const [view, setView] = useState("table");
     const [search, setSearch] = useState("");
+    const navigate = useNavigate();
 
     const students = [
         {
@@ -88,8 +91,8 @@ const StudentStudySession = () => {
                             key={btn.type}
                             onClick={() => setView(btn.type)}
                             className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all ${view === btn.type
-                                    ? "bg-blue-600 text-white"
-                                    : "text-gray-700 hover:bg-gray-300"
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-700 hover:bg-gray-300"
                                 }`}
                         >
                             {btn.icon}
@@ -123,7 +126,10 @@ const StudentStudySession = () => {
                     </thead>
                     <tbody>
                         {filteredStudents.map((student) => (
-                            <tr key={student.id} className="hover:bg-gray-50">
+                            <tr key={student.id} className="hover:bg-gray-50"
+                                onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                                style={{ cursor: "pointer" }}
+                            >
                                 <td className="py-3 px-4">
                                     <img
                                         src={student.avatar_url}
@@ -148,7 +154,11 @@ const StudentStudySession = () => {
             {view === "card" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredStudents.map((student) => (
-                        <div key={student.id} className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition">
+                        <div key={student.id} className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition"
+                            onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                            style={{ cursor: "pointer" }}
+
+                        >
                             <div className="flex items-center mb-4">
                                 <img
                                     src={student.avatar_url}
