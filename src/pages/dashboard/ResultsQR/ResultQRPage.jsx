@@ -349,7 +349,7 @@ const ResultQRPage = () => {
             <table className="w-full min-w-[800px] table-fixed border-collapse">
               {/* HEADER CỐ ĐỊNH */}
               <thead className="bg-slate-100 sticky top-0 z-10 shadow-sm">
-                <tr>
+                <tr >
                   <th className="w-64 px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('users.name')}</th>
                   <th className="w-72 px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('users.email')}</th>
                   <th className="w-32 px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('users.role')}</th>
@@ -361,7 +361,10 @@ const ResultQRPage = () => {
 
               <tbody className="divide-y divide-gray-200">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={u.id} className="hover:bg-slate-50 transition-colors"
+                    onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                    style={{ cursor: "pointer" }}
+                  >
                     {/* Tên + Avatar */}
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">

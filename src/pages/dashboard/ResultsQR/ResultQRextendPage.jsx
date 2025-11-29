@@ -1,5 +1,6 @@
 import { EllipsisIcon, Search } from 'lucide-react';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const icons = {
     PYPL: 'PayPal',
@@ -33,6 +34,7 @@ const transactions = [
 ];
 
 const ResultQRextendPage = () => {
+    const navigate = useNavigate();
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 10;
     const totalPages = Math.ceil(transactions.length / rowsPerPage);
@@ -106,7 +108,10 @@ const ResultQRextendPage = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {currentTransactions.map((t, i) => (
-                                <tr key={i} className="hover:bg-gray-50 transition">
+                                <tr key={i} className="hover:bg-gray-50 transition"
+                                    onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                                    style={{ cursor: "pointer" }}
+                                >
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
@@ -114,6 +119,7 @@ const ResultQRextendPage = () => {
                                             </div>
                                             <span className="text-sm font-medium text-gray-900">{t.name}</span>
                                         </div>
+
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600">{t.date}</td>
                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{t.price}</td>
@@ -124,7 +130,9 @@ const ResultQRextendPage = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right text-gray-400 hover:text-gray-600 cursor-pointer">
-                                        <EllipsisIcon className="w-5 h-5" onClick={() => handleShowNotification(t.status)} />
+
+                                        <EllipsisIcon className="w-5 h-5" />
+
                                     </td>
                                 </tr>
                             ))}

@@ -110,9 +110,6 @@ const DescriptionTab = () => {
                                 <p className="mt-1 text-gray-700 font-medium">19/12/2025</p>
                             </div>
                         </div>
-
-
-
                     </div>
 
                     <hr className="my-5 border-slate-100" />

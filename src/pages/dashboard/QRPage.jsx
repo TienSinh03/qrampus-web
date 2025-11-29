@@ -440,6 +440,9 @@ const QRPage = () => {
                 className={`flex items-center justify-between rounded-xl px-2 py-2 hover:bg-slate-50
                   ${index !== meetings.length - 1 ? "mb-3" : ""}
                 `}
+                onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                style={{ cursor: "pointer" }}
+
               >
                 <div className="flex items-center gap-3">
                   <div
