@@ -1,235 +1,217 @@
 import React from "react";
-import {
-  TrendingUp,
-  DollarSign,
-  ShoppingCart,
-  ArrowUpRight,
-  ArrowDownRight,
-  BadgeCheck,
-  Coffee,
-  Users,
-  Activity
-} from "lucide-react";
 
-export default function DashboardPage() {
+export default function Dashboard() {
   return (
-    <div className="space-y-6">
-      <div className="mx-auto space-y-6">
-        {/* Congratulations Banner */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-              Congratulations John! 🎉
-            </h2>
-            <p className="text-gray-600 mt-2">
-              You have done <span className="font-bold text-gray-900">72% ☕</span> more sales today.
-              Check your new raising badge in your profile.
-            </p>
+    <div className="min-h-screen">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        {/* TRANSACTIONS */}
+
+        <div className="lg:row-span-2 rounded-2xl p-4 sm:p-5 md:p-6 shadow-sm border border-rose-100/70 bg-gradient-to-br from-rose-50 via-white to-rose-100/60">
+          {/* HEADER */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-rose-400 mb-1">
+                Học phần
+              </p>
+              <h2 className="text-sm md:text-base font-semibold text-rose-600">
+                Học phần dạy kỳ này
+              </h2>
+            </div>
+
+            <button className="self-start md:self-auto px-3 py-1.5 rounded-full text-xs font-medium bg-rose-500 text-white shadow-sm hover:bg-rose-600 transition">
+              Xem tất cả
+            </button>
           </div>
 
-          <div className="flex items-center gap-8">
-
-
-            <div className="flex gap-4">
-              <div className="bg-gray-50 rounded-xl p-4 text-center min-w-32">
-                <div className="flex items-center justify-center text-green-500 mb-2">
-                  <DollarSign className="w-6 h-6" />
-                </div>
-                <p className="text-sm text-gray-600">Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">$95.2k</p>
-                <p className="text-sm text-green-600 flex items-center justify-center gap-1 mt-1">
-                  <ArrowUpRight className="w-4 h-4" />
-                  +12%
-                </p>
+          {/* DANH SÁCH CUỘN DỌC */}
+          <div className="relative max-h-64 overflow-y-auto pr-1 space-y-3">
+            {/* item 1 */}
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-rose-100 hover:bg-rose-50 transition">
+              <div className="mt-0.5 h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-400 flex items-center justify-center text-white shadow-sm">
+                <span className="text-lg">🎓</span>
               </div>
-
-              <div className="bg-gray-50 rounded-xl p-4 text-center min-w-32">
-                <div className="flex items-center justify-center text-purple-500 mb-2">
-                  <ShoppingCart className="w-6 h-6" />
+              <div className="text-xs sm:text-sm leading-snug text-slate-700">
+                <div className="font-semibold">
+                  Lập trình hướng đối tượng
                 </div>
-                <p className="text-sm text-gray-600">Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">1.2k</p>
-                <p className="text-sm text-green-600 flex items-center justify-center gap-1 mt-1">
-                  <ArrowUpRight className="w-4 h-4" />
-                  +38%
-                </p>
+                <div className="text-[11px] sm:text-xs text-slate-400">
+                  3 tín chỉ • 45 tiết • Lý thuyết + thực hành
+                </div>
+              </div>
+            </div>
+
+            {/* item 2 */}
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-rose-100 hover:bg-rose-50 transition">
+              <div className="mt-0.5 h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-400 flex items-center justify-center text-white shadow-sm">
+                <span className="text-lg">💻</span>
+              </div>
+              <div className="text-xs sm:text-sm leading-snug text-slate-700">
+                <div className="font-semibold">
+                  Cấu trúc dữ liệu & Giải thuật
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-400">
+                  3 tín chỉ • 45 tiết
+                </div>
+              </div>
+            </div>
+
+            {/* item 3 */}
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-rose-100 hover:bg-rose-50 transition">
+              <div className="mt-0.5 h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white shadow-sm">
+                <span className="text-lg">📊</span>
+              </div>
+              <div className="text-xs sm:text-sm leading-snug text-slate-700">
+                <div className="font-semibold">
+                  Cơ sở dữ liệu
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-400">
+                  3 tín chỉ • Thực hành trên SQL
+                </div>
+              </div>
+            </div>
+
+            {/* item 4 (ví dụ thêm cho đủ scroll) */}
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-rose-100 hover:bg-rose-50 transition">
+              <div className="mt-0.5 h-10 w-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white shadow-sm">
+                <span className="text-lg">📱</span>
+              </div>
+              <div className="text-xs sm:text-sm leading-snug text-slate-700">
+                <div className="font-semibold">
+                  Phát triển ứng dụng di động
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-400">
+                  2 tín chỉ • Project cuối kỳ
+                </div>
+              </div>
+            </div>
+
+            {/* thêm nhiều item nữa nếu muốn để scrollbar hiện rõ hơn */}
+          </div>
+        </div>
+
+
+
+
+        {/* LOGISTICS */}
+        <div className="rounded-xl bg-white p-4 shadow">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-2xl bg-rose-500" />
+              <span className="text-sm font-semibold">Logistics</span>
+            </div>
+            <div className="text-slate-400 text-xs">•••</div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-semibold">$44k</span>
+            <span className="text-sm text-emerald-500">+42%</span>
+          </div>
+          <p className="mt-2 text-xs text-slate-400">Revenue Increase</p>
+        </div>
+
+        {/* REPORTS */}
+        <div className="rounded-xl bg-white p-4 shadow">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-2xl bg-amber-400" />
+              <span className="text-sm font-semibold">Reports</span>
+            </div>
+            <div className="text-slate-400 text-xs">•••</div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-semibold">268</span>
+            <span className="text-sm text-rose-500">-28%</span>
+          </div>
+          <p className="mt-2 text-xs text-slate-400">System Bugs</p>
+        </div>
+
+        {/* WEBSITE STATS */}
+        <div className="lg:row-span-2 rounded-xl bg-white p-4 shadow">
+          <div className="flex items-start justify-between mb-4">
+            <span className="text-sm font-semibold">Website Statistics</span>
+            <div className="text-slate-400 text-xs">•••</div>
+          </div>
+
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-4xl font-semibold">4,590</span>
+            <div className="flex h-20 items-end gap-1">
+
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mb-4">Total Traffic</p>
+
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span>Direct</span>
+              </div>
+              <div className="flex gap-6">
+                <span>86,471</span>
+                <span>15%</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-violet-400" />
+                <span>Organic</span>
+              </div>
+              <div className="flex gap-2 items-center">
+                <span>57,484</span>
+                <span>85%</span>
+                <span className="text-emerald-500">▲</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span>Referral</span>
+              </div>
+              <div className="flex gap-2 items-center">
+                <span>2,534</span>
+                <span>48%</span>
+                <span className="text-emerald-500">▲</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-rose-400" />
+                <span>Mail</span>
+              </div>
+              <div className="flex gap-6">
+                <span>977</span>
+                <span>36%</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Total Profit Chart */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Total Profit</h3>
-              <BadgeCheck className="w-5 h-5 text-purple-500" />
-            </div>
-
-            <div className="space-y-4">
-              {/* Simple Bar Chart */}
-              <div className="flex items-end justify-between h-48 gap-2">
-                {[25, 35, 32, 28, 40, 22, 45, 38, 30, 48].map((height, i) => (
-                  <div key={i} className="flex-1 flex flex-col justify-end">
-                    <div
-                      className={`w-full rounded-t-lg transition-all ${i === 9 ? 'bg-green-500' : 'bg-purple-500'
-                        }`}
-                      style={{ height: `${height * 3}px` }}
-                    ></div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>2015</span>
-                <span>2016</span>
-                <span>2017</span>
-                <span>2018</span>
-                <span>2019</span>
-                <span>2020</span>
-                <span>2021</span>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="text-3xl font-bold text-gray-900">$482.85k</div>
-              <p className="text-sm text-gray-600">Last month balance $234.40k</p>
-            </div>
-          </div>
-
-          {/* Total Profit Breakdown */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Profit</p>
-                  <p className="text-2xl font-bold text-gray-900">$48,568.20</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Income</p>
-                  <p className="text-2xl font-bold text-gray-900">$38,453.25</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Expense</p>
-                  <p className="text-xl font-semibold text-gray-900">$2,453.45</p>
-                </div>
-              </div>
-
-              <button className="w-full mt-6 bg-purple-600 text-white py-3 rounded-xl font-medium hover:bg-purple-700 transition">
-                View Report
+        {/* NEW VISITORS */}
+        <div className="lg:col-span-2 rounded-xl bg-rose-50 p-4 md:p-6 shadow">
+          <div className="flex flex-col md:flex-row items-center md:items-stretch justify-between gap-4">
+            {/* Text bên trái */}
+            <div className="flex-1">
+              <h3 className="text-sm md:text-base font-semibold text-rose-500 mb-1">
+                Best Rated Courses
+              </h3>
+              <p className="text-xs md:text-sm text-slate-600 mb-4">
+                Enroll now in the most popular and best rated courses.
+              </p>
+              <button className="inline-flex items-center px-4 py-2 rounded-md bg-rose-500 text-white text-xs font-semibold shadow-sm hover:bg-rose-600">
+                View Courses
               </button>
             </div>
-          </div>
 
-          {/* Total Sales */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Total Sales</h3>
-              <span className="text-sm text-gray-600">Calculated in last 7 days</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl font-bold text-gray-900">$25,980</p>
-                <p className="text-sm text-green-600 flex items-center gap-1 mt-2">
-                  <ArrowUpRight className="w-4 h-4" />
-                  15.6%
-                </p>
-              </div>
-
-              <div className="relative w-24 h-24">
-                <svg className="w-24 h-24 transform -rotate-90">
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="#f3f4f6"
-                    strokeWidth="12"
-                    fill="none"
-                  />
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
-                    stroke="#fbbf24"
-                    strokeWidth="12"
-                    fill="none"
-                    strokeDasharray="251.2"
-                    strokeDashoffset="70.3"
-                    className="transition-all duration-1000"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-900">28%</span>
-                  <span className="text-xs text-gray-600">1 Quarter</span>
-                </div>
-              </div>
+            {/* Hình bên phải */}
+            <div className="w-32 h-24 md:w-40 md:h-28 rounded-lg bg-rose-100 flex items-center justify-center">
+              {/* Đổi emoji này thành <img src="..." /> nếu bạn có file hình */}
+              <span className="text-5xl">🧑🏻‍💻</span>
             </div>
           </div>
         </div>
 
-        {/* Bottom Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Total Revenue</h3>
-              <Activity className="w-5 h-5 text-purple-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900">$35.4k</p>
-            <div className="mt-4 h-20">
-              <svg viewBox="0 0 200 80" className="w-full">
-                <path
-                  d="M0,40 Q50,10 100,30 T200,40"
-                  stroke="#a78bfa"
-                  strokeWidth="4"
-                  fill="none"
-                  className="drop-shadow-sm"
-                />
-                <circle cx="180" cy="40" r="6" fill="#a78bfa" />
-              </svg>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Total Sales</h3>
-            <p className="text-3xl font-bold text-gray-900">135k</p>
-            <div className="mt-4 relative">
-              <div className="w-full bg-gray-200 rounded-full h-12">
-                <div
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-12 rounded-full flex items-center justify-end pr-4 text-white font-bold"
-                  style={{ width: "78%" }}
-                >
-                  78%
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl shadow-sm p-6 text-white">
-            <h3 className="text-lg font-semibold mb-4">Growth Rate</h3>
-            <p className="text-4xl font-bold">68.2%</p>
-            <p className="text-purple-100 mt-2">+8.2% from last month</p>
-            <div className="mt-6">
-              <TrendingUp className="w-12 h-12 text-white opacity-80" />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
