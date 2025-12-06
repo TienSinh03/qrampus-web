@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Menu, Bell, Search } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
@@ -8,6 +9,7 @@ const Header = ({ toggleSidebar }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [openUserMenu, setOpenUserMenu] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
@@ -38,7 +40,7 @@ const Header = ({ toggleSidebar }) => {
         <div className="flex items-center space-x-4">
           {/* Language Switcher */}
           <LanguageSwitcher />
-          
+
           {/* Notifications */}
           <button className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
             <Bell className="w-6 h-6" />
@@ -74,11 +76,11 @@ const Header = ({ toggleSidebar }) => {
                   className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
                   onClick={() => {
                     console.log('Thông tin tài khoản');
+                    navigate('/dashboard/account-setting');
                   }}
                 >
                   {t('header.profile')}
                 </button>
-
                 <button
                   className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
                   onClick={() => {
