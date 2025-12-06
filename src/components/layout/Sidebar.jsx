@@ -26,6 +26,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { icon: Calendar, label: t('sidebar.schedule'), path: '/dashboard/schedule' },
     { icon: BarChart3, label: t('sidebar.reports'), path: '/dashboard/reports' },
     { icon: ScanQrCode, label: t('sidebar.qrcode'), path: '/dashboard/qrcode' },
+    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/study-session' },
+    // chấm Công
+    { icon: FileText, label: 'Quản lý Chấm Công', path: '/dashboard/results-qr' },
   ];
 
   const isActive = (path) => location.pathname === path;

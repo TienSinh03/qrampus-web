@@ -10,6 +10,7 @@ import StudySessionPage from "@pages/dashboard/StudySession/StudySessionPage";
 import ResultQRPage from "@pages/dashboard/ResultsQR/ResultQRPage";
 import ResultQRextendPage from "../pages/dashboard/ResultsQR/ResultQRextendPage";
 import ResultQRDetailUserPage from "../pages/dashboard/ResultsQR/ResultQRDetailUserPage";
+import AccountPage from "@pages/dashboard/AccountSetting/AccountPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -85,6 +86,10 @@ const router = createBrowserRouter([
         path: "results-qr-detail-user",
         element: <ResultQRDetailUserPage />,
       },
+      {
+        path: "account-setting",
+        element: <AccountPage />,
+      }
     ],
   },
 
