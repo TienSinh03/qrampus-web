@@ -11,6 +11,11 @@ import ResultQRPage from "@pages/dashboard/ResultsQR/ResultQRPage";
 import ResultQRextendPage from "../pages/dashboard/ResultsQR/ResultQRextendPage";
 import ResultQRDetailUserPage from "../pages/dashboard/ResultsQR/ResultQRDetailUserPage";
 import AccountPage from "@pages/dashboard/AccountSetting/AccountPage";
+import QRViewPage from "../pages/dashboard/QRViewPage";
+import Timekeeping from "../pages/dashboard/Timekeeping";
+import SurveyPage from "../pages/dashboard/SurveyPage";
+import LeavePage from "../pages/dashboard/LeavePage";
+import AnnouncementPage from "../pages/dashboard/AnnouncementPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -89,7 +94,27 @@ const router = createBrowserRouter([
       {
         path: "account-setting",
         element: <AccountPage />,
-      }
+      },
+      {
+        path: "qrcode-fullscreen",
+        element: <QRViewPage />,
+      },
+      {
+        path: "timekeeping",
+        element: <Timekeeping />,
+      },
+      {
+        path: "survey-page",
+        element: <SurveyPage />,
+      },
+      {
+        path: "leave-management",
+        element: <LeavePage />,
+      },
+      {
+        path: "notifications",
+        element: <AnnouncementPage />,
+      },
     ],
   },
 
