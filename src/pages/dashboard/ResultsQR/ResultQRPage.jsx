@@ -332,7 +332,7 @@ const ResultQRPage = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column: Bảng người dùng - CHIẾM 2 CỘT TRÊN MÀN LỚN */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow overflow-hidden">
+        <div className="lg:col-span-3 bg-white rounded-xl shadow overflow-hidden">
           <div className="overflow-auto max-h-[600px] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
             {/* Bắt buộc có min-w để scroll ngang */}
             <div className="flex justify-between mb-6 p-2">
@@ -439,38 +439,38 @@ const ResultQRPage = () => {
           )}
         </div>
 
-        {/* Right Column: Biểu đồ */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          {/* ... giữ nguyên phần chart của bạn ... */}
-          <div className="h-64 sm:h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart layout="vertical" data={interestData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fill: "#555" }} width={100} />
-                <Tooltip cursor={{ fill: "rgba(0,0,0,0.05)" }} />
-                <Bar dataKey="value" radius={[0, 8, 8, 0]} label={{ position: "right", fill: "#333", fontWeight: 600 }}>
-                  {interestData.map((entry, i) => (
-                    <Cell key={`bar-${i}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-8">
-            {interestData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-sm font-medium text-gray-700">{item.name}</span>
-                </div>
-                <span className="font-bold text-gray-800">{item.value}%</span>
+      </div>
+      {/* Right Column: Biểu đồ */}
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        {/* ... giữ nguyên phần chart của bạn ... */}
+        <div className="h-64 sm:h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart layout="vertical" data={interestData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+              <XAxis type="number" hide />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fill: "#555" }} width={100} />
+              <Tooltip cursor={{ fill: "rgba(0,0,0,0.05)" }} />
+              <Bar dataKey="value" radius={[0, 8, 8, 0]} label={{ position: "right", fill: "#333", fontWeight: 600 }}>
+                {interestData.map((entry, i) => (
+                  <Cell key={`bar-${i}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mt-8">
+          {interestData.map((item) => (
+            <div key={item.name} className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-sm font-medium text-gray-700">{item.name}</span>
               </div>
-            ))}
-          </div>
+              <span className="font-bold text-gray-800">{item.value}%</span>
+            </div>
+          ))}
         </div>
       </div>
-
 
     </div>
 

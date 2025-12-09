@@ -314,6 +314,16 @@ const QRPage = () => {
             <p className="mt-3 text-sm text-slate-500">
               Quét QR để xem thông tin học phần
             </p>
+
+            <button
+              onClick={() => navigate('/dashboard/qrcode-fullscreen')}
+              className="mt-2 inline-flex h-10 p-3 items-center justify-center rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md"
+            >
+              <ExternalLink className="w-5 h-5" />
+              <span className="ml-2 text-sm font-medium">Mở rộng màn hình</span>
+            </button>
+
+
           </div>
         </div>
 
@@ -488,7 +498,7 @@ const QRPage = () => {
           </div>
 
           {/* Stacked progress bar */}
-          <div className="mb-6 overflow-hidden rounded-full bg-slate-100">
+          <div className="mb-8 overflow-hidden rounded-full bg-slate-100">
             <div className="flex h-6 text-[15px] font-semibold text-gray-900">
               <div className="flex items-center justify-center bg-violet-400 w-[39.7%]">
                 39.7%
@@ -582,66 +592,131 @@ const QRPage = () => {
         </div>
 
         {/* Shipment Statistics */}
+
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-800">
-                Shipment Statistics
-              </h2>
-              <p className="text-xs text-slate-500">
-                Total number of deliveries 23.8k
-              </p>
-            </div>
-            <select className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
-              <option>January</option>
-              <option>February</option>
-              <option>March</option>
-            </select>
+            <h2 className="text-lg font-semibold text-slate-800">
+              Yêu cầu từ Sinh Viên
+            </h2>
+            {/* mở ra danh sách KQ hôm đó */}
+            <button onClick={() => navigate('/dashboard/results-qr')} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100">
+              <ExternalLink className="w-4 h-4" />
+            </button>
           </div>
+          <p className="mb-4 text-sm text-slate-500">Danh sách Sinh viên yêu cầu điểm danh, khi báo lỗi hoặc có vấn đề</p>
 
-          {/* Fake chart using simple bars */}
-          <div className="mb-4 flex h-40 items-end justify-between gap-2">
-            {[
-              { day: "1 Jan", ship: 32, del: 24 },
-              { day: "2 Jan", ship: 38, del: 30 },
-              { day: "3 Jan", ship: 28, del: 26 },
-              { day: "4 Jan", ship: 34, del: 22 },
-              { day: "5 Jan", ship: 45, del: 35 },
-              { day: "7 Jan", ship: 36, del: 32 },
-              { day: "9 Jan", ship: 34, del: 29 }
-            ].map((d) => (
+          <div className="max-h-72 overflow-y-auto pr-2">
+            {meetings.map((m, index) => (
               <div
-                key={d.day}
-                className="flex flex-1 flex-col items-center justify-end gap-1"
+                key={m.name}
+                className={`flex items-center justify-between rounded-xl px-2 py-2 hover:bg-slate-50
+                  ${index !== meetings.length - 1 ? "mb-3" : ""}
+                `}
+                onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                style={{ cursor: "pointer" }}
+
               >
-                <div className="flex w-full items-end justify-center gap-1">
+                <div className="flex items-center gap-3">
                   <div
-                    className="w-3 rounded-t-full bg-amber-400"
-                    style={{ height: `${d.ship * 1.4}px` }}
-                  />
-                  <div
-                    className="w-1 rounded-full bg-violet-400"
-                    style={{ height: `${d.del * 1.2}px` }}
-                  />
+                    className={`flex h-10 w-10 items-center justify-center rounded-full ${m.avatarBg} text-lg`}
+                  >
+                    <img src={m.avatar_url} alt={m.name} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">{m.name}</p>
+                    <div className="flex items-center gap-1 text-xs text-slate-500">
+                      <span>📅</span>
+                      <span>{m.date}</span>
+                      <span className="mx-1">|</span>
+                      <span>{m.time}</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-[10px] text-slate-400">{d.day}</span>
+
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${m.tagColor}`}
+                >
+                  Xem yêu cầu
+                </span>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="text-slate-500">Shipment</span>
+      </div>
+
+
+
+
+      <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">
+              Shipment Statistics
+            </h2>
+            <p className="text-xs text-slate-500">
+              Total number of deliveries 23.8k
+            </p>
+          </div>
+          <select className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+            <option>January</option>
+            <option>February</option>
+            <option>March</option>
+          </select>
+        </div>
+
+        {/* Fake chart using simple bars */}
+        <div className="mb-4 flex h-40 items-end justify-between gap-2">
+          {[
+            { day: "1 Jan", ship: 32, del: 24 },
+            { day: "2 Jan", ship: 38, del: 30 },
+            { day: "3 Jan", ship: 28, del: 26 },
+            { day: "4 Jan", ship: 34, del: 22 },
+            { day: "5 Jan", ship: 45, del: 35 },
+            { day: "7 Jan", ship: 36, del: 32 },
+            { day: "9 Jan", ship: 34, del: 29 }
+          ].map((d) => (
+            <div
+              key={d.day}
+              className="flex flex-1 flex-col items-center justify-end gap-1"
+            >
+              <div className="flex w-full items-end justify-center gap-1">
+                <div
+                  className="w-3 rounded-t-full bg-amber-400"
+                  style={{ height: `${d.ship * 1.4}px` }}
+                />
+                <div
+                  className="w-1 rounded-full bg-violet-400"
+                  style={{ height: `${d.del * 1.2}px` }}
+                />
+              </div>
+              <span className="text-[10px] text-slate-400">{d.day}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-violet-400" />
-              <span className="text-slate-500">Delivery</span>
-            </div>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-amber-400" />
+            <span className="text-slate-500">Shipment</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-violet-400" />
+            <span className="text-slate-500">Delivery</span>
           </div>
         </div>
       </div>
+
+
+
+
+
+
+
+
+
+
 
       {/* Bottom row */}
       <div className="grid gap-6 xl:grid-cols-3">

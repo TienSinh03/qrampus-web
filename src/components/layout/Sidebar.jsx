@@ -11,7 +11,9 @@ import {
   Menu,
   X,
   LogOut,
-  ScanQrCode
+  ScanQrCode,
+  ImagePlus,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 
@@ -26,9 +28,17 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { icon: Calendar, label: t('sidebar.schedule'), path: '/dashboard/schedule' },
     { icon: BarChart3, label: t('sidebar.reports'), path: '/dashboard/reports' },
     { icon: ScanQrCode, label: t('sidebar.qrcode'), path: '/dashboard/qrcode' },
-    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/study-session' },
+    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/survey-page' },
+    // 
     // chấm Công
-    { icon: FileText, label: 'Quản lý Chấm Công', path: '/dashboard/results-qr' },
+    { icon: FileText, label: 'Quản lý Chấm Công', path: '/dashboard/timekeeping' },
+    // quản lý nghỉ phép
+    { icon: ImagePlus, label: 'Quản lý Nghỉ phép', path: '/dashboard/leave-management' },
+    //thông báo
+    { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/notifications' },
+
+
+    { icon: Settings, label: t('sidebar.settings'), path: '/dashboard/settings' },
   ];
 
   const isActive = (path) => location.pathname === path;
