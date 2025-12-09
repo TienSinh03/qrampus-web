@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import vi from "date-fns/locale/vi";
+import en from "date-fns/locale/en-US";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
-// Cấu hình locale cho date-fns (tiếng Việt)
 const locales = {
   vi: vi,
+  en: en,
 };
 
 const localizer = dateFnsLocalizer({
@@ -24,21 +26,21 @@ const localizer = dateFnsLocalizer({
 const initialEvents = [
   {
     id: 1,
-    title: "Hẹn khách xem nhà Quận 7",
+    title: "Khóa luận tốt nghiệp DKHTPM17A",
     start: new Date(2025, 10, 25, 9, 0), // 25/11/2025 09:00
-    end: new Date(2025, 10, 25, 10, 0),
-    resource: { type: "meeting", note: "Khách VIP – căn 3PN" },
+    end: new Date(2025, 10, 25, 11, 40, 0),
+    resource: { type: "meeting", note: "lịch dạy khóa luận" },
   },
   {
     id: 2,
-    title: "Call tư vấn đầu tư",
+    title: "Nhập môn lập trình 404000000 DKHTPM17A",
     start: new Date(2025, 10, 26, 14, 0),
     end: new Date(2025, 10, 26, 15, 0),
     resource: { type: "call" },
   },
   {
     id: 3,
-    title: "Sự kiện mở bán dự án mới",
+    title: "......",
     start: new Date(2025, 10, 27, 8, 0),
     end: new Date(2025, 10, 27, 12, 0),
     resource: { type: "event" },
@@ -46,6 +48,7 @@ const initialEvents = [
 ];
 
 const SchedulePage = () => {
+  const { t, i18n } = useTranslation();
   const [events, setEvents] = useState(initialEvents);
   const [view, setView] = useState(Views.WEEK);
   const [date, setDate] = useState(new Date());
@@ -113,9 +116,9 @@ const SchedulePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Lịch làm việc</h1>
+          <h1 className="text-2xl font-bold">{t('schedulePage.title')}</h1>
           <p className="text-sm text-gray-500">
-            Quản lý lịch hẹn xem nhà, cuộc gọi và sự kiện.
+            {t('schedulePage.description')}
           </p>
         </div>
 
@@ -164,7 +167,7 @@ const SchedulePage = () => {
       <div className="bg-white rounded-xl shadow p-4 h-[700px]">
         <Calendar
           localizer={localizer}
-          culture="vi"
+          culture={i18n.language}
           events={events}
           startAccessor="start"
           endAccessor="end"
