@@ -85,9 +85,9 @@ export default function LeavePage() {
 
     const getStatusIcon = (status) => {
         switch (status) {
-            case "approved": return <CheckCircle className="w-5 h-5 text-emerald-600" />;
-            case "rejected": return <XCircle className="w-5 h-5 text-red-600" />;
-            case "pending": return <Clock className="w-5 h-5 text-amber-600" />;
+            case "approved": return <CheckCircle className="w-4 h-4 text-emerald-600" />;
+            case "rejected": return <XCircle className="w-4 h-4 text-red-600" />;
+            case "pending": return <Clock className="w-4 h-4 text-amber-600" />;
         }
     };
 
@@ -95,40 +95,68 @@ export default function LeavePage() {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
             {/* Header */}
             <div className="bg-white shadow-md border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-6 py-8">
+                <div className="mx-auto px-6 py-8">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                         <div>
-                            <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-4">
+                            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-4">
                                 Quản lý minh chứng nghỉ học
                             </h1>
-                            <p className="mt-3 text-lg text-gray-600">
-                                Xem và xử lý minh chứng nghỉ học của sinh viên trong các học phần bạn phụ trách
+                            <p className="mt-3 text-sm text-gray-600">
+                                <i>Xem và xử lý minh chứng nghỉ học của sinh viên trong các học phần bạn phụ trách</i>
                             </p>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-4">
                             {/* Lọc học kỳ */}
-                            <select
-                                value={selectedSemester}
-                                onChange={(e) => setSelectedSemester(e.target.value)}
-                                className="px-6 py-3 rounded-xl border border-gray-300 font-medium focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition"
-                            >
-                                {semesters.map(s => (
-                                    <option key={s.value} value={s.value}>{s.label}</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <select
+                                    value={selectedSemester}
+                                    onChange={(e) => setSelectedSemester(e.target.value)}
+                                    className="
+                                                                appearance-none 
+                                                                bg-gradient-to-r from-indigo-400 to-purple-600 
+                                                                text-white font-semibold 
+                                                                px-8 py-3 pr-12 rounded-2xl
+                                                                shadow-lg hover:shadow-xl 
+                                                                transition-all duration-200
+                                                                cursor-pointer text-sm
+                                                            "
+                                >
+                                    {semesters.map((sem) => (
+                                        <option key={sem.value} value={sem.value} className="text-gray-900">
+                                            {sem.label}
+                                        </option>
+                                    ))}
+                                </select>
 
-                            {/* Lọc trạng thái */}
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="px-6 py-3 rounded-xl border border-gray-300 font-medium focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition"
-                            >
-                                <option value="all">Tất cả trạng thái</option>
-                                <option value="pending">Chờ duyệt</option>
-                                <option value="approved">Đã duyệt</option>
-                                <option value="rejected">Từ chối</option>
-                            </select>
+                                <ChevronDown
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-white pointer-events-none"
+                                />
+                            </div>
+                            <div className="relative">
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="
+                                                                appearance-none 
+                                                                bg-gradient-to-r from-indigo-400 to-purple-600 
+                                                                text-white font-semibold 
+                                                                px-8 py-3 pr-12 rounded-2xl
+                                                                shadow-lg hover:shadow-xl 
+                                                                transition-all duration-200
+                                                                cursor-pointer text-sm
+                                                            "
+                                >
+                                    <option value="all" className="text-gray-900">Tất cả trạng thái</option>
+                                    <option value="pending" className="text-gray-900">Chờ duyệt</option>
+                                    <option value="approved" className="text-gray-900">Đã duyệt</option>
+                                    <option value="rejected" className="text-gray-900">Từ chối</option>
+                                </select>
+
+                                <ChevronDown
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-white pointer-events-none"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -141,42 +169,42 @@ export default function LeavePage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600">Tổng đơn</p>
-                                <p className="text-4xl font-bold text-gray-900 mt-2">{leaves.length}</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-2">{leaves.length}</p>
                             </div>
-                            <AlertCircle className="w-12 h-12 text-indigo-500" />
+                            <AlertCircle className="w-9 h-9 text-indigo-500" />
                         </div>
                     </div>
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600">Chờ duyệt</p>
-                                <p className="text-4xl font-bold text-amber-600 mt-2">
+                                <p className="text-2xl font-bold text-amber-600 mt-2">
                                     {leaves.filter(l => l.trangThai === "pending").length}
                                 </p>
                             </div>
-                            <Clock className="w-12 h-12 text-amber-500" />
+                            <Clock className="w-9 h-9 text-amber-500" />
                         </div>
                     </div>
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600">Đã duyệt</p>
-                                <p className="text-4xl font-bold text-emerald-600 mt-2">
+                                <p className="text-2xl font-bold text-emerald-600 mt-2">
                                     {leaves.filter(l => l.trangThai === "approved").length}
                                 </p>
                             </div>
-                            <CheckCircle className="w-12 h-12 text-emerald-500" />
+                            <CheckCircle className="w-9 h-9 text-emerald-500" />
                         </div>
                     </div>
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600">Từ chối</p>
-                                <p className="text-4xl font-bold text-red-600 mt-2">
+                                <p className="text-2xl font-bold text-red-600 mt-2">
                                     {leaves.filter(l => l.trangThai === "rejected").length}
                                 </p>
                             </div>
-                            <XCircle className="w-12 h-12 text-red-500" />
+                            <XCircle className="w-9 h-9 text-red-500" />
                         </div>
                     </div>
                 </div>
@@ -184,7 +212,7 @@ export default function LeavePage() {
                 {/* Danh sách minh chứng */}
                 <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
                     <div className="px-8 py-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-b">
-                        <h2 className="text-2xl font-bold text-gray-900">Danh sách minh chứng nghỉ học</h2>
+                        <h2 className="text-xl font-bold text-gray-900">Danh sách minh chứng nghỉ học</h2>
                     </div>
 
                     <div className="divide-y divide-gray-100">
@@ -193,23 +221,31 @@ export default function LeavePage() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-6">
                                         {/* Avatar + Info */}
-                                        <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
                                             {item.hoTen.split(" ").pop()[0]}
                                         </div>
 
                                         <div>
-                                            <h3 className="text-xl font-bold text-gray-900">
+                                            <h3 className="text-ms font-bold text-gray-900">
                                                 {item.hoTen} • {item.mssv}
                                             </h3>
                                             <div className="flex items-center gap-6 mt-2 text-gray-600">
-                                                <span className="flex items-center gap-2">
-                                                    <Calendar className="w-5 h-5" />
+                                                <span className="flex items-center gap-2 text-sm">
+                                                    <Calendar className="w-4 h-4" />
                                                     {new Date(item.ngayNghi).toLocaleDateString("vi-VN")}
                                                 </span>
-                                                <span>{item.lop}</span>
-                                                <span className="font-medium text-indigo-600">{item.hocPhan}</span>
+                                                <span className="font-medium text-indigo-600 text-sm">
+                                                    Mã học phần:
+                                                    <a href="#" className="underline hover:text-indigo-800">
+                                                        {item.lop}
+                                                    </a>
+
+                                                </span>
+                                                <span className="font-medium text-indigo-600 text-sm">
+                                                    {item.hocPhan}
+                                                </span>
                                             </div>
-                                            <p className="mt-2 text-gray-700 font-medium">{item.lyDo}</p>
+                                            <p className="mt-2 text-gray-700 font-medium italic text-ms">{item.lyDo}</p>
                                         </div>
                                     </div>
 
@@ -217,14 +253,14 @@ export default function LeavePage() {
                                     <div className="flex items-center gap-6">
                                         {/* Xem ảnh minh chứng */}
                                         <button className="group relative p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition">
-                                            <Eye className="w-6 h-6 text-gray-600" />
+                                            <Eye className="w-4 h-4 text-gray-600" />
                                             <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition">
                                                 Xem ảnh
                                             </span>
                                         </button>
 
                                         {/* Trạng thái */}
-                                        <div className={`px-5 py-3 rounded-xl border font-bold flex items-center gap-3 ${getStatusBadge(item.trangThai)}`}>
+                                        <div className={`px-5 py-3 rounded-xl border font-bold flex items-center gap-3   ${getStatusBadge(item.trangThai)}`}>
                                             {getStatusIcon(item.trangThai)}
                                             {item.trangThai === "approved" ? "Đã duyệt" : item.trangThai === "rejected" ? "Từ chối" : "Chờ duyệt"}
                                         </div>
@@ -232,10 +268,10 @@ export default function LeavePage() {
                                         {/* Nút duyệt / từ chối (chỉ hiện khi đang chờ) */}
                                         {item.trangThai === "pending" && (
                                             <div className="flex gap-3">
-                                                <button className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition">
+                                                <button className=" text-ms bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition">
                                                     Duyệt
                                                 </button>
-                                                <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition">
+                                                <button className="text-ms bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition">
                                                     Từ chối
                                                 </button>
                                             </div>
