@@ -173,7 +173,7 @@ export default function QRViewPage() {
                         </div>
 
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">
+                            <h1 className="text-2xl font-bold text-gray-900">
                                 LẬP TRÌNH THIẾT BỊ DI ĐỘNG
                             </h1>
                             <div className="mt-3 flex flex-wrap items-center gap-6 text-gray-600">
@@ -391,29 +391,29 @@ export default function QRViewPage() {
             <div className="overflow-hidden p-6 mt-6 bg-white shadow-xl rounded-b-3xl">
                 <div className="mb-8">
                     <div className="flex flex-wrap items-center justify-between gap-6">
-                        <h2 className="text-2xl font-bold text-gray-900">
+                        <h2 className="text-xl font-bold text-gray-900">
                             Chi tiết điểm danh của Sinh viên
                         </h2>
 
                         <div className="flex items-center gap-4">
                             <button className="group relative flex items-center gap-3 rounded-xl bg-emerald-500 px-6 py-3 text-white font-semibold shadow-xl hover:bg-emerald-600 transition-all hover:scale-105">
                                 <div className="absolute -inset-1 rounded-xl bg-emerald-400 opacity-30 blur-lg group-hover:opacity-50 transition"></div>
-                                <span className="relative">Thành công</span>
+                                <span className="relative text-sm">Thành công</span>
                                 <span className="relative bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">48</span>
                             </button>
 
                             <button className="group relative flex items-center gap-3 rounded-xl bg-amber-500 px-6 py-3 text-white font-semibold shadow-xl hover:bg-amber-600 transition-all hover:scale-105">
-                                <span className="relative">Cho phép</span>
+                                <span className="relative text-sm">Cho phép</span>
                                 <span className="relative bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">12</span>
                             </button>
 
                             <button className="group relative flex items-center gap-3 rounded-xl bg-red-500 px-6 py-3 text-white font-semibold shadow-xl hover:bg-red-600 transition-all hover:scale-105">
-                                <span className="relative">Vượt mức</span>
+                                <span className="relative text-sm">Vượt mức</span>
                                 <span className="relative bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">3</span>
                             </button>
 
                             <button className="group relative flex items-center gap-3 rounded-xl bg-gray-200 px-6 py-3 text-gray-700 font-semibold shadow-xl hover:bg-gray-300 transition-all hover:scale-105">
-                                <span className="relative">Không tham gia</span>
+                                <span className="relative text-sm">Không tham gia</span>
                                 <span className="relative bg-gray-400 text-white px-2 py-0.5 rounded-full text-xs font-bold">5</span>
                             </button>
                         </div>
@@ -486,7 +486,7 @@ export default function QRViewPage() {
                     </div>
 
                     {/* Phân trang cực gọn + đẹp */}
-                    <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                    <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 text-sm">
                         <ReactPaginate
                             previousLabel="Trước"
                             nextLabel="Sau"

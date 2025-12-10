@@ -63,7 +63,7 @@ export default function LecturerSurveyManagement() {
                                     px-8 py-3 pr-12 rounded-2xl
                                     shadow-lg hover:shadow-xl 
                                     transition-all duration-200
-                                    cursor-pointer text-lg
+                                    cursor-pointer text-sm
                                 "
                             >
                                 {semesters.map((sem) => (
@@ -93,7 +93,7 @@ export default function LecturerSurveyManagement() {
                                 <p className="text-gray-600">Tổng sinh viên</p>
                                 <p className="text-2xl font-bold text-gray-900 mt-2">{totalSV}</p>
                             </div>
-                            <Users className="w-14 h-14 text-blue-500 opacity-80" />
+                            <Users className="w-9 h-9 text-blue-500 opacity-80" />
                         </div>
                     </div>
 
@@ -103,7 +103,7 @@ export default function LecturerSurveyManagement() {
                                 <p className="text-gray-600">Tỷ lệ phản hồi</p>
                                 <p className="text-2xl font-bold text-emerald-600 mt-2">{avgResponseRate}%</p>
                             </div>
-                            <TrendingUp className="w-14 h-14 text-emerald-500 opacity-80" />
+                            <TrendingUp className="w-9 h-9 text-emerald-500 opacity-80" />
                         </div>
                     </div>
 
@@ -112,7 +112,8 @@ export default function LecturerSurveyManagement() {
                             <div>
                                 <p className="text-gray-600">Điểm trung bình</p>
                                 <p className="text-2xl font-bold text-amber-600 mt-2 flex items-center gap-2">
-                                    {avgScore} <Star className="w-10 h-10 text-amber-500 fill-current" />
+                                    {avgScore}
+                                    <Star className="w-9 h-9 text-amber-500 fill-current" />
                                 </p>
                             </div>
                         </div>
@@ -126,7 +127,7 @@ export default function LecturerSurveyManagement() {
                                 <p className="text-gray-600">Học phần đã khảo sát</p>
                                 <p className="text-2xl font-bold text-purple-600 mt-2">{filteredData.length}</p>
                             </div>
-                            <CheckCircle2 className="w-14 h-14 text-purple-500 opacity-80" />
+                            <CheckCircle2 className="w-9 h-9 text-purple-500 opacity-80" />
                         </div>
                     </div>
                 </div>
