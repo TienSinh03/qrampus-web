@@ -16,11 +16,11 @@ export default function LecturerSurveyManagement() {
 
     // Dữ liệu khảo sát theo từng học kỳ
     const surveyData = [
-        { id: 1, maHP: "INT3306", tenHP: "Lập trình thiết bị di động", lop: "20TCLC_DT3", ky: "hk1-2024-2025", soSV: 68, daKhaoSat: 64, tyLe: 94, diemTB: 9.1 },
-        { id: 2, maHP: "WEB301", tenHP: "Phát triển ứng dụng Web", lop: "21TCLC_DT1", ky: "hk1-2024-2025", soSV: 54, daKhaoSat: 48, tyLe: 89, diemTB: 8.7 },
-        { id: 3, maHP: "AI101", tenHP: "Nhập môn Trí tuệ nhân tạo", lop: "22TCLC_DT2", ky: "hk1-2024-2025", soSV: 42, daKhaoSat: 28, tyLe: 67, diemTB: 8.0 },
-        { id: 4, maHP: "MOB403", tenHP: "Phát triển ứng dụng di động", lop: "20TCLC_DT4", ky: "hk2-2023-2024", soSV: 65, daKhaoSat: 65, tyLe: 100, diemTB: 9.4 },
-        { id: 5, maHP: "PRJ301", tenHP: "Java Web Application", lop: "21TCLC_DT5", ky: "hk1-2023-2024", soSV: 70, daKhaoSat: 66, tyLe: 94, diemTB: 8.9 },
+        { id: 1, maHP: "4203001549", tenHP: "Lập trình thiết bị di động", lop: "20TCLC_DT3", ky: "hk1-2024-2025", soSV: 68, daKhaoSat: 64, tyLe: 94, diemTB: 9.1 },
+        { id: 2, maHP: "4203002009", tenHP: "Phát triển ứng dụng Web", lop: "21TCLC_DT1", ky: "hk1-2024-2025", soSV: 54, daKhaoSat: 48, tyLe: 89, diemTB: 8.7 },
+        { id: 3, maHP: "4203003259", tenHP: "Nhập môn Trí tuệ nhân tạo", lop: "22TCLC_DT2", ky: "hk1-2024-2025", soSV: 42, daKhaoSat: 28, tyLe: 67, diemTB: 8.2 },
+        { id: 4, maHP: "4203003242", tenHP: "Phát triển ứng dụng di động", lop: "20TCLC_DT4", ky: "hk2-2023-2024", soSV: 65, daKhaoSat: 65, tyLe: 100, diemTB: 9.4 },
+        { id: 5, maHP: "4203015216", tenHP: "Java Web Application", lop: "21TCLC_DT5", ky: "hk1-2023-2024", soSV: 70, daKhaoSat: 66, tyLe: 94, diemTB: 8.9 },
     ];
 
     const filteredData = selectedSemester === "all"
@@ -90,7 +90,7 @@ export default function LecturerSurveyManagement() {
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-gray-600">Tổng sinh viên</p>
+                                <p className="text-gray-600">Sinh viên khảo sát</p>
                                 <p className="text-2xl font-bold text-gray-900 mt-2">{totalSV}</p>
                             </div>
                             <Users className="w-9 h-9 text-blue-500 opacity-80" />
@@ -100,7 +100,7 @@ export default function LecturerSurveyManagement() {
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-gray-600">Tỷ lệ phản hồi</p>
+                                <p className="text-gray-600">Tỷ lệ khảo sát</p>
                                 <p className="text-2xl font-bold text-emerald-600 mt-2">{avgResponseRate}%</p>
                             </div>
                             <TrendingUp className="w-9 h-9 text-emerald-500 opacity-80" />
@@ -110,7 +110,7 @@ export default function LecturerSurveyManagement() {
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-gray-600">Điểm trung bình</p>
+                                <p className="text-gray-600">Chất lượng dạy</p>
                                 <p className="text-2xl font-bold text-amber-600 mt-2 flex items-center gap-2">
                                     {avgScore}
                                     <Star className="w-9 h-9 text-amber-500 fill-current" />
@@ -170,7 +170,7 @@ export default function LecturerSurveyManagement() {
                                     {/* Thống kê & hành động */}
                                     <div className="flex items-center gap-10">
                                         <div className="text-center">
-                                            <p className="text-sm text-gray-600">Tỷ lệ phản hồi</p>
+                                            <p className="text-sm text-gray-600">Sinh viên khảo sát</p>
                                             <p className="text-2xl font-bold text-gray-900">
                                                 {item.tyLe}%
                                             </p>
@@ -185,7 +185,7 @@ export default function LecturerSurveyManagement() {
                                         </div>
 
                                         <div className="text-center">
-                                            <p className="text-sm text-gray-600">Đánh giá</p>
+                                            <p className="text-sm text-gray-600">Chất lượng dạy</p>
                                             <p className="text-2xl font-bold text-indigo-600 flex items-center justify-center gap-2">
                                                 {item.diemTB}
                                                 <Star className="w-5 h-5 text-yellow-500 fill-current" />
@@ -193,7 +193,7 @@ export default function LecturerSurveyManagement() {
                                         </div>
 
                                         <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300">
-                                            Xem báo cáo chi tiết
+                                            Chi tiết
                                         </button>
                                     </div>
                                 </div>
