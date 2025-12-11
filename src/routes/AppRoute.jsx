@@ -16,6 +16,7 @@ import Timekeeping from "../pages/dashboard/Timekeeping";
 import SurveyPage from "../pages/dashboard/SurveyPage";
 import LeavePage from "../pages/dashboard/LeavePage";
 import AnnouncementPage from "../pages/dashboard/AnnouncementPage";
+import Setting from "../pages/dashboard/SettingPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -114,7 +115,10 @@ const router = createBrowserRouter([
       {
         path: "notifications",
         element: <AnnouncementPage />,
-      },
+      }, {
+        path: "setting",
+        element: <Setting />,
+      }
     ],
   },
 

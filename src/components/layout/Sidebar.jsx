@@ -38,7 +38,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/notifications' },
 
 
-    { icon: Settings, label: t('sidebar.settings'), path: '/dashboard/settings' },
+    { icon: Settings, label: t('sidebar.settings'), path: '/dashboard/setting' },
   ];
 
   const isActive = (path) => location.pathname === path;
