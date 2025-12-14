@@ -43,11 +43,8 @@ const SettingPage = () => {
     const menuItems = [
         { id: "general", label: "Chung", icon: Settings },
         { id: "account", label: "Tài khoản", icon: User },
-        { id: "notifications", label: "Thông báo", icon: Bell },
-        { id: "privacy", label: "Quyền riêng tư & Bảo mật", icon: Shield },
-        { id: "appearance", label: "Giao diện", icon: Palette },
-        { id: "language", label: "Ngôn ngữ & Khu vực", icon: Globe },
-        { id: "advanced", label: "Nâng cao", icon: Key },
+        { id: "privacy", label: "Bảo mật", icon: Shield },
+        { id: "advanced", label: "Thông tin truy cập", icon: Palette },
     ];
 
     return (

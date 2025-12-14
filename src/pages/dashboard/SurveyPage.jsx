@@ -35,7 +35,7 @@ export default function LecturerSurveyManagement() {
         : "0.0";
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="min-h-screen from-slate-50 via-blue-50 to-indigo-100">
             {/* Header */}
             <div className="bg-white border-b border-gray-200 shadow-sm">
                 <div className="mx-auto px-6 py-8">
@@ -85,7 +85,7 @@ export default function LecturerSurveyManagement() {
 
 
             {/* Tổng quan theo học kỳ đã chọn */}
-            <div className="mx-auto px-6 py-8">
+            <div className="mx-auto py-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                         <div className="flex items-center justify-between">
@@ -134,49 +134,59 @@ export default function LecturerSurveyManagement() {
 
                 {/* Bảng danh sách học phần */}
                 <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                    <div className="px-8 py-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-b">
-                        <h2 className="text-xl font-bold text-gray-900">
+                    {/* Header */}
+                    <div className="px-6 sm:px-8 py-5 sm:py-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                             Danh sách học phần • {semesters.find(s => s.value === selectedSemester)?.label}
                         </h2>
                     </div>
 
+                    {/* Danh sách */}
                     <div className="divide-y divide-gray-100">
                         {filteredData.map((item) => (
-                            <div key={item.id} className="px-8 py-6 hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 transition-all group">
-                                <div className="flex items-center justify-between">
-                                    {/* Thông tin học phần */}
-                                    <div className="flex items-center gap-6">
-                                        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-bold text-lg shadow-xl">
-                                            <span className="text-2xl">LC</span>
+                            <div
+                                key={item.id}
+                                className="px-6 sm:px-8 py-6 hover:bg-gradient-to-r hover:from-indigo-50/60 hover:to-purple-50/60 transition-all duration-300 group"
+                            >
+                                {/* Layout: Desktop = ngang, Mobile = dọc */}
+                                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+                                    {/* Phần trái: Avatar + Tên học phần */}
+                                    <div className="flex items-center gap-5 flex-1 min-w-0">
+                                        {/* Avatar */}
+                                        <div className="shrink-0 bg-gradient-to-br from-indigo-600 to-purple-700 text-white w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center font-bold text-xl sm:text-2xl shadow-lg">
+                                            <span>LC</span>
                                         </div>
 
-                                        <div>
-                                            <h3 className="text-ms font-bold text-gray-900">
+                                        {/* Thông tin học phần */}
+                                        <div className="min-w-0">
+                                            <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
                                                 {item.tenHP}
-                                                <span className="text-lg font-normal text-blue-600 ml-3">
+                                                <span className="text-sm sm:text-lg font-normal text-blue-600 ml-2 sm:ml-3">
                                                     <a href="#" className="hover:underline">
                                                         ({item.maHP})
                                                     </a>
-
                                                 </span>
                                             </h3>
-                                            <p className="text-gray-600 mt-1 flex items-center gap-2">
-                                                <Calendar className="w-5 h-5" />
+                                            <p className="text-gray-600 mt-1 flex items-center gap-2 text-sm sm:text-base">
+                                                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                                                 {semesters.find(s => s.value === item.ky)?.label}
                                             </p>
                                         </div>
                                     </div>
 
-                                    {/* Thống kê & hành động */}
-                                    <div className="flex items-center gap-10">
-                                        <div className="text-center">
-                                            <p className="text-sm text-gray-600">Sinh viên khảo sát</p>
-                                            <p className="text-2xl font-bold text-gray-900">
-                                                {item.tyLe}%
-                                            </p>
-                                            <div className="w-32 mt-2 mx-auto bg-gray-200 rounded-full h-3 overflow-hidden">
+                                    {/* Phần phải: Thống kê + Nút (trên mobile sẽ xếp dọc) */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-6 lg:gap-10">
+                                        {/* Tỷ lệ khảo sát */}
+                                        <div className="text-center sm:text-left">
+                                            <p className="text-xs sm:text-sm text-gray-600">Sinh viên khảo sát</p>
+                                            <p className="text-2xl font-bold text-gray-900 mt-1">{item.tyLe}%</p>
+                                            <div className="w-28 sm:w-32 mt-2 mx-auto sm:mx-0 bg-gray-200 rounded-full h-3 overflow-hidden">
                                                 <div
-                                                    className={`h-full rounded-full transition-all duration-1000 ${item.tyLe >= 90 ? "bg-emerald-500" : item.tyLe >= 70 ? "bg-amber-500" : "bg-red-500"
+                                                    className={`h-full rounded-full transition-all duration-1000 ease-out ${item.tyLe >= 90
+                                                            ? "bg-emerald-500"
+                                                            : item.tyLe >= 70
+                                                                ? "bg-amber-500"
+                                                                : "bg-red-500"
                                                         }`}
                                                     style={{ width: `${item.tyLe}%` }}
                                                 />
@@ -184,15 +194,17 @@ export default function LecturerSurveyManagement() {
                                             <p className="text-xs text-gray-500 mt-1">{item.daKhaoSat}/{item.soSV} SV</p>
                                         </div>
 
-                                        <div className="text-center">
-                                            <p className="text-sm text-gray-600">Chất lượng dạy</p>
-                                            <p className="text-2xl font-bold text-indigo-600 flex items-center justify-center gap-2">
+                                        {/* Điểm trung bình */}
+                                        <div className="text-center sm:text-left">
+                                            <p className="text-xs sm:text-sm text-gray-600">Chất lượng dạy</p>
+                                            <p className="text-2xl font-bold text-indigo-600 flex items-center justify-center sm:justify-start gap-2 mt-1">
                                                 {item.diemTB}
                                                 <Star className="w-5 h-5 text-yellow-500 fill-current" />
                                             </p>
                                         </div>
 
-                                        <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                                        {/* Nút Chi tiết - full width trên mobile */}
+                                        <button className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3.5 sm:py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300">
                                             Chi tiết
                                         </button>
                                     </div>
@@ -201,10 +213,12 @@ export default function LecturerSurveyManagement() {
                         ))}
                     </div>
 
+                    {/* Empty state */}
                     {filteredData.length === 0 && (
-                        <div className="text-center py-20 text-gray-500">
+                        <div className="text-center py-20 px-6">
                             <AlertCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                            <p className="text-xl">Chưa có dữ liệu khảo sát trong học kỳ này</p>
+                            <p className="text-lg sm:text-xl text-gray-500">Chưa có dữ liệu khảo sát trong học kỳ này</p>
+                            <p className="text-sm text-gray-400 mt-2">Hãy chọn học kỳ khác hoặc chờ sinh viên đánh giá</p>
                         </div>
                     )}
                 </div>

@@ -17,6 +17,11 @@ import SurveyPage from "../pages/dashboard/SurveyPage";
 import LeavePage from "../pages/dashboard/LeavePage";
 import AnnouncementPage from "../pages/dashboard/AnnouncementPage";
 import Setting from "../pages/dashboard/SettingPage";
+import ReportPage from "../pages/dashboard/ReportPage";
+
+// ADMIN
+import AdminQRPage from "@pages/dashboard/admin/AdminQRPage";
+import AdminQRDetailPage from "@pages/dashboard/admin/AdminQRDetailPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -118,6 +123,21 @@ const router = createBrowserRouter([
       }, {
         path: "setting",
         element: <Setting />,
+      }, {
+        path: "report-page",
+        element: <ReportPage />,
+      },
+
+
+      // ADMIN ROUTES
+      {
+        path: "admin/qrcode",
+        element: <AdminQRPage />,
+
+      },
+      {
+        path: "admin/qrcode/session/qrcode-detail",
+        element: <AdminQRDetailPage />,
       }
     ],
   },
