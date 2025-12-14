@@ -92,7 +92,7 @@ export default function LeavePage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+        <div className="min-h-screen from-gray-50 via-blue-50 to-indigo-50">
             {/* Header */}
             <div className="bg-white shadow-md border-b border-gray-200">
                 <div className="mx-auto px-6 py-8">
@@ -163,7 +163,7 @@ export default function LeavePage() {
             </div>
 
             {/* Thống kê nhanh */}
-            <div className="mx-auto px-6 py-8">
+            <div className="mx-auto  py-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                         <div className="flex items-center justify-between">
