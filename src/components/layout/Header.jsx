@@ -108,7 +108,7 @@ const Header = ({ toggleSidebar }) => {
   ];
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 bg">
+    <header className="bg-white border-b border-gray-200 sticky top-0 bg">
       <div className="flex items-center justify-between px-4 py-3">
         {/* Left */}
         <div className="flex items-center space-x-4">
