@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Bell, Clock, User } from "lucide-react";
+import { Calendar, Bell, Clock, User, Ellipsis } from "lucide-react";
 export default function Dashboard() {
   return (
     <div className="min-h-screen">
@@ -53,7 +53,7 @@ export default function Dashboard() {
                     <span className="ml-2">04/11/2003</span>
                   </div>
                   <div>
-                    <span className className="text-gray-600">Nơi sinh:</span>
+                    <span className="text-gray-600">Nơi sinh:</span>
                     <span className="ml-2">Đồng Tháp</span>
                   </div>
                 </div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 p-1">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 p-1 mt-6">
 
         {/* TRANSACTIONS */}
 
@@ -140,7 +140,7 @@ export default function Dashboard() {
           {/* HEADER */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
             <div>
-              <p className="text-xs uppercase tracking-wide text-rose-400 mb-1">
+              <p className="text-ms uppercase tracking-wide text-rose-400 mb-1">
                 Học phần
               </p>
               <h2 className="text-sm md:text-base font-semibold text-rose-600">
@@ -227,9 +227,11 @@ export default function Dashboard() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-2xl bg-rose-500" />
-              <span className="text-sm font-semibold">Số giờ dạy trong tuần</span>
+              <span className="text-0.5xl font-semibold">Số giờ dạy trong tuần</span>
             </div>
-            <div className="text-slate-400 text-xs">•••</div>
+            <div className="text-slate-400 text-xs">
+              <Ellipsis w-5 h-5 />
+            </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-semibold">18h</span>
@@ -243,9 +245,11 @@ export default function Dashboard() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-2xl bg-amber-400" />
-              <span className="text-sm font-semibold">Số giờ dạy trong tháng</span>
+              <span className="text-0.5xl font-semibold">Số giờ dạy trong tháng</span>
             </div>
-            <div className="text-slate-400 text-xs">•••</div>
+            <div className="text-slate-400 text-xs">
+              <Ellipsis w-5 h-5 />
+            </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-semibold">268h</span>
@@ -257,8 +261,10 @@ export default function Dashboard() {
         {/* WEBSITE STATS */}
         <div className="lg:row-span-2 rounded-xl bg-white p-4 shadow">
           <div className="flex items-start justify-between mb-4">
-            <span className="text-sm font-semibold">Quá trình chấm công của bạn</span>
-            <div className="text-slate-400 text-xs">•••</div>
+            <span className="text-0.5xl font-semibold">Quá trình chấm công của bạn</span>
+            <div className="text-slate-400 text-xs">
+              <Ellipsis w-5 h-5 />
+            </div>
           </div>
 
           <div className="flex items-center justify-between mb-4">
@@ -295,7 +301,7 @@ export default function Dashboard() {
             <div className="flex justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-amber-400" />
-                <span>Thủ công</span>
+                <span >Thủ công</span>
               </div>
               <div className="flex gap-6">
                 <span>86,471</span>

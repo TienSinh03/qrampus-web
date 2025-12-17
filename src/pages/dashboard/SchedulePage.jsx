@@ -1,188 +1,242 @@
-import React, { useMemo, useState } from "react";
-import { useTranslation } from 'react-i18next';
-import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
-import { format, parse, startOfWeek, getDay } from "date-fns";
-import vi from "date-fns/locale/vi";
-import en from "date-fns/locale/en-US";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-
-const locales = {
-  vi: vi,
-  en: en,
-};
-
-const localizer = dateFnsLocalizer({
+import React, { useState, useMemo } from "react";
+import {
+  CalendarDaysIcon,
+  ChevronLeft,
+  ChevronRight,
+  Printer,
+} from "lucide-react";
+import {
   format,
-  parse,
-  startOfWeek: (date) =>
-    startOfWeek(date, {
-      weekStartsOn: 1, // 1 = Thứ 2
-    }),
-  getDay,
-  locales,
-});
-
-// Fake data sự kiện
-const initialEvents = [
-  {
-    id: 1,
-    title: "Khóa luận tốt nghiệp DKHTPM17A",
-    start: new Date(2025, 10, 25, 9, 0), // 25/11/2025 09:00
-    end: new Date(2025, 10, 25, 11, 40, 0),
-    resource: { type: "meeting", note: "lịch dạy khóa luận" },
-  },
-  {
-    id: 2,
-    title: "Nhập môn lập trình 404000000 DKHTPM17A",
-    start: new Date(2025, 10, 26, 14, 0),
-    end: new Date(2025, 10, 26, 15, 0),
-    resource: { type: "call" },
-  },
-  {
-    id: 3,
-    title: "......",
-    start: new Date(2025, 10, 27, 8, 0),
-    end: new Date(2025, 10, 27, 12, 0),
-    resource: { type: "event" },
-  },
-];
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  addWeeks,
+  subWeeks,
+  startOfMonth,
+  endOfMonth,
+} from "date-fns";
+import { vi } from "date-fns/locale";
 
 const SchedulePage = () => {
-  const { t, i18n } = useTranslation();
-  const [events, setEvents] = useState(initialEvents);
-  const [view, setView] = useState(Views.WEEK);
-  const [date, setDate] = useState(new Date());
+  /* ================= STATE ================= */
+  const [currentWeekStart, setCurrentWeekStart] = useState(
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  );
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [monthCursor, setMonthCursor] = useState(new Date());
 
-  // Tuỳ chỉnh style cho sự kiện
-  const eventPropGetter = (event) => {
-    let backgroundColor = "#3174ad"; // mặc định
+  /* ================= WEEK ================= */
+  const weekDates = useMemo(() => {
+    const days = eachDayOfInterval({
+      start: currentWeekStart,
+      end: endOfWeek(currentWeekStart, { weekStartsOn: 1 }),
+    });
 
-    if (event?.resource?.type === "meeting") backgroundColor = "#16a34a"; // xanh lá
-    if (event?.resource?.type === "call") backgroundColor = "#eab308"; // vàng
-    if (event?.resource?.type === "event") backgroundColor = "#dc2626"; // đỏ
+    return days.map((date) => ({
+      raw: date,
+      dayName: format(date, "EEEE", { locale: vi }),
+      date: format(date, "dd/MM/yyyy"),
+    }));
+  }, [currentWeekStart]);
 
-    return {
-      style: {
-        backgroundColor,
-        borderRadius: "8px",
-        opacity: 0.9,
-        border: "none",
-        color: "white",
-        padding: "2px 4px",
-        fontSize: "0.8rem",
-      },
-    };
-  };
-
-  const messages = useMemo(
-    () => ({
-      date: "Ngày",
-      time: "Thời gian",
-      event: "Sự kiện",
-      allDay: "Cả ngày",
-      week: "Tuần",
-      work_week: "Tuần làm việc",
-      day: "Ngày",
-      month: "Tháng",
-      previous: "Trước",
-      next: "Sau",
-      today: "Hôm nay",
-      agenda: "Danh sách",
-      noEventsInRange: "Không có sự kiện trong khoảng thời gian này.",
-      showMore: (total) => `+${total} sự kiện nữa`,
-    }),
-    []
+  /* ================= MONTH ================= */
+  const monthDays = useMemo(
+    () =>
+      eachDayOfInterval({
+        start: startOfWeek(startOfMonth(monthCursor), {
+          weekStartsOn: 1,
+        }),
+        end: endOfWeek(endOfMonth(monthCursor), {
+          weekStartsOn: 1,
+        }),
+      }),
+    [monthCursor]
   );
 
-  const handleSelectSlot = ({ start, end }) => {
-    const title = window.prompt("Nhập tiêu đề sự kiện mới:");
-    if (title) {
-      const newEvent = {
-        id: events.length + 1,
-        title,
-        start,
-        end,
-      };
-      setEvents([...events, newEvent]);
-    }
+  /* ================= ACTION ================= */
+  const goToPreviousWeek = () =>
+    setCurrentWeekStart((prev) => subWeeks(prev, 1));
+  const goToNextWeek = () =>
+    setCurrentWeekStart((prev) => addWeeks(prev, 1));
+  const goToCurrentWeek = () =>
+    setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+
+  /* ================= MOCK EVENT ================= */
+  const examEvent = {
+    dayIndex: 2,
+    shift: "Tối",
+    title: "Lập trình WWW (Java)",
+    details: [
+      "DHKTPM18A - 420300362101",
+      "Tiết: 13 - 16",
+      "Phòng: H3.1.1",
+      "Nhóm: 3 (32-61)",
+      "GV: Đặng Thị Thu Hà, Hà Thị Kim Thoa",
+    ],
   };
 
-  const handleSelectEvent = (event) => {
-    alert(`Sự kiện: ${event.title}`);
-  };
-
+  /* ================= JSX ================= */
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t('schedulePage.title')}</h1>
-          <p className="text-sm text-gray-500">
-            {t('schedulePage.description')}
-          </p>
+    <div className="min-h-screen p-2">
+      <div className="mx-auto ">
+        {/* HEADER */}
+        <div className="bg-white rounded-xl shadow-sm border mb-6 p-4 flex flex-wrap justify-between gap-4">
+          <h2 className="text-xl font-semibold text-blue-900">
+            Lịch học, lịch thi theo tuần
+          </h2>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button className="btn-gray">Tất cả</button>
+            <button className="btn-blue">Lịch học</button>
+            <button className="btn-blue">Lịch thi</button>
+
+            {/* MONTH PICKER */}
+            <div className="relative">
+              <div
+                onClick={() => setShowMonthPicker(!showMonthPicker)}
+                className="flex items-center gap-2 border rounded-xl px-3 py-2 cursor-pointer hover:shadow"
+              >
+                <div className="w-9 h-9 flex items-center justify-center bg-blue-100 text-blue-700 rounded-lg">
+                  <CalendarDaysIcon className="w-5 h-5" />
+                </div>
+                <input
+                  readOnly
+                  value={`${weekDates[0]?.date} - ${weekDates[6]?.date}`}
+                  className="w-44 text-sm font-medium text-center bg-transparent outline-none"
+                />
+              </div>
+
+              {showMonthPicker && (
+                <div className="absolute z-50 top-full mt-2 bg-white border rounded-xl shadow-xl p-4 w-72">
+                  <div className="flex justify-between mb-3">
+                    <button onClick={() => setMonthCursor(subWeeks(monthCursor, 4))}>
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="font-semibold">
+                      {format(monthCursor, "MMMM yyyy", { locale: vi })}
+                    </span>
+                    <button onClick={() => setMonthCursor(addWeeks(monthCursor, 4))}>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-xs text-center">
+                    {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((d) => (
+                      <div key={d} className="font-medium text-gray-500">
+                        {d}
+                      </div>
+                    ))}
+
+                    {monthDays.map((day) => (
+                      <button
+                        key={day.toString()}
+                        onClick={() => {
+                          setCurrentWeekStart(
+                            startOfWeek(day, { weekStartsOn: 1 })
+                          );
+                          setShowMonthPicker(false);
+                        }}
+                        className={`py-2 rounded hover:bg-blue-100 ${format(day, "MM") !== format(monthCursor, "MM")
+                          ? "text-gray-300"
+                          : ""
+                          }`}
+                      >
+                        {format(day, "d")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ACTION */}
+            <button className="btn-gray">
+              <Printer className="w-4 h-4 inline mr-1" />
+              In lịch
+            </button>
+            <button onClick={goToCurrentWeek} className="btn-blue">
+              <CalendarDaysIcon className="w-4 h-4 inline mr-1" />
+              Hiện tại
+            </button>
+            <button onClick={goToPreviousWeek} className="icon-btn">
+              <ChevronLeft />
+            </button>
+            <button onClick={goToNextWeek} className="icon-btn">
+              <ChevronRight />
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            className="px-3 py-1 text-sm border rounded-lg"
-            onClick={() => setDate(new Date())}
-          >
-            Hôm nay
-          </button>
-          <button
-            className="px-3 py-1 text-sm border rounded-lg"
-            onClick={() =>
-              setDate(
-                new Date(date.getFullYear(), date.getMonth(), date.getDate() - 7)
-              )
-            }
-          >
-            ◀ Tuần trước
-          </button>
-          <button
-            className="px-3 py-1 text-sm border rounded-lg"
-            onClick={() =>
-              setDate(
-                new Date(date.getFullYear(), date.getMonth(), date.getDate() + 7)
-              )
-            }
-          >
-            Tuần sau ▶
-          </button>
+        {/* TABLE */}
+        <div className="bg-white rounded-xl shadow border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-blue-900 text-white">
+              <tr>
+                <th className="py-4 w-32">Ca học</th>
+                {weekDates.map((d) => (
+                  <th key={d.date} className="py-4">
+                    <div>{d.dayName}</div>
+                    <div className="text-lg font-bold">{d.date}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-          <select
-            className="px-2 py-1 text-sm border rounded-lg"
-            value={view}
-            onChange={(e) => setView(e.target.value)}
-          >
-            <option value={Views.MONTH}>Tháng</option>
-            <option value={Views.WEEK}>Tuần</option>
-            <option value={Views.DAY}>Ngày</option>
-            <option value={Views.AGENDA}>Danh sách</option>
-          </select>
+            <tbody>
+              {["Sáng", "Chiều", "Tối"].map((shift) => (
+                <tr key={shift} className="border-t">
+                  <td className="py-6 px-4 font-medium">{shift}</td>
+                  {weekDates.map((_, idx) => (
+                    <td key={idx} className="h-36 p-2 border-l" >
+                      {examEvent.dayIndex === idx &&
+                        examEvent.shift === shift && (
+                          <button className="cursor-pointer w-full h-full flex">
+                            <div className="bg-yellow-200 border-2 border-yellow-600 rounded-lg p-3 text-xs">
+                              <div className="font-bold">
+                                {examEvent.title}
+                              </div>
+                              {examEvent.details.map((d, i) => (
+                                <div key={i}>{d}</div>
+                              ))}
+                            </div>
+                          </button>
+
+                        )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-6 text-sm p-6">
+          {/* Lịch học */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-4 bg-gray-200 border rounded-sm" />
+            <span className="text-gray-700">Lịch học</span>
+          </div>
+
+          {/* Lịch học trực tuyến */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-4 bg-blue-400 border rounded-sm" />
+            <span className="text-gray-700">Lịch học trực tuyến</span>
+          </div>
+
+          {/* Lịch thi */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-4 bg-yellow-300 border rounded-sm" />
+            <span className="text-gray-700">Lịch thi</span>
+          </div>
+
+          {/* Lịch tạm ngưng */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-4 bg-red-500 border rounded-sm" />
+            <span className="text-gray-700">Lịch tạm ngưng</span>
+          </div>
         </div>
       </div>
 
-      {/* Calendar */}
-      <div className="bg-white rounded-xl shadow p-4 h-[700px]">
-        <Calendar
-          localizer={localizer}
-          culture={i18n.language}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: "100%" }}
-          view={view}
-          onView={setView}
-          date={date}
-          onNavigate={setDate}
-          selectable
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          eventPropGetter={eventPropGetter}
-          messages={messages}
-        />
-      </div>
     </div>
   );
 };

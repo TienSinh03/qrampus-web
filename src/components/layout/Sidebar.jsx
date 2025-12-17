@@ -14,6 +14,8 @@ import {
   ScanQrCode,
   ImagePlus,
   Bell,
+  BarChart,
+  FolderCog,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 
@@ -24,9 +26,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: t('sidebar.dashboard'), path: '/dashboard' },
-    { icon: Users, label: t('sidebar.users'), path: '/dashboard/users' },
     { icon: Calendar, label: t('sidebar.schedule'), path: '/dashboard/schedule' },
-    { icon: BarChart3, label: t('sidebar.reports'), path: '/dashboard/reports' },
+    { icon: BarChart3, label: t('sidebar.reports'), path: '/dashboard/report-page' },
     { icon: ScanQrCode, label: t('sidebar.qrcode'), path: '/dashboard/qrcode' },
     { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/survey-page' },
     // 
@@ -38,7 +39,16 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/notifications' },
 
 
-    { icon: Settings, label: t('sidebar.settings'), path: '/dashboard/settings' },
+    { icon: Settings, label: t('sidebar.settings'), path: '/dashboard/setting' },
+
+    { icon: Users, label: t('sidebar.users'), path: '/dashboard/users' },
+    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/admin/survey-page' },
+    { icon: ScanQrCode, label: 'Quản lý Điểm danh', path: '/dashboard/admin/qrcode' },
+    { icon: BarChart, label: 'Quản lý Thống kê', path: '/dashboard/admin/statistics' },
+
+    { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/admin/notifications' },
+    { icon: FolderCog, label: 'Quản lý Học Phần', path: '/dashboard/admin/schedule' },
+
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -65,7 +75,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-100">
             <div className="flex items-center space-x-2">
               <img src="/assets/images/logo-qrampus.png" alt="Logo" className="w-12 h-12 rounded-2xl" />
               <span className="text-xl font-bold text-gray-800">QRampus</span>

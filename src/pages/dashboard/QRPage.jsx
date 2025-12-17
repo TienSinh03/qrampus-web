@@ -336,7 +336,7 @@ const QRPage = () => {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#e5e7eb,_#cbd5f5)]" />
 
             {/* Text bottom-left */}
-            <h2 className="absolute bottom-4 left-4  font-semibold text-slate-800 drop-shadow-sm">
+            <h2 className="absolute bottom-4 left-4  font-semibold text-slate-800 drop-shadow-sm text-lg">
               LẬP TRÌNH THIẾT BỊ DI DỘNG
             </h2>
           </div>
