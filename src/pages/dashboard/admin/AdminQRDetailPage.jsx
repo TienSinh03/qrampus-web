@@ -109,6 +109,11 @@ const AdminQRDetailPage = () => {
                         <div
                             key={index}
                             className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 overflow-hidden"
+
+                            //AdminDetailSessionQRPage
+                            onClick={() => { window.location.href = '/dashboard/admin/qrcode/session/qrcode-detail/session-detail' }}
+
+
                         >
                             {/* Header Pattern */}
                             <div

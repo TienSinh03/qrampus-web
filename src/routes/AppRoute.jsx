@@ -22,6 +22,7 @@ import ReportPage from "../pages/dashboard/ReportPage";
 // ADMIN
 import AdminQRPage from "@pages/dashboard/admin/AdminQRPage";
 import AdminQRDetailPage from "@pages/dashboard/admin/AdminQRDetailPage";
+import AdminDetailSessionQRPage from "@pages/dashboard/admin/AdminDetailSessionQRPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -138,6 +139,9 @@ const router = createBrowserRouter([
       {
         path: "admin/qrcode/session/qrcode-detail",
         element: <AdminQRDetailPage />,
+      }, {
+        path: "admin/qrcode/session/qrcode-detail/session-detail",
+        element: <AdminDetailSessionQRPage />,
       }
     ],
   },

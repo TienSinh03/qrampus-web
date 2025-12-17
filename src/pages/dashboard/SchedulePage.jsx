@@ -1,276 +1,244 @@
-// src/pages/dashboard/SchedulePage.jsx
 import React, { useState, useMemo } from "react";
-import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
+import {
+  CalendarDaysIcon,
+  ChevronLeft,
+  ChevronRight,
+  Printer,
+} from "lucide-react";
 import {
   format,
-  parse,
   startOfWeek,
-  getDay,
+  endOfWeek,
+  eachDayOfInterval,
+  addWeeks,
+  subWeeks,
   startOfMonth,
   endOfMonth,
-  eachDayOfInterval,
-  isSameDay,
-  isToday,
-  addMonths,
-  subMonths,
-  startOfWeek as dateFnsStartOfWeek,
-  endOfWeek as dateFnsEndOfWeek,
 } from "date-fns";
-import { vi, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import "react-big-calendar/lib/css/react-big-calendar.css";
+import { vi } from "date-fns/locale";
 
-const locales = { vi, en: enUS };
-const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
+const SchedulePage = () => {
+  /* ================= STATE ================= */
+  const [currentWeekStart, setCurrentWeekStart] = useState(
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  );
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [monthCursor, setMonthCursor] = useState(new Date());
 
-// DỮ LIỆU CỦA BẠN (đã sửa lỗi cú pháp)
-const initialEvents = [
-  { id: 101, title: "Giảng: Cấu trúc Dữ liệu", start: new Date(2025, 11, 10, 8, 30), end: new Date(2025, 11, 10, 11, 30), category: "lecture" },
-  { id: 102, title: "Họp: Chuẩn bị Đề cương Môn học", start: new Date(2025, 11, 12, 14, 0), end: new Date(2025, 11, 12, 15, 30), category: "meeting" },
-  { id: 103, title: "Giảng: Lập trình Web Frontend", start: new Date(2025, 11, 15, 10, 0), end: new Date(2025, 11, 15, 12, 0), category: "lecture" },
-  { id: 104, title: "Chấm Bài: Bài tập Lớn (Cơ sở Dữ liệu)", start: new Date(2025, 11, 17, 13, 0), end: new Date(2025, 11, 17, 17, 0), category: "grading" },
-  { id: 105, title: "Seminar: Trí tuệ Nhân tạo", start: new Date(2025, 11, 18, 15, 30), end: new Date(2025, 11, 18, 17, 0), category: "research" },
-  { id: 106, title: "Giảng: Mạng Máy tính (Thực hành)", start: new Date(2025, 11, 20, 8, 0), end: new Date(2025, 11, 20, 11, 30), category: "lab" },
-  { id: 107, title: "Họp Khoa: Kế hoạch Học kỳ Mới", start: new Date(2025, 11, 22, 9, 30), end: new Date(2025, 11, 22, 11, 0), category: "meeting" },
-  { id: 108, title: "Chuẩn bị: Bài giảng (Thuật toán)", start: new Date(2025, 11, 27, 11, 0), end: new Date(2025, 11, 27, 14, 0), category: "preparation" },
-  { id: 109, title: "Giảng: Phân tích Thiết kế Hệ thống", start: new Date(2026, 0, 3, 13, 0), end: new Date(2026, 0, 3, 16, 0), category: "lecture" },
-];
+  /* ================= WEEK ================= */
+  const weekDates = useMemo(() => {
+    const days = eachDayOfInterval({
+      start: currentWeekStart,
+      end: endOfWeek(currentWeekStart, { weekStartsOn: 1 }),
+    });
 
-// Màu sắc theo loại công việc
-const categoryColors = {
-  lecture: "bg-red-500",
-  meeting: "bg-blue-500",
-  grading: "bg-purple-500",
-  research: "bg-green-500",
-  lab: "bg-yellow-500",
-  preparation: "bg-indigo-500",
-};
+    return days.map((date) => ({
+      raw: date,
+      dayName: format(date, "EEEE", { locale: vi }),
+      date: format(date, "dd/MM/yyyy"),
+    }));
+  }, [currentWeekStart]);
 
-const categoryLabels = {
-  lecture: "Giảng dạy",
-  meeting: "Họp hành",
-  grading: "Chấm bài",
-  research: "Nghiên cứu",
-  lab: "Thực hành",
-  preparation: "Chuẩn bị",
-};
+  /* ================= MONTH ================= */
+  const monthDays = useMemo(
+    () =>
+      eachDayOfInterval({
+        start: startOfWeek(startOfMonth(monthCursor), {
+          weekStartsOn: 1,
+        }),
+        end: endOfWeek(endOfMonth(monthCursor), {
+          weekStartsOn: 1,
+        }),
+      }),
+    [monthCursor]
+  );
 
-export default function SchedulePage() {
-  const [events] = useState(initialEvents);
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 1)); // December 2025
-  const [view, setView] = useState(Views.MONTH);
-  const [miniMonth, setMiniMonth] = useState(new Date());
-  const [filters, setFilters] = useState({
-    lecture: true,
-    meeting: true,
-    grading: true,
-    research: true,
-    lab: true,
-    preparation: true,
-  });
+  /* ================= ACTION ================= */
+  const goToPreviousWeek = () =>
+    setCurrentWeekStart((prev) => subWeeks(prev, 1));
+  const goToNextWeek = () =>
+    setCurrentWeekStart((prev) => addWeeks(prev, 1));
+  const goToCurrentWeek = () =>
+    setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  // Lọc sự kiện theo filter
-  const filteredEvents = events.filter(e => filters[e.category]);
-
-  // Tùy chỉnh màu cho từng loại sự kiện
-  const eventStyleGetter = (event) => {
-    const colorClass = categoryColors[event.category] || "bg-gray-500";
-    const hex = colorClass.replace("bg-", "").replace("-500", "");
-    const hexMap = {
-      red: "#ef4444",
-      blue: "#3b82f6",
-      purple: "#a855f7",
-      green: "#22c55e",
-      yellow: "#eab308",
-      indigo: "#6366f1",
-    };
-    const backgroundColor = hexMap[hex] || "#6b7280";
-
-    return {
-      style: {
-        backgroundColor,
-        borderRadius: "8px",
-        opacity: 0.95,
-        color: "white",
-        border: "none",
-        fontWeight: "500",
-      },
-    };
+  /* ================= MOCK EVENT ================= */
+  const examEvent = {
+    dayIndex: 2,
+    shift: "Tối",
+    title: "Lập trình WWW (Java)",
+    details: [
+      "DHKTPM18A - 420300362101",
+      "Tiết: 13 - 16",
+      "Phòng: H3.1.1",
+      "Nhóm: 3 (32-61)",
+      "GV: Đặng Thị Thu Hà, Hà Thị Kim Thoa",
+    ],
   };
 
-  // Mini Calendar nhỏ ở sidebar
-  const MiniCalendar = () => {
-    const monthStart = startOfMonth(miniMonth);
-    const monthEnd = endOfMonth(miniMonth);
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    const firstDayOfWeek = monthStart.getDay();
-    const blanks = Array(firstDayOfWeek).fill(null);
-
-    return (
-      <div className="bg-white rounded-xl shadow-sm p-4 border">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-semibold text-sm">{format(miniMonth, "MMMM yyyy")}</h3>
-          <div className="flex gap-1">
-            <button onClick={() => setMiniMonth(subMonths(miniMonth, 1))} className="p-1 hover:bg-gray-100 rounded">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button onClick={() => setMiniMonth(addMonths(miniMonth, 1))} className="p-1 hover:bg-gray-100 rounded">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-7 text-xs text-center font-medium text-gray-600 mb-1">
-          {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map(d => <div key={d}>{d}</div>)}
-        </div>
-
-        <div className="grid grid-cols-7 text-xs">
-          {blanks.map((_, i) => <div key={`blank-${i}`} />)}
-          {days.map(day => {
-            const hasEvent = events.some(e => isSameDay(e.start, day));
-            const isCurrentDay = isToday(day);
-            const isSelected = isSameDay(day, currentDate);
-
-            return (
-              <button
-                key={day.toString()}
-                onClick={() => {
-                  setCurrentDate(day);
-                  setView(Views.MONTH);
-                }}
-                className={`h-8 w-8 rounded-full flex items-center justify-center transition-all text-xs font-medium
-                  ${isCurrentDay ? "bg-purple-600 text-white" : ""}
-                  ${isSelected && !isCurrentDay ? "bg-purple-100 text-purple-700 ring-2 ring-purple-600" : ""}
-                  ${hasEvent && !isCurrentDay && !isSelected ? "text-purple-700 font-bold" : ""}
-                  ${!isCurrentDay && !isSelected && !hasEvent ? "hover:bg-gray-100" : ""}
-                `}
-              >
-                {format(day, "d")}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const messages = useMemo(() => ({
-    allDay: "Cả ngày",
-    previous: "Trước",
-    next: "Sau",
-    today: "Hôm nay",
-    month: "Tháng",
-    week: "Tuần",
-    day: "Ngày",
-    agenda: "Danh sách",
-    date: "Ngày",
-    time: "Thời gian",
-    event: "Sự kiện",
-    noEventsInRange: "Không có sự kiện nào",
-    showMore: (total) => `+${total} nữa`,
-  }), []);
-
+  /* ================= JSX ================= */
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto">
+    <div className="min-h-screen p-2">
+      <div className="mx-auto ">
+        {/* HEADER */}
+        <div className="bg-white rounded-xl shadow-sm border mb-6 p-4 flex flex-wrap justify-between gap-4">
+          <h2 className="text-xl font-semibold text-blue-900">
+            Lịch học, lịch thi theo tuần
+          </h2>
 
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
-          <button className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-3 rounded-xl flex items-center gap-3 shadow-lg transition">
-            <Plus className="w-5 h-5" />
-            Thêm lịch
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button className="btn-gray">Tất cả</button>
+            <button className="btn-blue">Lịch học</button>
+            <button className="btn-blue">Lịch thi</button>
 
-          <div className="flex items-center gap-4">
-            <button onClick={() => setCurrentDate(new Date())} className="px-5 py-2 bg-white border rounded-lg text-sm font-medium hover:bg-gray-50">
-              Hôm nay
-            </button>
-
-            <div className="flex items-center gap-3">
-              <button onClick={() => setCurrentDate(view === Views.MONTH ? subMonths(currentDate, 1) : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - (view === Views.WEEK ? 7 : 1)))} className="p-2 hover:bg-gray-200 rounded-lg">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <h2 className="text-xl font-semibold min-w-52 text-center">
-                {view === Views.MONTH && format(currentDate, "MMMM yyyy")}
-                {view === Views.WEEK && `${format(dateFnsStartOfWeek(currentDate), "d")} - ${format(dateFnsEndOfWeek(currentDate), "d MMM yyyy")}`}
-                {view === Views.DAY && format(currentDate, "EEEE, d MMMM yyyy")}
-                {view === Views.AGENDA && "Danh sách sự kiện"}
-              </h2>
-              <button onClick={() => setCurrentDate(view === Views.MONTH ? addMonths(currentDate, 1) : new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + (view === Views.WEEK ? 7 : 1)))} className="p-2 hover:bg-gray-200 rounded-lg">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex bg-gray-100 rounded-xl p-1 shadow-sm">
-            {["Month", "Week", "Day", "List"].map(v => (
-              <button
-                key={v}
-                onClick={() => setView(Views[v.toUpperCase()])}
-                className={`px-5 py-2 rounded-lg text-sm font-medium transition ${view === Views[v.toUpperCase()] ? "bg-white text-purple-600 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+            {/* MONTH PICKER */}
+            <div className="relative">
+              <div
+                onClick={() => setShowMonthPicker(!showMonthPicker)}
+                className="flex items-center gap-2 border rounded-xl px-3 py-2 cursor-pointer hover:shadow"
               >
-                {v === "Month" ? "Tháng" : v === "Week" ? "Tuần" : v === "Day" ? "Ngày" : "Danh sách"}
-              </button>
-            ))}
+                <div className="w-9 h-9 flex items-center justify-center bg-blue-100 text-blue-700 rounded-lg">
+                  <CalendarDaysIcon className="w-5 h-5" />
+                </div>
+                <input
+                  readOnly
+                  value={`${weekDates[0]?.date} - ${weekDates[6]?.date}`}
+                  className="w-44 text-sm font-medium text-center bg-transparent outline-none"
+                />
+              </div>
+
+              {showMonthPicker && (
+                <div className="absolute z-50 top-full mt-2 bg-white border rounded-xl shadow-xl p-4 w-72">
+                  <div className="flex justify-between mb-3">
+                    <button onClick={() => setMonthCursor(subWeeks(monthCursor, 4))}>
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="font-semibold">
+                      {format(monthCursor, "MMMM yyyy", { locale: vi })}
+                    </span>
+                    <button onClick={() => setMonthCursor(addWeeks(monthCursor, 4))}>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-xs text-center">
+                    {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((d) => (
+                      <div key={d} className="font-medium text-gray-500">
+                        {d}
+                      </div>
+                    ))}
+
+                    {monthDays.map((day) => (
+                      <button
+                        key={day.toString()}
+                        onClick={() => {
+                          setCurrentWeekStart(
+                            startOfWeek(day, { weekStartsOn: 1 })
+                          );
+                          setShowMonthPicker(false);
+                        }}
+                        className={`py-2 rounded hover:bg-blue-100 ${format(day, "MM") !== format(monthCursor, "MM")
+                          ? "text-gray-300"
+                          : ""
+                          }`}
+                      >
+                        {format(day, "d")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ACTION */}
+            <button className="btn-gray">
+              <Printer className="w-4 h-4 inline mr-1" />
+              In lịch
+            </button>
+            <button onClick={goToCurrentWeek} className="btn-blue">
+              <CalendarDaysIcon className="w-4 h-4 inline mr-1" />
+              Hiện tại
+            </button>
+            <button onClick={goToPreviousWeek} className="icon-btn">
+              <ChevronLeft />
+            </button>
+            <button onClick={goToNextWeek} className="icon-btn">
+              <ChevronRight />
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <MiniCalendar />
-
-            <div className="bg-white rounded-xl shadow-sm p-6 border">
-              <h3 className="font-semibold text-lg mb-4">Bộ lọc sự kiện</h3>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3">
-                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded" />
-                  <span className="text-sm font-medium">Hiển thị tất cả</span>
-                </label>
-                {Object.entries(categoryLabels).map(([key, label]) => (
-                  <label key={key} className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters[key]}
-                      onChange={e => setFilters(prev => ({ ...prev, [key]: e.target.checked }))}
-                      className="w-4 h-4 rounded"
-                    />
-                    <div className={`w-4 h-4 rounded ${categoryColors[key]}`} />
-                    <span className="text-sm">{label}</span>
-                  </label>
+        {/* TABLE */}
+        <div className="bg-white rounded-xl shadow border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-blue-900 text-white">
+              <tr>
+                <th className="py-4 w-32">Ca học</th>
+                {weekDates.map((d) => (
+                  <th key={d.date} className="py-4">
+                    <div>{d.dayName}</div>
+                    <div className="text-lg font-bold">{d.date}</div>
+                  </th>
                 ))}
-              </div>
-            </div>
+              </tr>
+            </thead>
+
+            <tbody>
+              {["Sáng", "Chiều", "Tối"].map((shift) => (
+                <tr key={shift} className="border-t">
+                  <td className="py-6 px-4 font-medium">{shift}</td>
+                  {weekDates.map((_, idx) => (
+                    <td key={idx} className="h-36 p-2 border-l" >
+                      {examEvent.dayIndex === idx &&
+                        examEvent.shift === shift && (
+                          <button className="cursor-pointer w-full h-full flex">
+                            <div className="bg-yellow-200 border-2 border-yellow-600 rounded-lg p-3 text-xs">
+                              <div className="font-bold">
+                                {examEvent.title}
+                              </div>
+                              {examEvent.details.map((d, i) => (
+                                <div key={i}>{d}</div>
+                              ))}
+                            </div>
+                          </button>
+
+                        )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-6 text-sm p-6">
+          {/* Lịch học */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-4 bg-gray-200 border rounded-sm" />
+            <span className="text-gray-700">Lịch học</span>
           </div>
 
-          {/* Main Calendar */}
-          <div className="lg:col-span-3 bg-white rounded-xl shadow-lg overflow-hidden border">
-            <div className="h-[720px]">
-              <Calendar
-                localizer={localizer}
-                events={filteredEvents}
-                startAccessor="start"
-                endAccessor="end"
-                titleAccessor="title"
-                style={{ height: "100%", padding: "16px" }}
-                view={view}
-                onView={setView}
-                date={currentDate}
-                onNavigate={setCurrentDate}
-                eventPropGetter={eventStyleGetter}
-                messages={messages}
-                formats={{
-                  dayFormat: (date, culture, localizer) => localizer.format(date, "EEE d", culture),
-                  monthHeaderFormat: (date, culture, localizer) => localizer.format(date, "MMMM yyyy", culture),
-                }}
-                dayPropGetter={(date) => ({
-                  style: isToday(date) ? { backgroundColor: "#faf5ff" } : {},
-                })}
-              />
-            </div>
+          {/* Lịch học trực tuyến */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-4 bg-blue-400 border rounded-sm" />
+            <span className="text-gray-700">Lịch học trực tuyến</span>
+          </div>
+
+          {/* Lịch thi */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-4 bg-yellow-300 border rounded-sm" />
+            <span className="text-gray-700">Lịch thi</span>
+          </div>
+
+          {/* Lịch tạm ngưng */}
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-4 bg-red-500 border rounded-sm" />
+            <span className="text-gray-700">Lịch tạm ngưng</span>
           </div>
         </div>
       </div>
+
     </div>
   );
-}
+};
+
+export default SchedulePage;
