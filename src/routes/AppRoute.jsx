@@ -10,6 +10,7 @@ import StudySessionPage from "@pages/dashboard/StudySession/StudySessionPage";
 import ResultQRPage from "@pages/dashboard/ResultsQR/ResultQRPage";
 import ResultQRextendPage from "../pages/dashboard/ResultsQR/ResultQRextendPage";
 import ResultQRDetailUserPage from "../pages/dashboard/ResultsQR/ResultQRDetailUserPage";
+import ResultQRextendStudentPage from "../pages/dashboard/ResultsQR/ResultQRextendStudentPage";
 import AccountPage from "@pages/dashboard/AccountSetting/AccountPage";
 import QRViewPage from "../pages/dashboard/QRViewPage";
 import Timekeeping from "../pages/dashboard/Timekeeping";
@@ -127,8 +128,10 @@ const router = createBrowserRouter([
       }, {
         path: "report-page",
         element: <ReportPage />,
+      }, {
+        path: "results-qr-extend-student",
+        element: <ResultQRextendStudentPage />,
       },
-
 
       // ADMIN ROUTES
       {

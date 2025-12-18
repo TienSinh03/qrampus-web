@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, Users, Star, TrendingUp, Filter, ChevronDown, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, Users, Star, TrendingUp, Filter, ChevronDown, CheckCircle2, AlertCircle, Eye } from "lucide-react";
 
 export default function LecturerSurveyManagement() {
     const [selectedSemester, setSelectedSemester] = useState("all");
@@ -51,19 +51,20 @@ export default function LecturerSurveyManagement() {
                             </p>
                         </div>
 
-                        {/* Bộ lọc học kỳ */}
-                        <div className="relative">
+
+                        <div className="grid items-center">
                             <select
                                 value={selectedSemester}
                                 onChange={(e) => setSelectedSemester(e.target.value)}
                                 className="
+                                    col-start-1 row-start-1
                                     appearance-none 
-                                    bg-gradient-to-r from-indigo-400 to-purple-600 
-                                    text-white font-semibold 
-                                    px-8 py-3 pr-12 rounded-2xl
-                                    shadow-lg hover:shadow-xl 
+                                    text-gray font-semibold 
+                                    px-8 py-3 pr-12
+                                    border border-gray-300
                                     transition-all duration-200
                                     cursor-pointer text-sm
+                                    focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                                 "
                             >
                                 {semesters.map((sem) => (
@@ -74,7 +75,7 @@ export default function LecturerSurveyManagement() {
                             </select>
 
                             <ChevronDown
-                                className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-white pointer-events-none"
+                                className="col-start-1 row-start-1 justify-self-end mr-4 w-6 h-6 text-gray-500 pointer-events-none"
                             />
                         </div>
 
@@ -183,10 +184,10 @@ export default function LecturerSurveyManagement() {
                                             <div className="w-28 sm:w-32 mt-2 mx-auto sm:mx-0 bg-gray-200 rounded-full h-3 overflow-hidden">
                                                 <div
                                                     className={`h-full rounded-full transition-all duration-1000 ease-out ${item.tyLe >= 90
-                                                            ? "bg-emerald-500"
-                                                            : item.tyLe >= 70
-                                                                ? "bg-amber-500"
-                                                                : "bg-red-500"
+                                                        ? "bg-emerald-500"
+                                                        : item.tyLe >= 70
+                                                            ? "bg-amber-500"
+                                                            : "bg-red-500"
                                                         }`}
                                                     style={{ width: `${item.tyLe}%` }}
                                                 />
@@ -204,8 +205,8 @@ export default function LecturerSurveyManagement() {
                                         </div>
 
                                         {/* Nút Chi tiết - full width trên mobile */}
-                                        <button className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3.5 sm:py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300">
-                                            Chi tiết
+                                        <button className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition" title="Xem chi tiết">
+                                            <Eye className="w-6 h-6 text-gray-600" title="Xem chi tiết" />
                                         </button>
                                     </div>
                                 </div>

@@ -20,6 +20,12 @@ export default function AnnouncementPageV2() {
     const [starred, setStarred] = useState([2, 4, 6]);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+    const openDrawer = () => setIsDrawerOpen(true);
+    const closeDrawer = () => setIsDrawerOpen(false);
+
     const notifications = [
         { id: 1, maHP: "INT3306", lop: "20TCLC_DT3", title: "Hạn chót nộp bài tập lớn – Nhóm 5 chưa nộp", sender: "Hệ thống Moodle", preview: "Nhóm 5 (21010611...) chưa nộp bài tập lớn môn INT3306", time: "02:46", unread: true, label: "urgent" },
         { id: 2, maHP: "WEB301", lop: "21TCLC_DT1", title: "Phản hồi bài kiểm tra giữa kỳ đã được gửi", sender: "Nguyễn Văn A", preview: "Em cảm ơn thầy đã chấm bài rất chi tiết...", time: "02:58", unread: true, label: "personal" },
@@ -52,7 +58,7 @@ export default function AnnouncementPageV2() {
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 shadow-sm sticky">
+            <div className="bg-white border-b border-gray-200 shadow-sm">
                 <div className="px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button
@@ -68,24 +74,24 @@ export default function AnnouncementPageV2() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <div className="relative hidden sm:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <div className="hidden sm:block">
+                            {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /> */}
                             <input
                                 type="text"
                                 placeholder="Tìm kiếm..."
                                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-full w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
-                        <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2 rounded-full font-medium shadow hover:shadow-lg transition hidden sm:flex items-center gap-2">
+                        <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2 rounded-full font-medium shadow hover:shadow-lg transition hidden sm:flex items-center gap-2" onClick={openDrawer}>
                             Soạn thông báo
                         </button>
                     </div>
                 </div>
-            </header>
+            </div>
 
             <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar */}
-                <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-72 bg-white border-r border-gray-200 transform transition-transform lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                <aside className={`fixed lg:static inset-y-0 left-0 z-0 w-72 bg-white border-r border-gray-200 transform transition-transform lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
                     <div className="p-4 h-full overflow-y-auto">
 
                         <nav className="space-y-1">
@@ -196,6 +202,124 @@ export default function AnnouncementPageV2() {
                     </div>
                 </main>
             </div>
+
+            {isDrawerOpen && (
+                <>
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 z-60"
+                        onClick={closeDrawer}
+                    />
+
+                    {/* Drawer từ bên phải trượt ra */}
+                    <div className="fixed inset-y-0 right-0 z-60 w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
+                        {/* Header Drawer */}
+                        <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-lime-100">
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-800">Soạn thông báo mới</h3>
+                            </div>
+                            <button
+                                onClick={closeDrawer}
+                                className="text-gray-500 hover:text-gray-700 focus:outline-none  rounded-full hover:bg-lime-400 transition-all  duration-300 ease-in-out p-2 hover:rotate-90"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Body Form */}
+                        <div className="p-6 space-y-6 overflow-y-auto h-full pb-32">
+                            <div className="grid grid-cols-1 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Mã học phần kỳ này
+                                    </label>
+                                    <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option>4212345678912</option>
+                                        <option>42000735839</option>
+                                        <option>42000735840</option>
+
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Hình thức học
+                                    </label>
+                                    <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option>Lý thuyết</option>
+                                        <option>Thực hành</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Nhóm thưc hành
+                                    </label>
+                                    <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option>0</option>
+                                        <option>1</option>
+                                        <option>2</option>
+                                        <option>3</option>
+                                    </select>
+                                </div>
+
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tiêu đề thông báo
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        placeholder="Nhập tiêu đề thông báo..."
+                                    />
+                                </div>
+
+
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Nội dung thông báo
+                                    </label>
+                                    <textarea
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        placeholder="Nhập nội dung thông báo..."
+                                    ></textarea>
+                                </div>
+
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Nhãn thông báo
+                                    </label>
+                                    <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option>Khẩn cấp</option>
+                                        <option>Thông báo</option>
+                                        <option>Quan trọng</option>
+                                        <option>Quản trị</option>
+                                        <option>Chính thức</option>
+                                    </select>
+                                </div>
+
+
+
+                            </div>
+                        </div>
+
+
+                        {/* Footer Buttons - Fixed bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 flex justify-end gap-4 px-6 py-5 border-t border-gray-200 bg-white">
+                            <button
+                                onClick={closeDrawer}
+                                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                Tạo QR ngay
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
+
     );
 }

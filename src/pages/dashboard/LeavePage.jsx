@@ -108,19 +108,20 @@ export default function LeavePage() {
 
                         <div className="flex flex-wrap items-center gap-4">
                             {/* Lọc học kỳ */}
-                            <div className="relative">
+                            <div className="grid items-center">
                                 <select
                                     value={selectedSemester}
                                     onChange={(e) => setSelectedSemester(e.target.value)}
                                     className="
-                                                                appearance-none 
-                                                                bg-gradient-to-r from-indigo-400 to-purple-600 
-                                                                text-white font-semibold 
-                                                                px-8 py-3 pr-12 rounded-2xl
-                                                                shadow-lg hover:shadow-xl 
-                                                                transition-all duration-200
-                                                                cursor-pointer text-sm
-                                                            "
+                                        col-start-1 row-start-1
+                                        appearance-none 
+                                        text-gray font-semibold 
+                                        px-8 py-3 pr-12
+                                        border border-gray-300
+                                        transition-all duration-200
+                                        cursor-pointer text-sm
+                                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                                    "
                                 >
                                     {semesters.map((sem) => (
                                         <option key={sem.value} value={sem.value} className="text-gray-900">
@@ -130,22 +131,26 @@ export default function LeavePage() {
                                 </select>
 
                                 <ChevronDown
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-white pointer-events-none"
+                                    className="col-start-1 row-start-1 justify-self-end mr-4 w-6 h-6 text-gray-500 pointer-events-none"
                                 />
                             </div>
-                            <div className="relative">
+
+
+
+                            <div className="grid items-center">
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
                                     className="
-                                                                appearance-none 
-                                                                bg-gradient-to-r from-indigo-400 to-purple-600 
-                                                                text-white font-semibold 
-                                                                px-8 py-3 pr-12 rounded-2xl
-                                                                shadow-lg hover:shadow-xl 
-                                                                transition-all duration-200
-                                                                cursor-pointer text-sm
-                                                            "
+                                        col-start-1 row-start-1
+                                        appearance-none 
+                                        text-gray font-semibold 
+                                        px-8 py-3 pr-12
+                                        border border-gray-300
+                                        transition-all duration-200
+                                        cursor-pointer text-sm
+                                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                                    "
                                 >
                                     <option value="all" className="text-gray-900">Tất cả trạng thái</option>
                                     <option value="pending" className="text-gray-900">Chờ duyệt</option>
@@ -154,9 +159,10 @@ export default function LeavePage() {
                                 </select>
 
                                 <ChevronDown
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-white pointer-events-none"
+                                    className="col-start-1 row-start-1 justify-self-end mr-4 w-6 h-6 text-gray-500 pointer-events-none"
                                 />
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -252,11 +258,8 @@ export default function LeavePage() {
                                     {/* Minh chứng + hành động */}
                                     <div className="flex items-center gap-6">
                                         {/* Xem ảnh minh chứng */}
-                                        <button className="group relative p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition">
-                                            <Eye className="w-4 h-4 text-gray-600" />
-                                            <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition">
-                                                Xem ảnh
-                                            </span>
+                                        <button className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition" title="Xem ảnh">
+                                            <Eye className="w-4 h-4 text-gray-600" title="Xem ảnh"/>
                                         </button>
 
                                         {/* Trạng thái */}
