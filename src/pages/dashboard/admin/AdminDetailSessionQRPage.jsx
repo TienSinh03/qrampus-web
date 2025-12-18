@@ -277,16 +277,15 @@ const AdminDetailSessionQRPage = () => {
                     {/* Drawer từ bên phải trượt ra */}
                     <div className="fixed inset-y-0 right-0 z-60 w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
                         {/* Header Drawer */}
-                        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
+                        <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-lime-100">
                             <div>
                                 <h3 className="text-xl font-semibold text-gray-800">Mở phiên điểm danh</h3>
-                                <p className="text-sm text-gray-500 mt-1">17/12/2025</p>
                             </div>
                             <button
                                 onClick={closeDrawer}
-                                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                                className="text-gray-500 hover:text-gray-700 focus:outline-none  rounded-full hover:bg-lime-400 transition-all  duration-300 ease-in-out p-2 hover:rotate-90"
                             >
-                                <X size={24} />
+                                <X size={16} />
                             </button>
                         </div>
 

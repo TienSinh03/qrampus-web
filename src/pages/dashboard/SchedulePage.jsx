@@ -16,8 +16,10 @@ import {
   endOfMonth,
 } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 
 const SchedulePage = () => {
+  const navigate = useNavigate();
   /* ================= STATE ================= */
   const [currentWeekStart, setCurrentWeekStart] = useState(
     startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -62,23 +64,120 @@ const SchedulePage = () => {
     setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   /* ================= MOCK EVENT ================= */
-  const examEvent = {
-    dayIndex: 2,
-    shift: "Tối",
-    title: "Lập trình WWW (Java)",
-    details: [
-      "DHKTPM18A - 420300362101",
-      "Tiết: 13 - 16",
-      "Phòng: H3.1.1",
-      "Nhóm: 3 (32-61)",
-      "GV: Đặng Thị Thu Hà, Hà Thị Kim Thoa",
-    ],
+  const examEvent = [
+    {
+      date: "18/12/2025",
+      title: "Lập trình WWW (Java)",
+      mahocphan: "420300362101",
+      tiet: "13-16",
+      phong: "H3.1.1",
+      nhom: "1",
+      giaovien: [
+        { magiangvien: "10000001", name: "Đặng Thị Thu Hà" },
+        { magiangvien: "10000002", name: "Hà Thị Kim Thoa" }
+      ],
+      loaihoc: "3", // 1: lý thuyết (lịch học), 2: trực tuyến, 3: thi, 4: tạm ngưng
+      hinhthuchoc: "Thực hành"
+    },
+    {
+      date: "17/12/2025",
+      title: "Lập trình web",
+      mahocphan: "420300362123",
+      tiet: "4-6",
+      phong: "H3.1.1",
+      nhom: "0",
+      giaovien: [
+        { magiangvien: "10000001", name: "Đặng Thị Thu Hà" }
+      ],
+      loaihoc: "1",
+      hinhthuchoc: "Lý thuyết"
+    },
+    {
+      date: "24/12/2025",
+      title: "Lập trình web",
+      mahocphan: "420300362123",
+      tiet: "4-6",
+      phong: "H3.1.1",
+      nhom: "1",
+      giaovien: [
+        { magiangvien: "10000001", name: "Đặng Thị Thu Hà" }
+      ],
+      loaihoc: "1",
+      hinhthuchoc: "Thực hành"
+    }, {
+      "date": "20/12/2025",
+      "title": "Cấu trúc dữ liệu và Giải thuật",
+      "mahocphan": "420300365002",
+      "tiet": "1-3",
+      "phong": "A1.2",
+      "nhom": "2",
+      "giaovien": [
+        {
+          "magiangvien": "10000001",
+          "name": "Đặng Thị Thu Hà"
+        }
+      ],
+      "loaihoc": "1",
+      "hinhthuchoc": "Lý thuyết"
+    },
+    {
+      "date": "22/12/2025",
+      "title": "Cơ sở dữ liệu",
+      "mahocphan": "420300368005",
+      "tiet": "7-9",
+      "phong": "V5.2",
+      "nhom": "1",
+      "giaovien": [
+        {
+          "magiangvien": "10000001",
+          "name": "Đặng Thị Thu Hà"
+        }
+      ],
+      "loaihoc": "1",
+      "hinhthuchoc": "Lý thuyết"
+    }
+  ];
+
+  /* ================= UTILS ================= */
+  const getStartTiet = (tiet) => {
+    if (!tiet) return null;
+    return parseInt(tiet.split("-")[0], 10);
   };
 
+  const getShiftFromTiet = (tiet) => {
+    const start = getStartTiet(tiet);
+    if (!start) return null;
+
+    if (start <= 6) return "Sáng";
+    if (start <= 12) return "Chiều";
+    return "Tối";
+  };
+
+  const isSameDate = (d1, d2) => d1 === d2;
+
+
+  const LOAI_HOC_STYLE = {
+    "1": {
+      bg: "bg-gray-200",
+      border: "border-gray-400"
+    },
+    "2": {
+      bg: "bg-blue-400",
+      border: "border-blue-600"
+    },
+    "3": {
+      bg: "bg-yellow-300",
+      border: "border-yellow-600"
+    },
+    "4": {
+      bg: "bg-red-500",
+      border: "border-red-700"
+    }
+  };
   /* ================= JSX ================= */
   return (
     <div className="min-h-screen p-2">
-      <div className="mx-auto ">
+      <div className="mx-auto">
         {/* HEADER */}
         <div className="bg-white rounded-xl shadow-sm border mb-6 p-4 flex flex-wrap justify-between gap-4">
           <h2 className="text-xl font-semibold text-blue-900">
@@ -186,57 +285,94 @@ const SchedulePage = () => {
               {["Sáng", "Chiều", "Tối"].map((shift) => (
                 <tr key={shift} className="border-t">
                   <td className="py-6 px-4 font-medium">{shift}</td>
-                  {weekDates.map((_, idx) => (
-                    <td key={idx} className="h-36 p-2 border-l" >
-                      {examEvent.dayIndex === idx &&
-                        examEvent.shift === shift && (
-                          <button className="cursor-pointer w-full h-full flex">
-                            <div className="bg-yellow-200 border-2 border-yellow-600 rounded-lg p-3 text-xs">
-                              <div className="font-bold">
-                                {examEvent.title}
+
+                  {weekDates.map((d, idx) => {
+                    const matchedEvents = examEvent.filter((ev) => {
+                      return (
+                        isSameDate(ev.date, d.date) &&
+                        getShiftFromTiet(ev.tiet) === shift
+                      );
+                    });
+
+                    return (
+                      <td key={idx} className="h-36 p-2 border-l">
+                        {matchedEvents.map((ev, i) => (
+                          <button key={i} className="cursor-pointer w-full flex flex-col space-y-2">
+
+                            <div
+                              className={`border-2 rounded-lg p-3 w-full ${LOAI_HOC_STYLE[ev.loaihoc]?.bg} ${LOAI_HOC_STYLE[ev.loaihoc]?.border}`}
+                            >
+                              <div className="flex flex-col space-y-1">
+                                <div className="font-bold">
+                                  <button
+                                    className="text-blue-600 hover:underline"
+                                    // onClick={() => handleCourseClick(ev.title)}
+                                    onClick={() => navigate('/dashboard/study-session')}
+
+
+                                  >
+                                    {ev.title}
+                                  </button>
+                                  <button
+                                    className="text-blue-600 hover:underline ml-2"
+                                    onClick={() => navigate('/dashboard/study-session')}
+
+                                  >
+                                    {ev.mahocphan}
+                                  </button>
+                                </div>
+
+                                {/* Event Details */}
+                                <div className="text-sm">
+                                  <div>Tiết: {ev.tiet}</div>
+                                  <div>Phòng: {ev.phong}</div>
+                                  <div>Nhóm: {ev.nhom}</div>
+                                  <div>
+                                    Giảng viên:{" "}
+                                    {ev.giaovien.map((gv, index) => (
+                                      <span key={gv.magiangvien}>
+                                        {gv.name}{index < ev.giaovien.length - 1 ? ", " : ""}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
                               </div>
-                              {examEvent.details.map((d, i) => (
-                                <div key={i}>{d}</div>
-                              ))}
                             </div>
                           </button>
+                        ))}
+                      </td>
 
-                        )}
-                    </td>
-                  ))}
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
 
         <div className="flex flex-wrap items-center gap-6 text-sm p-6">
-          {/* Lịch học */}
           <div className="flex items-center gap-2">
             <span className="w-6 h-4 bg-gray-200 border rounded-sm" />
             <span className="text-gray-700">Lịch học</span>
           </div>
 
-          {/* Lịch học trực tuyến */}
           <div className="flex items-center gap-2">
             <span className="w-6 h-4 bg-blue-400 border rounded-sm" />
             <span className="text-gray-700">Lịch học trực tuyến</span>
           </div>
 
-          {/* Lịch thi */}
           <div className="flex items-center gap-2">
             <span className="w-6 h-4 bg-yellow-300 border rounded-sm" />
             <span className="text-gray-700">Lịch thi</span>
           </div>
 
-          {/* Lịch tạm ngưng */}
           <div className="flex items-center gap-2">
             <span className="w-6 h-4 bg-red-500 border rounded-sm" />
             <span className="text-gray-700">Lịch tạm ngưng</span>
           </div>
         </div>
       </div>
-
     </div>
   );
 };
