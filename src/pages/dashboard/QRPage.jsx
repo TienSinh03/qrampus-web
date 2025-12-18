@@ -13,6 +13,7 @@ import {
   CircleCheckBig,
   GalleryThumbnails,
   Delete,
+  View,
 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
@@ -291,14 +292,20 @@ const QRPage = () => {
       <div className="grid gap-6 xl:grid-cols-3">
 
         <div className="rounded-2xl bg-white shadow-sm">
-          <div className="relative h-32 w-full overflow-hidden rounded-t-2xl bg-slate-200">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#e5e7eb,_#cbd5f5)]" />
-            <h2 className="absolute bottom-4 left-4  font-semibold text-slate-800 drop-shadow-sm">
-              <p className="text-xl font-bold text-slate-800">{time}</p>
-              <p className="text-sm text-slate-500 capitalize">{date}</p>
+          <div className="h-32 w-full overflow-hidden rounded-t-2xl bg-[radial-gradient(circle_at_top,_#e5e7eb,_#cbd5f5)] flex flex-col justify-end px-4 pb-4">
+            <p className="text-xl font-bold text-slate-800">{time}</p>
+            <p className="text-sm text-slate-500 capitalize">{date}</p>
+            <a
+              onClick={() => window.open('/dashboard/results-qr-extend-student', '_blank')}
+              className="mt-2 inline-flex items-center justify-center h-10 px-4 py-3 rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md"
+            >
+              <View className="w-5 h-5" />
+              <span className="ml-2 text-sm font-medium">Màn hình điểm danh dành cho sinh viên</span>
+            </a>
 
-            </h2>
+
           </div>
+
 
           {/* QR CODE */}
           <div className="flex flex-col items-center justify-center pt-2">
@@ -320,7 +327,7 @@ const QRPage = () => {
               className="mt-2 inline-flex h-10 p-3 items-center justify-center rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md"
             >
               <ExternalLink className="w-5 h-5" />
-              <span className="ml-2 text-sm font-medium">Mở rộng màn hình</span>
+              <span className="ml-2 text-sm font-medium">Chi tiết điểm danh</span>
             </button>
 
 
@@ -331,15 +338,12 @@ const QRPage = () => {
 
         <div className="rounded-2xl bg-white shadow-sm">
           {/* Image */}
-          <div className="relative h-32 w-full overflow-hidden rounded-t-2xl bg-slate-200">
-            {/* Background */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#e5e7eb,_#cbd5f5)]" />
-
-            {/* Text bottom-left */}
-            <h2 className="absolute bottom-4 left-4  font-semibold text-slate-800 drop-shadow-sm text-lg">
-              LẬP TRÌNH THIẾT BỊ DI DỘNG
+          <div className="h-32 w-full overflow-hidden rounded-t-2xl bg-[radial-gradient(circle_at_top,_#e5e7eb,_#cbd5f5)] flex items-end">
+            <h2 className="px-4 pb-4 text-lg font-semibold text-slate-800 drop-shadow-sm">
+              LẬP TRÌNH THIẾT BỊ DI ĐỘNG
             </h2>
           </div>
+
 
           <div className="p-6">
             {/* Header event */}

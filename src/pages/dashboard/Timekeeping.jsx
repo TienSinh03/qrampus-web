@@ -7,6 +7,7 @@ import {
     AlertTriangle,
     QrCode,
     Filter,
+    ChevronDown,
 } from "lucide-react";
 
 export default function TeacherAttendancePage() {
@@ -134,30 +135,65 @@ export default function TeacherAttendancePage() {
                 </div>
 
                 {/* Filter nổi bật theo kỳ và tháng */}
-                <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-2xl shadow-lg text-white mb-6">
+                <div className="p-6 rounded-2xl shadow-lg mb-6">
                     <h3 className="text-xl font-bold flex items-center gap-2 mb-4">
                         <Filter size={24} /> Lọc theo kỳ học & tháng
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <select
-                            value={selectedSemester}
-                            onChange={(e) => setSelectedSemester(e.target.value)}
-                            className="p-3 rounded-lg text-gray-800 font-medium"
-                        >
-                            <option>Học kỳ I - 2025-2026</option>
-                            <option>Học kỳ II - 2024-2025</option>
-                            <option>Học kỳ I - 2024-2025</option>
-                        </select>
-                        <select
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(e.target.value)}
-                            className="p-3 rounded-lg text-gray-800 font-medium"
-                        >
+
+
+
+
+
+                        <div className="grid items-center">
+                            <select
+                                value={selectedSemester}
+                                onChange={(e) => setSelectedSemester(e.target.value)}
+                                className="
+                                    col-start-1 row-start-1
+                                    appearance-none 
+                                    text-gray font-semibold 
+                                    px-8 py-3 pr-12
+                                    border border-gray-300
+                                    transition-all duration-200
+                                    cursor-pointer text-sm
+                                    focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                                "
+                            >
+                                <option>Học kỳ I - 2025-2026</option>
+                                <option>Học kỳ II - 2024-2025</option>
+                                <option>Học kỳ I - 2024-2025</option>
+                            </select>
+
+                            <ChevronDown
+                                className="col-start-1 row-start-1 justify-self-end mr-4 w-6 h-6 text-gray-500 pointer-events-none"
+                            />
+                        </div>
+                        <div className="grid items-center">
+                            <select
+                                value={selectedMonth}
+                                onChange={(e) => selectedMonth(e.target.value)}
+                                className="
+                                    col-start-1 row-start-1
+                                    appearance-none 
+                                    text-gray font-semibold 
+                                    px-8 py-3 pr-12
+                                    border border-gray-300
+                                    transition-all duration-200
+                                    cursor-pointer text-sm
+                                    focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                                "
+                            >
                             <option>Tất cả</option>
                             <option>Tháng Mười Hai</option>
                             <option>Tháng Mười Một</option>
                             <option>Tháng Mười</option>
-                        </select>
+                            </select>
+
+                            <ChevronDown
+                                className="col-start-1 row-start-1 justify-self-end mr-4 w-6 h-6 text-gray-500 pointer-events-none"
+                            />
+                        </div>
                     </div>
                 </div>
 
