@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { IdCard, Table2 } from "lucide-react";
+import { Edit, Eye, IdCard, Table2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 
@@ -122,6 +122,7 @@ const StudentStudySession = () => {
                             <th className="border-b py-3 px-4 text-left">Email</th>
                             <th className="border-b py-3 px-4 text-left">Role</th>
                             <th className="border-b py-3 px-4 text-left">Status</th>
+                            <th className="border-b py-3 px-4 text-left">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -143,6 +144,9 @@ const StudentStudySession = () => {
                                 <td className="py-3 px-4">{student.role}</td>
                                 <td className="py-3 px-4">
                                     <StatusBadge status={student.status} />
+                                </td>
+                                <td className="py-3 px-4 text-blue-600 underline">
+                                    <Eye className="w-5 h-5" titles="View Details" />
                                 </td>
                             </tr>
                         ))}

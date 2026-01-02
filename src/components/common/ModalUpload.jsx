@@ -35,10 +35,13 @@ const ModalUpload = ({ open, onClose }) => {
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 relative">
 
         {/* Close button */}
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-black">
-          <X />
-        </button>
 
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 focus:outline-none  rounded-full hover:bg-yellow-400 transition-all  duration-300 ease-in-out p-2 hover:rotate-90"
+        >
+          <X size={20} />
+        </button>
         <h2 className="text-xl font-bold mb-1">Upload Files</h2>
         <p className="text-sm text-gray-600 mb-6">
           Easily upload files to your account with just a few clicks.

@@ -1,305 +1,427 @@
 import React, { useState } from "react";
-import { Calendar, Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, AlertCircle, ChevronDown } from "lucide-react";
+import {
+  Calendar,
+  Filter,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertCircle,
+  ChevronDown,
+  TrendingUp,
+  Star, ArrowDown, ArrowUp
+} from "lucide-react";
 
 export default function LeavePage() {
-    const [selectedSemester, setSelectedSemester] = useState("all");
-    const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedSemester, setSelectedSemester] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-    const semesters = [
-        { value: "all", label: "Tất cả học kỳ" },
-        { value: "hk1-2024-2025", label: "HK1 2024-2025" },
-        { value: "hk2-2023-2024", label: "HK2 2023-2024" },
-        { value: "hk1-2023-2024", label: "HK1 2023-2024" },
-    ];
+  const semesters = [
+    { value: "all", label: "Tất cả học kỳ" },
+    { value: "hk1-2024-2025", label: "HK1 2024-2025" },
+    { value: "hk2-2023-2024", label: "HK2 2023-2024" },
+    { value: "hk1-2023-2024", label: "HK1 2023-2024" },
+  ];
 
-    // Dữ liệu minh chứng nghỉ học (thực tế lấy từ API)
-    const leaves = [
-        {
-            id: 1,
-            mssv: "21010611",
-            hoTen: "Nguyễn Văn An",
-            lop: "20TCLC_DT3",
-            hocPhan: "Lập trình thiết bị di động",
-            ngayNghi: "2025-04-05",
-            lyDo: "Khám bệnh (có giấy bệnh viện)",
-            file: "/images/giay-kham-benh-1.jpg",
-            trangThai: "pending",
-            ghiChu: "",
-            ky: "hk1-2024-2025",
-        },
-        {
-            id: 2,
-            mssv: "21010612",
-            hoTen: "Trần Thị Bình",
-            lop: "20TCLC_DT3",
-            hocPhan: "Lập trình thiết bị di động",
-            ngayNghi: "2025-04-03",
-            lyDo: "Tang lễ ông nội",
-            file: "/images/giay-bao-tu.jpg",
-            trangThai: "approved",
-            ghiChu: "Đã duyệt",
-            ky: "hk1-2024-2025",
-        },
-        {
-            id: 3,
-            mssv: "21010613",
-            hoTen: "Lê Văn Cường",
-            lop: "21TCLC_DT1",
-            hocPhan: "Phát triển ứng dụng Web",
-            ngayNghi: "2025-03-28",
-            lyDo: "Xe hỏng trên đường đi học",
-            file: "/images/xe-hong.jpg",
-            trangThai: "rejected",
-            ghiChu: "Không hợp lệ (không có ảnh rõ ràng)",
-            ky: "hk1-2024-2025",
-        },
-        {
-            id: 4,
-            mssv: "21010614",
-            hoTen: "Phạm Thị Dung",
-            lop: "20TCLC_DT4",
-            hocPhan: "Cơ sở dữ liệu",
-            ngayNghi: "2024-12-15",
-            lyDo: "Ốm nặng – Nghỉ 3 buổi",
-            file: "/images/giay-nghi-om.jpg",
-            trangThai: "approved",
-            ghiChu: "",
-            ky: "hk2-2023-2024",
-        },
-    ];
+  // Mock data
+  const leaves = [
+    {
+      id: 1,
+      mssv: "21010611",
+      hoTen: "Nguyễn Văn An",
+      lop: "20TCLC_DT3",
+      hocPhan: "Lập trình thiết bị di động",
+      ngayNghi: "2025-04-05",
+      lyDo: "Khám bệnh (có giấy bệnh viện)",
+      trangThai: "pending",
+      ghiChu: "",
+      ky: "hk1-2024-2025",
+    },
+    {
+      id: 2,
+      mssv: "21010612",
+      hoTen: "Trần Thị Bình",
+      lop: "20TCLC_DT3",
+      hocPhan: "Lập trình thiết bị di động",
+      ngayNghi: "2025-04-03",
+      lyDo: "Tang lễ ông nội",
+      trangThai: "approved",
+      ghiChu: "Đã duyệt",
+      ky: "hk1-2024-2025",
+    },
+    {
+      id: 3,
+      mssv: "21010613",
+      hoTen: "Lê Văn Cường",
+      lop: "21TCLC_DT1",
+      hocPhan: "Phát triển ứng dụng Web",
+      ngayNghi: "2025-03-28",
+      lyDo: "Xe hỏng trên đường đi học",
+      trangThai: "rejected",
+      ghiChu: "Không hợp lệ (không có ảnh rõ ràng)",
+      ky: "hk1-2024-2025",
+    },
+    {
+      id: 4,
+      mssv: "21010614",
+      hoTen: "Phạm Thị Dung",
+      lop: "20TCLC_DT4",
+      hocPhan: "Cơ sở dữ liệu",
+      ngayNghi: "2024-12-15",
+      lyDo: "Ốm nặng – Nghỉ 3 buổi",
+      trangThai: "approved",
+      ghiChu: "",
+      ky: "hk2-2023-2024",
+    },
+  ];
 
-    const filtered = leaves.filter(item => {
-        if (selectedSemester !== "all" && item.ky !== selectedSemester) return false;
-        if (statusFilter !== "all" && item.trangThai !== statusFilter) return false;
-        return true;
-    });
+  const filtered = leaves.filter((item) => {
+    if (selectedSemester !== "all" && item.ky !== selectedSemester)
+      return false;
+    if (statusFilter !== "all" && item.trangThai !== statusFilter) return false;
+    return true;
+  });
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "approved": return "bg-emerald-100 text-emerald-700 border-emerald-200";
-            case "rejected": return "bg-red-100 text-red-700 border-red-200";
-            case "pending": return "bg-amber-100 text-amber-700 border-amber-200";
-            default: return "bg-gray-100 text-gray-700";
-        }
-    };
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "approved":
+        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      case "rejected":
+        return "bg-red-100 text-red-700 border-red-200";
+      case "pending":
+        return "bg-amber-100 text-amber-700 border-amber-200";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
 
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case "approved": return <CheckCircle className="w-4 h-4 text-emerald-600" />;
-            case "rejected": return <XCircle className="w-4 h-4 text-red-600" />;
-            case "pending": return <Clock className="w-4 h-4 text-amber-600" />;
-        }
-    };
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "approved":
+        return <CheckCircle className="w-4 h-4 text-emerald-600" />;
+      case "rejected":
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      case "pending":
+        return <Clock className="w-4 h-4 text-amber-600" />;
+      default:
+        return null;
+    }
+  };
+  const [expanded, setExpanded] = useState(false);
 
-    return (
-        <div className="min-h-screen from-gray-50 via-blue-50 to-indigo-50">
-            {/* Header */}
-            <div className="bg-white shadow-md border-b border-gray-200">
-                <div className="mx-auto px-6 py-8">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-4">
-                                Quản lý minh chứng nghỉ học
-                            </h1>
-                            <p className="mt-3 text-sm text-gray-600">
-                                <i>Xem và xử lý minh chứng nghỉ học của sinh viên trong các học phần bạn phụ trách</i>
-                            </p>
-                        </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* HEADER */}
+      <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+      <div className="bg-white border shadow-sm rounded-b-xl p-6 mb-6">
+        <div className="flex flex-col lg:flex-row items-center gap-6">
 
-                        <div className="flex flex-wrap items-center gap-4">
-                            {/* Lọc học kỳ */}
-                            <div className="grid items-center">
-                                <select
-                                    value={selectedSemester}
-                                    onChange={(e) => setSelectedSemester(e.target.value)}
-                                    className="
-                                        col-start-1 row-start-1
-                                        appearance-none 
-                                        text-gray font-semibold 
-                                        px-8 py-3 pr-12
-                                        border border-gray-300
-                                        transition-all duration-200
-                                        cursor-pointer text-sm
-                                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                                    "
-                                >
-                                    {semesters.map((sem) => (
-                                        <option key={sem.value} value={sem.value} className="text-gray-900">
-                                            {sem.label}
-                                        </option>
-                                    ))}
-                                </select>
+          {/* Icon */}
+          <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white shrink-0">
+            <AlertCircle size={30} />
+          </div>
 
-                                <ChevronDown
-                                    className="col-start-1 row-start-1 justify-self-end mr-4 w-6 h-6 text-gray-500 pointer-events-none"
-                                />
-                            </div>
+          {/* Title */}
+          <div className="flex-1 text-center lg:text-left">
+            <h2 className="text-xl font-bold text-gray-800">
+              Thống kê minh chứng
+            </h2>
+            <p className="text-gray-500 mt-1">
+              Tổng hợp tình trạng xử lý đơn nghỉ học
+            </p>
+          </div>
 
+          {/* Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full lg:w-auto text-center">
 
-
-                            <div className="grid items-center">
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="
-                                        col-start-1 row-start-1
-                                        appearance-none 
-                                        text-gray font-semibold 
-                                        px-8 py-3 pr-12
-                                        border border-gray-300
-                                        transition-all duration-200
-                                        cursor-pointer text-sm
-                                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                                    "
-                                >
-                                    <option value="all" className="text-gray-900">Tất cả trạng thái</option>
-                                    <option value="pending" className="text-gray-900">Chờ duyệt</option>
-                                    <option value="approved" className="text-gray-900">Đã duyệt</option>
-                                    <option value="rejected" className="text-gray-900">Từ chối</option>
-                                </select>
-
-                                <ChevronDown
-                                    className="col-start-1 row-start-1 justify-self-end mr-4 w-6 h-6 text-gray-500 pointer-events-none"
-                                />
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
+            <div className="bg-blue-50 rounded-xl p-4">
+              <p className="text-3xl font-bold text-blue-600">
+                {leaves.length}                </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Tổng đơn xin
+              </p>
             </div>
 
-            {/* Thống kê nhanh */}
-            <div className="mx-auto  py-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600">Tổng đơn</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-2">{leaves.length}</p>
-                            </div>
-                            <AlertCircle className="w-9 h-9 text-indigo-500" />
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600">Chờ duyệt</p>
-                                <p className="text-2xl font-bold text-amber-600 mt-2">
-                                    {leaves.filter(l => l.trangThai === "pending").length}
-                                </p>
-                            </div>
-                            <Clock className="w-9 h-9 text-amber-500" />
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600">Đã duyệt</p>
-                                <p className="text-2xl font-bold text-emerald-600 mt-2">
-                                    {leaves.filter(l => l.trangThai === "approved").length}
-                                </p>
-                            </div>
-                            <CheckCircle className="w-9 h-9 text-emerald-500" />
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600">Từ chối</p>
-                                <p className="text-2xl font-bold text-red-600 mt-2">
-                                    {leaves.filter(l => l.trangThai === "rejected").length}
-                                </p>
-                            </div>
-                            <XCircle className="w-9 h-9 text-red-500" />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Danh sách minh chứng */}
-                <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                    <div className="px-8 py-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-b">
-                        <h2 className="text-xl font-bold text-gray-900">Danh sách minh chứng nghỉ học</h2>
-                    </div>
-
-                    <div className="divide-y divide-gray-100">
-                        {filtered.map((item) => (
-                            <div key={item.id} className="px-8 py-6 hover:bg-gradient-to-r hover:from-indigo-50/30 hover:to-purple-50/30 transition-all group">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-6">
-                                        {/* Avatar + Info */}
-                                        <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                                            {item.hoTen.split(" ").pop()[0]}
-                                        </div>
-
-                                        <div>
-                                            <h3 className="text-ms font-bold text-gray-900">
-                                                {item.hoTen} • {item.mssv}
-                                            </h3>
-                                            <div className="flex items-center gap-6 mt-2 text-gray-600">
-                                                <span className="flex items-center gap-2 text-sm">
-                                                    <Calendar className="w-4 h-4" />
-                                                    {new Date(item.ngayNghi).toLocaleDateString("vi-VN")}
-                                                </span>
-                                                <span className="font-medium text-indigo-600 text-sm">
-                                                    Mã học phần:
-                                                    <a href="#" className="underline hover:text-indigo-800">
-                                                        {item.lop}
-                                                    </a>
-
-                                                </span>
-                                                <span className="font-medium text-indigo-600 text-sm">
-                                                    {item.hocPhan}
-                                                </span>
-                                            </div>
-                                            <p className="mt-2 text-gray-700 font-medium italic text-ms">{item.lyDo}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Minh chứng + hành động */}
-                                    <div className="flex items-center gap-6">
-                                        {/* Xem ảnh minh chứng */}
-                                        <button className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition" title="Xem ảnh">
-                                            <Eye className="w-4 h-4 text-gray-600" title="Xem ảnh"/>
-                                        </button>
-
-                                        {/* Trạng thái */}
-                                        <div className={`px-5 py-3 rounded-xl border font-bold flex items-center gap-3   ${getStatusBadge(item.trangThai)}`}>
-                                            {getStatusIcon(item.trangThai)}
-                                            {item.trangThai === "approved" ? "Đã duyệt" : item.trangThai === "rejected" ? "Từ chối" : "Chờ duyệt"}
-                                        </div>
-
-                                        {/* Nút duyệt / từ chối (chỉ hiện khi đang chờ) */}
-                                        {item.trangThai === "pending" && (
-                                            <div className="flex gap-3">
-                                                <button className=" text-ms bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition">
-                                                    Duyệt
-                                                </button>
-                                                <button className="text-ms bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition">
-                                                    Từ chối
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Ghi chú nếu có */}
-                                {item.ghiChu && (
-                                    <div className="mt-4 ml-24 text-sm text-gray-600 italic">
-                                        Ghi chú: {item.ghiChu}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Ghi chú cuối trang */}
-                <div className="mt-10 text-center text-gray-600 bg-white/80 backdrop-blur rounded-2xl py-6 border">
-                    <p className="text-lg font-medium">
-                        Tất cả minh chứng được lưu trữ an toàn • Chỉ giảng viên phụ trách mới xem được
-                    </p>
-                </div>
+            <div className="bg-emerald-50 rounded-xl p-4">
+              <p className="text-3xl font-bold text-emerald-600">
+                {leaves.filter((l) => l.trangThai === "pending").length}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Chờ duyệt đơn
+              </p>
             </div>
+
+            <div className="bg-amber-50 rounded-xl p-4">
+              <p className="text-3xl font-bold text-amber-600 flex items-center justify-center gap-1">
+                {leaves.filter((l) => l.trangThai === "approved").length}
+                <Star size={18} />
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Đã duyệt
+              </p>
+            </div>
+
+            <div className="bg-purple-50 rounded-xl p-4">
+              <p className="text-3xl font-bold text-purple-600">
+                {leaves.filter((l) => l.trangThai === "rejected").length}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Từ chối
+              </p>
+            </div>
+
+          </div>
         </div>
-    );
+      </div>
+      <div className="bg-white border  p-6">
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+          </svg>
+          <span>Bộ lọc đơn xin phép</span>
+          <button onClick={() => setExpanded(!expanded)} className="flex items-center text-blue-600 hover:text-blue-800 ml-auto">
+            {expanded ? (
+              <>
+                <ArrowUp size={16} className="mr-1" />
+                Thu gọn
+              </>
+            ) : (
+              <>
+                <ArrowDown size={16} className="mr-1" />
+                Mở rộng bộ lọc
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Form */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Học kỳ / năm học
+            </label>
+            <select
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              {semesters.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trạng thái đơn
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Từ chối</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ngày nghỉ
+            </label>
+            <input
+              type="date"
+              placeholder="Ví dụ: 05/04/2025"
+              className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Mã học phần
+            </label>
+            <input
+              type="text"
+              placeholder="Ví dụ: 4203001549"
+              className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {expanded && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tên môn học / học phần
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: Lập trình thiết bị di động"
+                  className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tên lớp
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: 20TCLC_DT3"
+                  className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mã số sinh viên
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: 20TCLC_DT3"
+                  className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Họ tên sinh viên
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: 20TCLC_DT3"
+                  className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3 mt-6">
+          <button className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.3-4.3" />
+            </svg>
+            Lọc
+          </button>
+
+          <button className="flex items-center gap-2 border border-green-600 text-green-600 px-5 py-2 rounded-lg hover:bg-green-50">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-8 14H8v-4h3v4zm0-6H8V7h3v4zm5 6h-3v-7h3v7zm0-9h-3V7h3v1z" />
+            </svg>
+            Export Excel
+          </button>
+
+          <button className="flex items-center gap-2 border px-5 py-2 rounded-lg hover:bg-gray-100">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Xóa bộ lọc
+          </button>
+        </div>
+      </div>
+
+      <div className="mx-auto">
+        <div className="bg-white shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Sinh viên
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Ngày nghỉ
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Học phần
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Lý do
+                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                    Trạng thái
+                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                    Hành động
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-200">
+                {filtered.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition">
+                    {/* Sinh viên */}
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium">{item.hoTen}</p>
+                        <p className="text-sm text-gray-500">{item.mssv}</p>
+                      </div>
+                    </td>
+
+                    {/* Ngày nghỉ */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 text-sm">
+                        <Calendar size={14} />
+                        {new Date(item.ngayNghi).toLocaleDateString("vi-VN")}
+                      </div>
+                    </td>
+
+                    {/* Học phần */}
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-sm">{item.hocPhan}</p>
+                      <p className="text-xs text-gray-500">{item.lop}</p>
+                    </td>
+
+                    {/* Lý do */}
+                    <td className="px-6 py-4">
+                      <p className="text-sm italic text-gray-700 line-clamp-2">
+                        {item.lyDo}
+                      </p>
+                      {item.ghiChu && (
+                        <p className="text-xs italic text-gray-500 mt-1">
+                          Ghi chú: {item.ghiChu}
+                        </p>
+                      )}
+                    </td>
+
+                    {/* Trạng thái */}
+                    <td className="px-6 py-4 text-center">
+                      <div
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium ${getStatusBadge(
+                          item.trangThai
+                        )}`}
+                      >
+                        {getStatusIcon(item.trangThai)}
+                        {item.trangThai === "approved"
+                          ? "Đã duyệt"
+                          : item.trangThai === "rejected"
+                            ? "Từ chối"
+                            : "Chờ duyệt"}
+                      </div>
+                    </td>
+
+                    {/* Hành động */}
+                    <td className="px-6 py-4 text-center">
+                      <button className="p-2 rounded-full hover:bg-gray-100 transition">
+                        <Eye size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
