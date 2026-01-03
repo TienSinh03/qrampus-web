@@ -16,6 +16,7 @@ import {
   Bell,
   BarChart,
   FolderCog,
+  IdCardLanyard,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 
@@ -41,7 +42,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
     { icon: Settings, label: t('sidebar.settings'), path: '/dashboard/setting' },
 
-    { icon: Users, label: t('sidebar.users'), path: '/dashboard/users' },
+
+    // khúc này admin
+    { icon: IdCardLanyard, label: 'Quản lý Nhân sự', path: '/dashboard/users' },
+    { icon: Users, label: 'Quản lý Sinh viên', path: '/dashboard/admin/students' },
+
     { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/admin/survey-page' },
     { icon: ScanQrCode, label: 'Quản lý Điểm danh', path: '/dashboard/admin/qrcode' },
     { icon: BarChart, label: 'Quản lý Thống kê', path: '/dashboard/admin/statistics' },

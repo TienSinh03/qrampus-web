@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { BookOpen, Mail, Lock, User, Eye, EyeOff, IdCardLanyard } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 
@@ -27,14 +27,14 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    
+
     if (!formData.fullName) newErrors.fullName = t('errors.fullNameRequired');
     if (!formData.email) newErrors.email = t('errors.emailRequired');
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = t('errors.emailInvalid');
-    
+
     if (!formData.password) newErrors.password = t('errors.passwordRequired');
     else if (formData.password.length < 6) newErrors.password = t('errors.passwordMinLength');
-    
+
     if (!formData.confirmPassword) newErrors.confirmPassword = t('errors.confirmPasswordRequired');
     else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = t('errors.passwordMismatch');
@@ -52,7 +52,7 @@ const RegisterPage = () => {
       password: formData.password
     });
     setIsLoading(false);
-    
+
     if (result.success) {
       navigate('/login');
     } else {
@@ -63,6 +63,7 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           {/* Logo & Title */}
           <div className="text-center space-y-2">
@@ -76,6 +77,24 @@ const RegisterPage = () => {
           {/* Form */}
           <div className="space-y-4">
             {/* Full Name Field */}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Mã giảng viên</label>
+              <div className="relative">
+                <IdCardLanyard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="manhasu"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  className={`w-full pl-10 pr-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition`}
+                  placeholder="012345"
+                />
+              </div>
+              {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
+            </div>
+
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">{t('auth.fullName')}</label>
               <div className="relative">
