@@ -14,7 +14,8 @@ const ChangePasswordPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto px-4 max-w-xl">
-        <div className="bg-white rounded-2xl shadow border p-8 mt-10">
+        <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+        <div className="bg-white rounded-b-xl shadow border p-8 mt-10">
           <button
             onClick={() => navigate("/dashboard/account-setting")}
             className="flex items-center text-sm text-purple-600 mb-6"

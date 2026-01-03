@@ -19,14 +19,10 @@ const AccountPage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto px-4">
         {/* Header giống các trang khác */}
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 mb-6">
-          <h1 className="text-3xl font-bold">Tài khoản cá nhân</h1>
-          <p className="text-purple-100 mt-1">
-            Quản lý thông tin cá nhân giảng viên
-          </p>
-        </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border p-8">
+
+        <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+        <div className="bg-white rounded-b-xl shadow-sm border p-8">
           <div className="flex flex-col md:flex-row gap-10">
             {/* Avatar */}
             <div className="flex flex-col items-center">
