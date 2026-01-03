@@ -53,12 +53,13 @@ const SettingPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+
       <div className="flex h-screen overflow-hidden">
         {/* ===== SIDEBAR ===== */}
         <aside
-          className={`${
-            sidebarOpen ? "w-64" : "w-0"
-          } transition-all duration-300 bg-white border-r border-gray-200 overflow-hidden`}
+          className={`${sidebarOpen ? "w-64" : "w-0"
+            } transition-all duration-300 bg-white border-r border-gray-200 overflow-hidden`}
         >
           <div className="p-6 border-b">
             <h1 className="text-xl font-bold flex items-center gap-3">
@@ -75,10 +76,9 @@ const SettingPage = () => {
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full px-6 py-3 flex items-center gap-4 text-left transition
-                    ${
-                      activeTab === item.id
-                        ? "bg-purple-50 text-purple-600 border-r-4 border-purple-600"
-                        : "text-gray-700 hover:bg-gray-100"
+                    ${activeTab === item.id
+                      ? "bg-purple-50 text-purple-600 border-r-4 border-purple-600"
+                      : "text-gray-700 hover:bg-gray-100"
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -108,7 +108,7 @@ const SettingPage = () => {
 
           {/* CONTENT */}
           <main className="flex-1 overflow-y-auto p-8">
-            <div className="max-w-4xl mx-auto space-y-8">
+            <div className="mx-auto space-y-8">
               <h2 className="text-3xl font-bold text-gray-800">
                 {menuItems.find((i) => i.id === activeTab)?.label}
               </h2>
