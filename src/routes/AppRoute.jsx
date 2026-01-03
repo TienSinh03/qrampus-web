@@ -1,7 +1,12 @@
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
 
 import LoginPage from "@pages/auth/LoginPage";
 import RegisterPage from "@pages/auth/RegisterPage";
+import ChangePasswordPage from "@pages/dashboard/AccountSetting/ChangePasswordPage";
 import DashboardPage from "@pages/dashboard/DashboardPage";
 import SchedulePage from "@pages/dashboard/SchedulePage";
 import UsersPage from "@pages/dashboard/UsersPage";
@@ -77,7 +82,11 @@ const router = createBrowserRouter([
       },
       {
         path: "reports",
-        element: <div className="p-8"><h1 className="text-2xl font-bold">Báo cáo</h1></div>,
+        element: (
+          <div className="p-8">
+            <h1 className="text-2xl font-bold">Báo cáo</h1>
+          </div>
+        ),
       },
       {
         path: "qrcode",
@@ -104,6 +113,10 @@ const router = createBrowserRouter([
         element: <AccountPage />,
       },
       {
+        path: "change-password",
+        element: <ChangePasswordPage />,
+      },
+      {
         path: "qrcode-fullscreen",
         element: <QRViewPage />,
       },
@@ -122,13 +135,16 @@ const router = createBrowserRouter([
       {
         path: "notifications",
         element: <AnnouncementPage />,
-      }, {
+      },
+      {
         path: "setting",
         element: <Setting />,
-      }, {
+      },
+      {
         path: "report-page",
         element: <ReportPage />,
-      }, {
+      },
+      {
         path: "results-qr-extend-student",
         element: <ResultQRextendStudentPage />,
       },
@@ -137,15 +153,15 @@ const router = createBrowserRouter([
       {
         path: "admin/qrcode",
         element: <AdminQRPage />,
-
       },
       {
         path: "admin/qrcode/session/qrcode-detail",
         element: <AdminQRDetailPage />,
-      }, {
+      },
+      {
         path: "admin/qrcode/session/qrcode-detail/session-detail",
         element: <AdminDetailSessionQRPage />,
-      }
+      },
     ],
   },
 

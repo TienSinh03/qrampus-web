@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Menu,
   Bell,
@@ -11,9 +11,9 @@ import {
   Rocket,
   Mail,
   ChevronDown,
-} from 'lucide-react';
-import { useAuth } from '@contexts/AuthContext';
-import LanguageSwitcher from '@/components/common/LanguageSwitcher';
+} from "lucide-react";
+import { useAuth } from "@contexts/AuthContext";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 const Header = ({ toggleSidebar }) => {
   const { t } = useTranslation();
@@ -108,7 +108,7 @@ const Header = ({ toggleSidebar }) => {
   ];
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 bg">
+    <header className="bg-white border-b border-gray-200 sticky top-0 bg z-40">
       <div className="flex items-center justify-between px-4 py-3">
         {/* Left */}
         <div className="flex items-center space-x-4">
@@ -124,7 +124,7 @@ const Header = ({ toggleSidebar }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder={t('common.search') || 'Tìm kiếm...'}
+              placeholder={t("common.search") || "Tìm kiếm..."}
               className="pl-10 pr-4 py-2 w-64 lg:w-80 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -198,9 +198,13 @@ const Header = ({ toggleSidebar }) => {
                               {notif.icon}
                             </div>
                             {notif.desc && (
-                              <p className="text-sm text-gray-600 mt-0.5">{notif.desc}</p>
+                              <p className="text-sm text-gray-600 mt-0.5">
+                                {notif.desc}
+                              </p>
                             )}
-                            <p className="text-xs text-gray-400 mt-1">{notif.time}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {notif.time}
+                            </p>
                           </div>
 
                           {/* Unread dot */}
@@ -230,13 +234,15 @@ const Header = ({ toggleSidebar }) => {
               className="flex items-center gap-3 hover:bg-gray-100 rounded-xl px-3 py-2 transition"
             >
               <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                {user?.name?.charAt(0).toUpperCase() || 'A'}
+                {user?.name?.charAt(0).toUpperCase() || "A"}
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-semibold text-gray-800">
-                  {user?.name || 'Admin'}
+                  {user?.name || "Admin"}
                 </p>
-                <p className="text-xs text-gray-500">{user?.role || 'Administrator'}</p>
+                <p className="text-xs text-gray-500">
+                  {user?.role || "Administrator"}
+                </p>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-500 hidden md:block" />
             </button>
@@ -254,12 +260,15 @@ const Header = ({ toggleSidebar }) => {
                     <p className="text-sm text-gray-500">{user?.email}</p>
                   </div>
                   <button
-                    onClick={() => navigate('/dashboard/account-setting')}
+                    onClick={() => navigate("/dashboard/account-setting")}
                     className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
                   >
                     Hồ sơ cá nhân
                   </button>
-                  <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100">
+                  <button
+                    onClick={() => navigate("/dashboard/change-password")}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
+                  >
                     Đổi mật khẩu
                   </button>
                   <hr className="my-1" />
