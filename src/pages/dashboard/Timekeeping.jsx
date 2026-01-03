@@ -307,7 +307,7 @@ export default function TeacherAttendancePage() {
         </div>
 
         {/* Sessions Table */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-b-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-100">
