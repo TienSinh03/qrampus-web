@@ -6,9 +6,11 @@ export default function Dashboard() {
       <div className="bg-gray-50 p-1">
         <div className="mx-auto">
           {/* Header */}
-          <h1 className="text-xl font-bold text-blue-700 mb-6">
+          <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+
+          {/* <h1 className="text-xl font-bold text-blue-700 mb-6">
             Thông tin Giảng viên
-          </h1>
+          </h1> */}
 
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6 md:p-8">

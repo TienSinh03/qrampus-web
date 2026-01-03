@@ -22,7 +22,7 @@ const AccountPage = () => {
 
 
         <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
-        <div className="bg-white rounded-b-xl shadow-sm border p-8">
+        <div className="bg-white rounded-b-xl shadow-sm border p-4">
           <div className="flex flex-col md:flex-row gap-10">
             {/* Avatar */}
             <div className="flex flex-col items-center">
