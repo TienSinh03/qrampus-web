@@ -179,7 +179,8 @@ const SchedulePage = () => {
     <div className="min-h-screen p-2">
       <div className="mx-auto">
         {/* HEADER */}
-        <div className="bg-white rounded-xl shadow-sm border mb-6 p-4 flex flex-wrap justify-between gap-4">
+        <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+        <div className="bg-white  shadow-sm border p-4 flex flex-wrap justify-between gap-4">
           <h2 className="text-xl font-semibold text-blue-900">
             Lịch học, lịch thi theo tuần
           </h2>
@@ -267,7 +268,7 @@ const SchedulePage = () => {
         </div>
 
         {/* TABLE */}
-        <div className="bg-white rounded-xl shadow border overflow-hidden">
+        <div className="bg-white rounded-b-xl shadow border overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-blue-900 text-white">
               <tr>

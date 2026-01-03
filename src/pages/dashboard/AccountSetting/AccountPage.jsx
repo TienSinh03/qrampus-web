@@ -65,7 +65,7 @@ const AccountPage = () => {
             {/* Thông tin */}
             <div className="flex-1 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="Họ tên giảng viên" defaultValue="Nguyễn Văn A" />
+                <Input label="Họ tên giảng viên" defaultValue="Nguyễn Văn A"  />
                 <Input label="Mã nhân sự" defaultValue="1012345" />
                 <Input label="Email" defaultValue="teacher@iuh.edu.vn" />
                 <Input label="Điện thoại" defaultValue="0909 123 456" />

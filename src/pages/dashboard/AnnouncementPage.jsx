@@ -121,6 +121,8 @@ export default function AnnouncementPageV2() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
+      <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -164,9 +166,8 @@ export default function AnnouncementPageV2() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`fixed lg:static inset-y-0 left-0 z-0 w-72 bg-white border-r border-gray-200 transform transition-transform lg:translate-x-0 ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={`fixed lg:static inset-y-0 left-0 z-0 w-72 bg-white border-r border-gray-200 transform transition-transform lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
         >
           <div className="p-4 h-full overflow-y-auto">
             <nav className="space-y-1">
@@ -260,11 +261,10 @@ export default function AnnouncementPageV2() {
             {notifications.map((noti) => (
               <div
                 key={noti.id}
-                className={`px-4 sm:px-6 py-4 hover:bg-white transition-all cursor-pointer group ${
-                  noti.unread
+                className={`px-4 sm:px-6 py-4 hover:bg-white transition-all cursor-pointer group ${noti.unread
                     ? "bg-white border-l-4 border-l-indigo-500"
                     : "bg-gray-50"
-                } ${selected.includes(noti.id) ? "bg-indigo-50" : ""}`}
+                  } ${selected.includes(noti.id) ? "bg-indigo-50" : ""}`}
                 onClick={() => toggleSelect(noti.id)}
               >
                 <div className="flex items-center gap-3">
@@ -283,11 +283,10 @@ export default function AnnouncementPageV2() {
                     className="p-1"
                   >
                     <Star
-                      className={`w-5 h-5 ${
-                        starred.includes(noti.id)
+                      className={`w-5 h-5 ${starred.includes(noti.id)
                           ? "fill-amber-400 text-amber-400"
                           : "text-gray-400"
-                      }`}
+                        }`}
                     />
                   </button>
 
@@ -300,9 +299,8 @@ export default function AnnouncementPageV2() {
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 text-sm">
                             <span
-                              className={`font-medium ${
-                                noti.unread ? "text-gray-900" : "text-gray-600"
-                              }`}
+                              className={`font-medium ${noti.unread ? "text-gray-900" : "text-gray-600"
+                                }`}
                             >
                               {noti.sender}
                             </span>
@@ -319,9 +317,8 @@ export default function AnnouncementPageV2() {
                             )}
                           </div>
                           <p
-                            className={`mt-1 font-medium ${
-                              noti.unread ? "text-gray-900" : "text-gray-700"
-                            } truncate`}
+                            className={`mt-1 font-medium ${noti.unread ? "text-gray-900" : "text-gray-700"
+                              } truncate`}
                           >
                             {noti.title}
                           </p>
