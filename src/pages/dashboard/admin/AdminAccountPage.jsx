@@ -15,10 +15,13 @@ import {
   UserCheck,
   UserX,
   UserPlus,
-  X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX
+  X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX,
+  CheckLine,
+  Lock,
+  File
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
-const AdminStudentPage = () => {
+const AdminAccountPage = () => {
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -137,41 +140,41 @@ const AdminStudentPage = () => {
           <div className="">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
-                title="Session"
+                title="Total Users"
                 value="21,459"
                 percent="(+29%)"
                 positive={true}
-                subtitle="Total User"
+                subtitle="Tổng tài khoản"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
               />
 
               <StatsCard
-                title="Paid Users"
+                title="Users Active"
                 value="4,567"
                 percent="(+18%)"
                 positive={true}
-                subtitle="Last week analytics"
-                icon={<UserPlus className="w-6 h-6 text-rose-600" />}
-                iconBg="bg-rose-100"
-              />
-
-              <StatsCard
-                title="Active Users"
-                value="19,860"
-                percent="(-14%)"
-                positive={false}
-                subtitle="Last week analytics"
-                icon={<UserCheck className="w-6 h-6 text-green-600" />}
+                subtitle="Đang hoạt động"
+                icon={<UserPlus className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
               />
 
               <StatsCard
-                title="Pending Users"
+                title="Inactive Users"
+                value="19,860"
+                percent="(-14%)"
+                positive={false}
+                subtitle="Chờ kích hoạt"
+                icon={<UserCheck className="w-6 h-6 text-rose-600" />}
+                iconBg="bg-rose-100"
+              />
+
+              <StatsCard
+                title=" Locked Users"
                 value="237"
                 percent="(+42%)"
                 positive={true}
-                subtitle="Last week analytics"
+                subtitle="Đã khóa"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />
@@ -213,7 +216,7 @@ const AdminStudentPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã số sinh viên
+                    Mã số nhân sự
                   </label>
                   <input
                     type="text"
@@ -223,12 +226,25 @@ const AdminStudentPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Họ và tên
+                    Trạng thái
                   </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-lg border px-3 py-2"
-                  />
+                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>Đang hoạt động</option>
+                    <option>Chưa kích hoạt</option>
+                    <option>Đã khóa</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phân quyền
+                  </label>
+                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>Sinh viên</option>
+                    <option>Giảng viên</option>
+                    <option>Bộ phận chấm công</option>
+                    <option>Admin</option>
+
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -242,19 +258,18 @@ const AdminStudentPage = () => {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Trạng thái
-                  </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Đang hoạt động</option>
-                    <option>Tạm ngưng</option>
-                    <option>Đã xóa</option>
-                  </select>
-                </div>
+
                 {expanded && (
                   <>
-
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Họ và tên
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border px-3 py-2"
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Mail
@@ -296,6 +311,19 @@ const AdminStudentPage = () => {
                 {/* Nhóm buttons chính bên trái */}
                 <div className="flex flex-wrap items-center gap-3">
                   <button
+
+                    className="flex items-center gap-2 bg-emerald-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md transition-all duration-200"
+                  >
+                    <CheckLine className="w-5 h-5" />
+                    Kích hoạt tài khoản
+                  </button>
+
+                  <button className="flex items-center gap-2 bg-red-200 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-400 hover:shadow-md transition-all duration-200">
+                    <Lock className="w-5 h-5" />
+                    Khóa tài khoản
+                  </button>
+
+                  {/* <button
                     onClick={openDrawer}
                     className="flex items-center gap-2 bg-blue-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-700 hover:shadow-md transition-all duration-200"
                   >
@@ -303,10 +331,6 @@ const AdminStudentPage = () => {
                     {t("users.addUser")}
                   </button>
 
-                  <button className="flex items-center gap-2 bg-red-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-700 hover:shadow-md transition-all duration-200">
-                    <Trash2 className="w-5 h-5" />
-                    {t("users.deleteUser")}
-                  </button>
 
                   <button
                     onClick={() => setOpenUpload(true)}
@@ -314,17 +338,21 @@ const AdminStudentPage = () => {
                   >
                     <CloudUpload className="w-5 h-5" />
                     {t("users.upload")}
-                  </button>
+                  </button> */}
                 </div>
 
                 {/* Nhóm buttons phụ bên phải: Lọc, Export, Xóa lọc */}
                 <div className="flex flex-wrap items-center gap-3">
-
-
                   <button className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200">
                     <FileSpreadsheet className="w-5 h-5" />
                     Export Excel
                   </button>
+                  <button className="flex items-center gap-2 bg-orange-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-orange-700 hover:shadow-md transition-all duration-200">
+                    <File className="w-5 h-5" />
+                    Tải PDF
+                  </button>
+
+
 
                   <button className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200">
                     <FilterX className="w-5 h-5" />
@@ -336,11 +364,11 @@ const AdminStudentPage = () => {
 
 
             {/* TABLE */}
-            <div className="w-full overflow-x-auto bg-white rounded-xl shadow mb-6">
+            <div className="w-full overflow-x-auto bg-white  shadow mb-6">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-slate-100">
-                    <th className="w-12">
+                  <tr className="bg-gray-100">
+                    <th>
                       <input type="checkbox" className="ml-4" />
                     </th>
                     <th className="h-12 px-4">Ảnh</th>
@@ -561,4 +589,4 @@ const AdminStudentPage = () => {
   );
 };
 
-export default AdminStudentPage;
+export default AdminAccountPage;

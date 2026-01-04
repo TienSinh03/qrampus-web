@@ -15,10 +15,11 @@ import {
   UserCheck,
   UserX,
   UserPlus,
-  X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX
+  X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX,
+  ArrowDownToLine
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
-const AdminStudentPage = () => {
+const AdminTeacherPage = () => {
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -213,7 +214,7 @@ const AdminStudentPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã số sinh viên
+                    Mã số nhân sự
                   </label>
                   <input
                     type="text"
@@ -297,7 +298,7 @@ const AdminStudentPage = () => {
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     onClick={openDrawer}
-                    className="flex items-center gap-2 bg-blue-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-700 hover:shadow-md transition-all duration-200"
+                    className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200"
                   >
                     <CirclePlus className="w-5 h-5" />
                     {t("users.addUser")}
@@ -320,7 +321,10 @@ const AdminStudentPage = () => {
                 {/* Nhóm buttons phụ bên phải: Lọc, Export, Xóa lọc */}
                 <div className="flex flex-wrap items-center gap-3">
 
-
+                  <button className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200">
+                    <ArrowDownToLine className="w-5 h-5" />
+                    Tải mẫu Excel
+                  </button>
                   <button className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200">
                     <FileSpreadsheet className="w-5 h-5" />
                     Export Excel
@@ -340,11 +344,8 @@ const AdminStudentPage = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-100">
-                    <th className="w-12">
-                      <input type="checkbox" className="ml-4" />
-                    </th>
                     <th className="h-12 px-4">Ảnh</th>
-                    <th className="h-12 px-4">ID</th>
+                    <th className="h-12 px-4">Mã nhân sự</th>
                     <th className="h-12 px-4">{t("users.name")}</th>
                     <th className="h-12 px-4">{t("users.email")}</th>
                     <th className="h-12 px-4">{t("users.role")}</th>
@@ -356,13 +357,7 @@ const AdminStudentPage = () => {
                 <tbody>
                   {users.map((u) => (
                     <tr key={u.id} className="border-t hover:bg-slate-50">
-                      <td>
-                        <input
-                          type="checkbox"
-                          className="ml-4"
-                        />
-                      </td>
-                      <td className="px-2 h-10 flex items-center gap-2 p-6">
+                      <td className="px-4 h-10 flex items-center gap-2 p-6">
                         <img src={u.avatar_url} className="w-8 h-8 rounded-full" />
                       </td>
                       <td className="px-4">{u.user_id}</td>
@@ -561,4 +556,4 @@ const AdminStudentPage = () => {
   );
 };
 
-export default AdminStudentPage;
+export default AdminTeacherPage;
