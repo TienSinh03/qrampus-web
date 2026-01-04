@@ -17,6 +17,7 @@ import {
   BarChart,
   FolderCog,
   IdCardLanyard,
+  UserCog,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 
@@ -44,8 +45,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
 
     // khúc này admin
-    { icon: IdCardLanyard, label: 'Quản lý Nhân sự', path: '/dashboard/users' },
+    { icon: UserCog, label: 'Quản lý Tài khoản', path: '/dashboard/admin/accounts' },
+    { icon: IdCardLanyard, label: 'Quản lý Nhân sự', path: '/dashboard/admin/teachers' },
     { icon: Users, label: 'Quản lý Sinh viên', path: '/dashboard/admin/students' },
+
 
     { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/admin/survey-page' },
     { icon: ScanQrCode, label: 'Quản lý Điểm danh', path: '/dashboard/admin/qrcode' },
@@ -122,8 +125,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                     flex items-center space-x-3 px-4 py-3 rounded-lg
                     transition-all duration-200
                     ${active
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-gradient-to-r from-blue-400 to-blue-200 text-white'
+                      : 'text-gray-700 hover:bg-blue-100'
                     }
                   `}
                   onClick={() => window.innerWidth < 1024 && toggleSidebar()}
