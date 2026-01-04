@@ -3,6 +3,10 @@ import { useTranslation } from "react-i18next";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
+
+import { toast } from "sonner";
+
+
 import {
   CirclePlus,
   Trash2,
@@ -18,7 +22,7 @@ import {
   X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX,
   CheckLine,
   Lock,
-  File
+  File, Camera,
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
 const AdminAccountPage = () => {
@@ -310,51 +314,35 @@ const AdminAccountPage = () => {
               <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
                 {/* Nhóm buttons chính bên trái */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <button
-
-                    className="flex items-center gap-2 bg-emerald-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md transition-all duration-200"
-                  >
+                  {/* Kích hoạt tài khoản - Xanh lá hiện đại */}
+                  <button className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200">
                     <CheckLine className="w-5 h-5" />
                     Kích hoạt tài khoản
                   </button>
 
-                  <button className="flex items-center gap-2 bg-red-200 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-400 hover:shadow-md transition-all duration-200">
+                  {/* Khóa tài khoản - Đỏ nổi bật nhưng không chói */}
+                  <button className="flex items-center gap-2 bg-rose-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-all duration-200">
                     <Lock className="w-5 h-5" />
                     Khóa tài khoản
                   </button>
-
-                  {/* <button
-                    onClick={openDrawer}
-                    className="flex items-center gap-2 bg-blue-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-700 hover:shadow-md transition-all duration-200"
-                  >
-                    <CirclePlus className="w-5 h-5" />
-                    {t("users.addUser")}
-                  </button>
-
-
-                  <button
-                    onClick={() => setOpenUpload(true)}
-                    className="flex items-center gap-2 bg-indigo-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all duration-200"
-                  >
-                    <CloudUpload className="w-5 h-5" />
-                    {t("users.upload")}
-                  </button> */}
                 </div>
 
-                {/* Nhóm buttons phụ bên phải: Lọc, Export, Xóa lọc */}
+                {/* Nhóm buttons phụ bên phải */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <button className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200">
+                  {/* Tải Excel - Xanh dương lá chuyên nghiệp */}
+                  <button className="flex items-center gap-2 bg-teal-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
                     <FileSpreadsheet className="w-5 h-5" />
-                    Export Excel
+                    Tải Excel
                   </button>
-                  <button className="flex items-center gap-2 bg-orange-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-orange-700 hover:shadow-md transition-all duration-200">
+
+                  {/* Tải PDF - Cam/đỏ nhẹ nhàng */}
+                  <button className="flex items-center gap-2 bg-amber-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
                     <File className="w-5 h-5" />
                     Tải PDF
                   </button>
 
-
-
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200">
+                  {/* Xóa bộ lọc - Style outline tinh tế */}
+                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
                     <FilterX className="w-5 h-5" />
                     Xóa bộ lọc
                   </button>
@@ -372,7 +360,7 @@ const AdminAccountPage = () => {
                       <input type="checkbox" className="ml-4" />
                     </th>
                     <th className="h-12 px-4">Ảnh</th>
-                    <th className="h-12 px-4">ID</th>
+                    <th className="h-12 px-4">MGV-MSSV</th>
                     <th className="h-12 px-4">{t("users.name")}</th>
                     <th className="h-12 px-4">{t("users.email")}</th>
                     <th className="h-12 px-4">{t("users.role")}</th>
@@ -410,8 +398,12 @@ const AdminAccountPage = () => {
 
                       <td className="px-4">
                         <div className="flex gap-3">
-                          <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
-                          <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
+                          <button title="Xóa" alt="Xóa">
+                            <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
+                          </button>
+                          <button title="Xem chi tiết" alt="Xem chi tiết">
+                            <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
+                          </button>
                           {/* More Menu */}
                           <div className="relative">
                             <MoreVertical
@@ -426,15 +418,33 @@ const AdminAccountPage = () => {
                               <div className="absolute mt-2 w-25 bg-white shadow-lg rounded-md border z-20">
                                 <button
                                   className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  onClick={() => console.log("Edit", u.id)}
+                                  title="Chỉnh sửa"
+                                  // onClick={() => console.log("Edit", u.id)}
+                                  onClick={openDrawer}
                                 >
                                   <PencilLine className="inline w-4 h-4 mr-2" />
                                 </button>
                                 <button
                                   className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  onClick={() => console.log("Lock", u.id)}
+                                  title="Khóa tài khoản"
+                                  onClick={() =>
+                                    toast.error("Bạn muốn khóa tài khoản này?", {
+                                      action: {
+                                        label: "Yes",
+                                        onClick: () => {
+                                          // xử lý khóa tài khoản
+                                          console.log("Lock user", u.id);
+                                          toast.success("Đã khóa tài khoản");
+                                        },
+                                      },
+                                      cancel: {
+                                        label: "No",
+                                      },
+                                    })
+                                  }
                                 >
                                   <LockKeyhole className="inline w-4 h-4 mr-2" />
+
                                 </button>
                               </div>
                             )}
@@ -459,128 +469,168 @@ const AdminAccountPage = () => {
 
             {isDrawerOpen && (
               <>
+                {/* Overlay */}
                 <div
-                  className="fixed inset-0 bg-black bg-opacity-50 z-[1000]"
+                  className="fixed inset-0 bg-black/50 z-[999]"
                   onClick={closeDrawer}
                 />
 
-                {/* Drawer từ bên phải trượt ra */}
-                <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
-                  {/* Header Drawer */}
-                  <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-lime-100">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-800">
-                        Thêm hồ sơ Giảng viên
-                      </h3>
-                    </div>
+                {/* Drawer */}
+                <div className=" fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl  flex flex-col">
+                  {/* ================= HEADER ================= */}
+                  <div className="flex items-center justify-between px-6 py-5 border-b bg-blue-300">
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      Cập nhật hồ sơ tài khoản
+                    </h3>
+
                     <button
                       onClick={closeDrawer}
-                      className="text-gray-500 hover:text-gray-700 focus:outline-none  rounded-full hover:bg-lime-400 transition-all  duration-300 ease-in-out p-2 hover:rotate-90"
+                      className="p-2 rounded-full text-gray-600 hover:text-gray-800 hover:bg-lime-300 transition-all duration-300 hover:rotate-90"
                     >
-                      <X size={16} />
+                      <X size={18} />
                     </button>
                   </div>
 
-                  {/* Body Form */}
-                  <div className="p-6 overflow-y-auto h-full pb-32">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mã giảng viên
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Họ tên Giảng viên
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Ngày sinh
-                        </label>
-                        <input
-                          type="date"
-                          className="w-full border  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Khoa/Viện
-                        </label>
-                        <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                          <option>Khoa Công nghệ thông tin</option>
-                          <option>Khoa Điện tử - Viễn thông</option>
-                          <option>Khoa Cơ khí</option>
-                          <option>Khoa Kinh tế</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Số điện thoại
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Phân quyền tài khoản
-                        </label>
-                        <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                          <option>Giảng viên</option>
-                          <option>Quản trị viên</option>
-                          <option>Bộ phận chấm công</option>
-                        </select>
-                      </div>
-
-                      {/* ảnh đại diện */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Ảnh đại diện
-                        </label>
-                        <input
-                          type="file"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
+                  {/* ================= BODY (SCROLL) ================= */}
+                  <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Cập nhật mật khẩu mới
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Xác nhận mật khẩu mới
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mã giảng viên / Sinh viên
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Họ tên Giảng viên
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày sinh
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Khoa / Viện
+                      </label>
+                      <select className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
+                        <option>Khoa Công nghệ thông tin</option>
+                        <option>Khoa Điện tử - Viễn thông</option>
+                        <option>Khoa Cơ khí</option>
+                        <option>Khoa Kinh tế</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Số điện thoại
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phân quyền tài khoản
+                      </label>
+                      <select className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                        <option>Giảng viên</option>
+                        <option>Quản trị viên</option>
+                        <option>Bộ phận chấm công</option>
+                      </select>
+                    </div>
+
+                    {/* Ảnh đại diện */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ảnh đại diện
+                      </label>
+                      <input
+                        type="file"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+                    {/* thiết kế khung ảnh hiện tại */}
+                    <div className="relative w-28 h-28 mx-auto">
+                      <img
+                        src={"https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png"}
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                      <label
+                        htmlFor="avatar-upload"
+                        className="absolute bottom-0 right-0 bg-sky-500 p-2 rounded-full text-white shadow hover:bg-sky-600 cursor-pointer"
+                      >
+                        <Camera size={16} />
+                      </label>
+                    </div>
+
                   </div>
 
-                  {/* Footer Buttons - Fixed bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 flex justify-end gap-4 px-6 py-5 border-t border-gray-200 bg-white">
+                  {/* ================= FOOTER ================= */}
+                  <div className=" sticky bottom-0 flex justify-end gap-4 px-6 py-4 border-t bg-white/90 backdrop-blur">
                     <button
                       onClick={closeDrawer}
-                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                      className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
                     >
                       Hủy
                     </button>
-                    <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                      Tạo hồ sơ
+
+                    <button
+                      className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+                    >
+                      Lưu thay đổi
                     </button>
                   </div>
                 </div>
               </>
             )}
+
           </div>
         </div>
       </div>

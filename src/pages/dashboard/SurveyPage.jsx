@@ -7,7 +7,7 @@ import {
   Filter,
   ChevronDown,
   CheckCircle2,
-  Eye,
+  Eye, ArrowDownToLine, FileSpreadsheet, FilterX, File, Settings
 } from "lucide-react";
 
 export default function LecturerSurveyManagement() {
@@ -68,6 +68,19 @@ export default function LecturerSurveyManagement() {
     ? (filtered.reduce((s, i) => s + i.trungbinhdanhgia, 0) / filtered.length).toFixed(1)
     : "0.0";
 
+
+  // cột , bảng
+  const [visibleCols, setVisibleCols] = useState({
+    mahocphan: true,
+    lop: true,
+    nhomthuchanh: true,
+    sobuoidiemdanh: false,
+    svkhaosat: true,
+    tyle: true,
+    tbkhaosat: true,
+    detail: true,
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto">
@@ -118,7 +131,7 @@ export default function LecturerSurveyManagement() {
                   <Star size={18} />
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Điểm TB
+                  Trung bình điểm đánh giá
                 </p>
               </div>
 
@@ -203,28 +216,64 @@ export default function LecturerSurveyManagement() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-3 mt-6">
-            <button className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.3-4.3" />
-              </svg>
-              Lọc
-            </button>
+          <div className="flex flex-wrap gap-3 mt-6 justify-end">
+            <div className="flex flex-wrap items-center gap-3">
+              <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
+                <FileSpreadsheet className="w-5 h-5" />
+                Tải Excel
+              </button>
+              <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-50 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
+                <File className="w-5 h-5" />
+                Tải PDF
+              </button>
+              <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+                <FilterX className="w-5 h-5" />
+                Xóa bộ lọc
+              </button>
 
-            <button className="flex items-center gap-2 border border-green-600 text-green-600 px-5 py-2 rounded-lg hover:bg-green-50">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-8 14H8v-4h3v4zm0-6H8V7h3v4zm5 6h-3v-7h3v7zm0-9h-3V7h3v1z" />
-              </svg>
-              Export Excel
-            </button>
+              <details className="relative">
+                <summary className="list-none flex items-center gap-2 border border-sky-300 text-sky-700 bg-white px-5 py-2.5 rounded-lg font-medium cursor-pointer hover:bg-sky-50 hover:border-sky-400 hover:text-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 transition-all duration-200">
+                  <Settings className="w-5 h-5" />
+                  Hiển thị cột
+                </summary>
 
-            <button className="flex items-center gap-2 border px-5 py-2 rounded-lg hover:bg-gray-100">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Xóa bộ lọc
-            </button>
+                <div className="absolute right-0 mt-2 w-100% bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-20 text-sm">
+                  {[
+                    ["mahocphan", "Học phần"],
+                    ["lop", "Lớp"],
+                    ["nhomthuchanh", "Nhóm thực hành"],
+                    ["sobuoidiemdanh", "Số buổi điểm danh"],
+                    ["svkhaosat", "SV khảo sát"],
+                    ["tyle", "Tỷ lệ"],
+                    ["tbkhaosat", "TB khảo sát"],
+                    ["detail", "Chi tiết"],
+                  ].map(([key, label]) => {
+                    const active = visibleCols[key];
+
+                    return (
+                      <div
+                        key={key}
+                        onClick={() =>
+                          setVisibleCols(prev => ({
+                            ...prev,
+                            [key]: !prev[key],
+                          }))
+                        }
+                        className={`px-3 py-2 rounded cursor-pointer flex items-center justify-between transition
+            ${active
+                            ? "bg-sky-50 text-sky-600 font-medium"
+                            : "hover:bg-gray-50 text-gray-700"
+                          }`}
+                      >
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
+
+
+            </div>
           </div>
         </div>
 
@@ -234,53 +283,108 @@ export default function LecturerSurveyManagement() {
             <table className="w-full">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    Học phần
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
-                    Lớp
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold">
-                    SV khảo sát
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold">
-                    Tỷ lệ
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold">
-                    Điểm TB
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold">
-                    Chi tiết
-                  </th>
+                  {visibleCols.mahocphan && (
+                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                      Học phần
+                    </th>
+                  )}
+
+                  {visibleCols.lop && (
+                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                      Lớp
+                    </th>
+                  )}
+
+                  {visibleCols.nhomthuchanh && (
+                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                      Nhóm thực hành
+                    </th>
+                  )}
+
+                  {visibleCols.sobuoidiemdanh && (
+                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                      Số buổi điểm danh
+                    </th>
+                  )}
+
+                  {visibleCols.svkhaosat && (
+                    <th className="px-6 py-4 text-center text-sm font-semibold">
+                      SV khảo sát
+                    </th>
+                  )}
+
+                  {visibleCols.tyle && (
+                    <th className="px-6 py-4 text-center text-sm font-semibold">
+                      Tỷ lệ
+                    </th>
+                  )}
+
+                  {visibleCols.tbkhaosat && (
+                    <th className="px-6 py-4 text-center text-sm font-semibold">
+                      TB khảo sát
+                    </th>
+                  )}
+
+                  {visibleCols.detail && (
+                    <th className="px-6 py-4 text-center text-sm font-semibold">
+                      Chi tiết
+                    </th>
+                  )}
                 </tr>
               </thead>
 
+
               <tbody className="divide-y">
-                {filtered.map((item) => (
+                {filtered.map(item => (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium">
-                      {item.tenHP}
-                      <div className="text-sm text-gray-500">{item.maHP}</div>
-                    </td>
-                    <td className="px-6 py-4">{item.lop}</td>
-                    <td className="px-6 py-4 text-center">
-                      {item.daKhaoSat}/{item.soSV}
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold">
-                      {item.tyLe}%
-                    </td>
-                    <td className="px-6 py-4 text-center text-amber-600 font-bold">
-                      {item.trungbinhdanhgia}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button className="p-2 rounded-full hover:bg-gray-100">
-                        <Eye size={18} />
-                      </button>
-                    </td>
+                    {visibleCols.mahocphan && (
+                      <td className="px-6 py-4 font-medium">
+                        {item.tenHP}
+                        <div className="text-sm text-gray-500">{item.maHP}</div>
+                      </td>
+                    )}
+
+                    {visibleCols.lop && (
+                      <td className="px-6 py-4">{item.lop}</td>
+                    )}
+
+                    {visibleCols.nhomthuchanh && (
+                      <td className="px-6 py-4">ĐIỀN SỐ NHÓM</td>
+                    )}
+
+                    {visibleCols.sobuoidiemdanh && (
+                      <td className="px-6 py-4">LẤY SỐ BUỔI TẠO QR</td>
+                    )}
+
+                    {visibleCols.svkhaosat && (
+                      <td className="px-6 py-4 text-center">
+                        {item.daKhaoSat}/{item.soSV}
+                      </td>
+                    )}
+
+                    {visibleCols.tyle && (
+                      <td className="px-6 py-4 text-center font-bold">
+                        {item.tyLe}%
+                      </td>
+                    )}
+
+                    {visibleCols.tbkhaosat && (
+                      <td className="px-6 py-4 text-center text-amber-600 font-bold">
+                        {item.trungbinhdanhgia}
+                      </td>
+                    )}
+
+                    {visibleCols.detail && (
+                      <td className="px-6 py-4 text-center">
+                        <button className="p-2 rounded-full hover:bg-gray-100">
+                          <Eye size={18} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
-
               </tbody>
+
             </table>
           </div>
         </div>

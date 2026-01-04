@@ -128,6 +128,8 @@ const AdminTeacherPage = () => {
   };
   const [expanded, setExpanded] = useState(false);
 
+  // CỘT, BẢNG
+
   return (
 
     <div className="min-h-screen">
@@ -298,20 +300,20 @@ const AdminTeacherPage = () => {
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     onClick={openDrawer}
-                    className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200"
+                    className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200"
                   >
                     <CirclePlus className="w-5 h-5" />
                     {t("users.addUser")}
                   </button>
 
-                  <button className="flex items-center gap-2 bg-red-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-700 hover:shadow-md transition-all duration-200">
+                  <button className="flex items-center gap-2 bg-rose-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-all duration-200">
                     <Trash2 className="w-5 h-5" />
                     {t("users.deleteUser")}
                   </button>
 
                   <button
                     onClick={() => setOpenUpload(true)}
-                    className="flex items-center gap-2 bg-indigo-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all duration-200"
+                    className="flex items-center gap-2 bg-amber-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200"
                   >
                     <CloudUpload className="w-5 h-5" />
                     {t("users.upload")}
@@ -320,17 +322,16 @@ const AdminTeacherPage = () => {
 
                 {/* Nhóm buttons phụ bên phải: Lọc, Export, Xóa lọc */}
                 <div className="flex flex-wrap items-center gap-3">
-
-                  <button className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200">
+                  <button className="flex items-center gap-2 bg-cyan-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-cyan-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-all duration-200">
                     <ArrowDownToLine className="w-5 h-5" />
                     Tải mẫu Excel
                   </button>
-                  <button className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200">
+                  <button className="flex items-center gap-2 bg-teal-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
                     <FileSpreadsheet className="w-5 h-5" />
-                    Export Excel
+                    Tải Excel
                   </button>
 
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200">
+                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
                     <FilterX className="w-5 h-5" />
                     Xóa bộ lọc
                   </button>
@@ -344,6 +345,9 @@ const AdminTeacherPage = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-100">
+                    <th className="w-12">
+                      <input type="checkbox" className="ml-4" />
+                    </th>
                     <th className="h-12 px-4">Ảnh</th>
                     <th className="h-12 px-4">Mã nhân sự</th>
                     <th className="h-12 px-4">{t("users.name")}</th>
@@ -357,7 +361,13 @@ const AdminTeacherPage = () => {
                 <tbody>
                   {users.map((u) => (
                     <tr key={u.id} className="border-t hover:bg-slate-50">
-                      <td className="px-4 h-10 flex items-center gap-2 p-6">
+                      <td>
+                        <input
+                          type="checkbox"
+                          className="ml-4"
+                        />
+                      </td>
+                      <td className="px-2 h-10 flex items-center gap-2 p-6">
                         <img src={u.avatar_url} className="w-8 h-8 rounded-full" />
                       </td>
                       <td className="px-4">{u.user_id}</td>
@@ -551,7 +561,7 @@ const AdminTeacherPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
 
   );
 };
