@@ -8,7 +8,7 @@ import {
   QrCode,
   Filter,
   ChevronDown, TrendingUp, Star,
-  ArrowDown, ArrowUp
+  ArrowDown, ArrowUp, FileSpreadsheet, File, FilterX, Eye, Settings
 } from "lucide-react";
 
 export default function TeacherAttendancePage() {
@@ -30,8 +30,11 @@ export default function TeacherAttendancePage() {
     {
       date: "10/12/2025",
       time: "07:30 - 09:10",
-      courseCode: "INT3306 3",
+      courseCode: "421234567890",
       courseName: "Phát triển ứng dụng Web",
+      id_usercreate: "10100001",
+      name_usercreate: "Nguyễn Văn An",
+      group: "1",
       room: "301-B3",
       createdAt: "07:25", // giờ tạo QR
       status: "onTime", // onTime | late | manual | missing
@@ -39,8 +42,11 @@ export default function TeacherAttendancePage() {
     {
       date: "09/12/2025",
       time: "09:20 - 11:00",
-      courseCode: "INT3306 3",
+      courseCode: "421234523890",
       courseName: "Phát triển ứng dụng Web",
+      id_usercreate: "10100001",
+      name_usercreate: "Nguyễn Văn An",
+      group: "2",
       room: "301-B3",
       createdAt: "09:30",
       status: "late",
@@ -48,9 +54,12 @@ export default function TeacherAttendancePage() {
     {
       date: "08/12/2025",
       time: "13:30 - 15:10",
-      courseCode: "INT3401",
+      courseCode: "421233237890",
       courseName: "Lập trình di động",
+      id_usercreate: "00100001",
+      name_usercreate: "Admin",
       room: "204-B4",
+      group: "",
       createdAt: null,
       status: "manual",
       note: "Đã chấm tay do quên tạo QR",
@@ -93,6 +102,20 @@ export default function TeacherAttendancePage() {
 
 
   const [expanded, setExpanded] = useState(false);
+
+  // cột , bảng
+  const [visibleCols, setVisibleCols] = useState({
+    date: true,
+    time: true,
+    course: true,
+    room: false,
+    createdAt: true,
+    creator: true,
+    group: true,
+    status: true,
+    detail: true,
+  });
+
 
 
   return (
@@ -281,91 +304,169 @@ export default function TeacherAttendancePage() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-3 mt-6">
-            <button className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.3-4.3" />
-              </svg>
-              Lọc
-            </button>
+          <div className="flex flex-wrap gap-3 mt-6 justify-end">
+            <div className="flex flex-wrap items-center gap-3">
+              <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
+                <FileSpreadsheet className="w-5 h-5" />
+                Tải Excel
+              </button>
+              <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none hover:bg-amber-50 focus:ring-1 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
+                <File className="w-5 h-5" />
+                Tải PDF
+              </button>
+              <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+                <FilterX className="w-5 h-5" />
+                Xóa bộ lọc
+              </button>
 
-            <button className="flex items-center gap-2 border border-green-600 text-green-600 px-5 py-2 rounded-lg hover:bg-green-50">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-8 14H8v-4h3v4zm0-6H8V7h3v4zm5 6h-3v-7h3v7zm0-9h-3V7h3v1z" />
-              </svg>
-              Export Excel
-            </button>
 
-            <button className="flex items-center gap-2 border px-5 py-2 rounded-lg hover:bg-gray-100">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Xóa bộ lọc
-            </button>
+
+
+              <details className="relative">
+                <summary className="list-none flex items-center gap-2 border border-sky-300 text-sky-700 bg-sky px-5 py-2.5 rounded-lg font-medium cursor-pointer hover:bg-sky-50 hover:border-sky-400 hover:text-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 transition-all duration-200">
+                  <Settings className="w-5 h-5" />
+                  Hiển thị cột
+                </summary>
+
+                <div className="absolute right-0 mt-2 w-100% bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-20 text-sm">
+                  {[
+                    ["date", "Ngày"],
+                    ["time", "Thời gian"],
+                    ["course", "Môn học"],
+                    ["room", "Phòng"],
+                    ["createdAt", "Giờ tạo QR"],
+                    ["creator", "Người tạo"],
+                    ["group", "Nhóm thực hành"],
+                    ["status", "Trạng thái"],
+                    ["detail", "Chi tiết"],
+                  ].map(([key, label]) => {
+                    const active = visibleCols[key];
+
+                    return (
+                      <div
+                        key={key}
+                        onClick={() =>
+                          setVisibleCols(prev => ({
+                            ...prev,
+                            [key]: !prev[key],
+                          }))
+                        }
+                        className={`px-3 py-2 rounded cursor-pointer flex items-center justify-between transition
+            ${active
+                            ? "bg-sky-50 text-sky-600 font-medium"
+                            : "hover:bg-gray-50 text-gray-700"
+                          }`}
+                      >
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
+
+
+            </div>
+
           </div>
         </div>
 
         {/* Sessions Table */}
+
         <div className="bg-white rounded-b-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                    Ngày
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                    Thời gian
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                    Môn học
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                    Phòng
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                    Giờ tạo QR
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                    Trạng thái
-                  </th>
+                  {visibleCols.date && <th className="px-6 py-4">Ngày </th>}
+                  {visibleCols.time && <th className="px-6 py-4">Thời gian</th>}
+                  {visibleCols.course && <th className="px-6 py-4">Môn học</th>}
+                  {visibleCols.room && <th className="px-6 py-4">Phòng</th>}
+                  {visibleCols.createdAt && <th className="px-6 py-4">Giờ tạo QR</th>}
+                  {visibleCols.creator && <th className="px-6 py-4">Người tạo</th>}
+                  {visibleCols.group && <th className="px-6 py-4">Nhóm thực hành</th>}
+                  {visibleCols.status && (
+                    <th className="px-6 py-4 text-center">Trạng thái</th>
+                  )}
+                  {visibleCols.detail && <th className="px-6 py-4">Chi tiết</th>}
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-gray-200">
                 {filteredSessions.map((session, i) => (
                   <tr key={i} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 font-medium">{session.date}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1">
-                        <Clock size={16} />
-                        {session.time}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
+
+                    {visibleCols.date && (
+                      <td className="px-6 py-4 font-medium">{session.date}</td>
+                    )}
+
+                    {visibleCols.time && (
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1">
+                          <Clock size={16} />
+                          {session.time}
+                        </div>
+                      </td>
+                    )}
+
+                    {visibleCols.course && (
+                      <td className="px-6 py-4">
                         <p className="font-medium">{session.courseCode}</p>
                         <p className="text-sm text-gray-600">
                           {session.courseName}
                         </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{session.room}</td>
-                    <td className="px-6 py-4">
-                      {session.createdAt ? (
-                        <span className="text-sm">{session.createdAt}</span>
-                      ) : (
-                        <span className="text-red-600 text-sm">
-                          — Chưa tạo —
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {getStatusBadge(session.status)}
-                    </td>
+                      </td>
+                    )}
+
+                    {visibleCols.room && (
+                      <td className="px-6 py-4 text-gray-600">{session.room}</td>
+                    )}
+
+                    {visibleCols.createdAt && (
+                      <td className="px-6 py-4">
+                        {session.createdAt ? (
+                          <span className="text-sm">{session.createdAt}</span>
+                        ) : (
+                          <span className="text-red-600 text-sm">— Chưa tạo —</span>
+                        )}
+                      </td>
+                    )}
+
+                    {visibleCols.creator && (
+                      <td className="px-6 py-4">
+                        <p className="font-medium">{session.name_usercreate}</p>
+                        <p className="text-sm text-gray-600">
+                          {session.id_usercreate}
+                        </p>
+                      </td>
+                    )}
+
+                    {visibleCols.group && (
+                      <td className="px-6 py-4 text-center">
+                        {session.group || "—"}
+                      </td>
+                    )}
+
+                    {visibleCols.status && (
+                      <td className="px-6 py-4 text-center">
+                        {getStatusBadge(session.status)}
+                      </td>
+                    )}
+
+                    {visibleCols.detail && (
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          className="p-2 rounded-full hover:bg-gray-100"
+                          title="Xem chi tiết điểm danh"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      </td>
+                    )}
+
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         </div>
