@@ -7,7 +7,7 @@ import {
   Filter,
   ChevronDown,
   CheckCircle2,
-  Eye, ArrowDownToLine, FileSpreadsheet, FilterX, File, Settings
+  Eye, ArrowDownToLine, FileSpreadsheet, FilterX, File, Settings, X, Camera
 } from "lucide-react";
 
 export default function LecturerSurveyManagement() {
@@ -80,6 +80,9 @@ export default function LecturerSurveyManagement() {
     tbkhaosat: true,
     detail: true,
   });
+  // drawer xuất excel
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const closeDrawer = () => setIsDrawerOpen(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -218,7 +221,7 @@ export default function LecturerSurveyManagement() {
           {/* Actions */}
           <div className="flex flex-wrap gap-3 mt-6 justify-end">
             <div className="flex flex-wrap items-center gap-3">
-              <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
+              <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200" onClick={() => setIsDrawerOpen(true)}>
                 <FileSpreadsheet className="w-5 h-5" />
                 Tải Excel
               </button>
@@ -389,6 +392,110 @@ export default function LecturerSurveyManagement() {
           </div>
         </div>
       </div>
+      {/* xuất excel */}
+      {isDrawerOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50 z-[999]"
+            onClick={closeDrawer}
+          />
+
+          {/* Drawer */}
+          <div className=" fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl  flex flex-col">
+            {/* ================= HEADER ================= */}
+            <div className="flex items-center justify-between px-6 py-5 border-b bg-blue-300">
+              <h3 className="text-xl font-semibold text-gray-800">
+                Hỗ trợ xuất Excel
+              </h3>
+
+              <button
+                onClick={closeDrawer}
+                className="p-2 rounded-full text-gray-600 hover:text-gray-800 hover:bg-lime-300 transition-all duration-300 hover:rotate-90"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* ================= BODY (SCROLL) ================= */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đặt tên file Excel
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tên Sheet
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ngày sinh
+                </label>
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Chọn cột xuất Excel
+                </label>
+                <div className="space-y-2 mt-2">
+                  {Object.entries(visibleCols).map(([key, isVisible]) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={isVisible}
+                        onChange={() =>
+                          setVisibleCols((prev) => ({
+                            ...prev,
+                            [key]: !prev[key],
+
+                          }))
+                        }
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-gray-700 capitalize">
+                        {key.replace(/([A-Z])/g, ' $1')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            </div>
+
+            {/* ================= FOOTER ================= */}
+            <div className=" sticky bottom-0 flex justify-end gap-4 px-6 py-4 border-t bg-white/90 backdrop-blur">
+              <button
+                onClick={closeDrawer}
+                className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
+              >
+                Hủy
+              </button>
+
+              <button
+                className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+              >
+                Xuất Excel
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { Edit, Eye, IdCard, Table2 } from "lucide-react";
+import {
+    Edit, Eye, IdCard, Table2,
+    ArrowDown, ArrowUp
+
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 
@@ -77,39 +81,150 @@ const StudentStudySession = () => {
             </span>
         );
     };
+    const [expanded, setExpanded] = useState(false);
 
     return (
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="rounded-xl bg-white p-6 shadow-sm">
             {/* Switch View + Search */}
-            <div className="mb-6 flex items-center gap-4">
-                <div className="inline-flex rounded-lg shadow-sm bg-gray-200 p-1">
-                    {[
-                        { type: "table", icon: <Table2 className="w-4 h-4 mr-2" />, label: "Table" },
-                        { type: "card", icon: <IdCard className="w-4 h-4 mr-2" />, label: "Card" },
-                    ].map((btn) => (
-                        <button
-                            key={btn.type}
-                            onClick={() => setView(btn.type)}
-                            className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all ${view === btn.type
-                                ? "bg-blue-600 text-white"
-                                : "text-gray-700 hover:bg-gray-300"
-                                }`}
-                        >
-                            {btn.icon}
-                            {btn.label}
-                        </button>
-                    ))}
+
+
+            <div className="bg-white">
+                {/* Header */}
+                <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
+                    <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+                    </svg>
+                    <span>Bộ lọc thống kê</span>
+                    <button onClick={() => setExpanded(!expanded)} className="flex items-center text-blue-600 hover:text-blue-800 ml-auto">
+                        {expanded ? (
+                            <>
+                                <ArrowUp size={16} className="mr-1" />
+                                Thu gọn
+                            </>
+                        ) : (
+                            <>
+                                <ArrowDown size={16} className="mr-1" />
+                                Mở rộng bộ lọc
+                            </>
+                        )}
+                    </button>
                 </div>
 
-                {/* SEARCH BAR */}
-                <input
-                    type="text"
-                    placeholder="Tìm kiếm..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg w-64 focus:ring-2 focus:ring-blue-500 outline-none"
-                />
+                {/* Form */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Mã số sinh viên
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Ví dụ: 4203001549"
+                            className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Họ và tên
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full rounded-lg border px-3 py-2"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Khoa/Viện
+                        </label>
+                        <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option>Khoa Công nghệ thông tin</option>
+                            <option>Khoa Điện tử - Viễn thông</option>
+                            <option>Khoa Cơ khí</option>
+                            <option>Khoa Kinh tế</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Trạng thái
+                        </label>
+                        <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option>Đang hoạt động</option>
+                            <option>Tạm ngưng</option>
+                            <option>Đã xóa</option>
+                        </select>
+                    </div>
+                    {expanded && (
+                        <>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Mail
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Ví dụ: ...."
+                                    className="w-full rounded-lg border px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Số điện thoại
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Ví dụ: ...."
+                                    className="w-full rounded-lg border px-3 py-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Ngày sinh
+                                </label>
+                                <input
+                                    type="date"
+                                    placeholder="Ví dụ: ...."
+                                    className="w-full rounded-lg border px-3 py-2"
+                                />
+                            </div>
+                        </>
+                    )}
+
+
+                </div>
             </div>
+
+            <div className="mt-6 mb-6 flex items-center gap-4">
+                <div className="inline-flex rounded-lg bg-gray-200 p-1 shadow-sm">
+                    {[
+                        { type: "table", icon: Table2, label: "Table" },
+                        { type: "card", icon: IdCard, label: "Card" },
+                    ].map(({ type, icon: Icon, label }) => {
+                        const active = view === type;
+
+                        return (
+                            <button
+                                key={type}
+                                onClick={() => setView(type)}
+                                className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all
+                                     ${active
+                                        ? "bg-blue-400 text-white shadow"
+                                        : "text-gray-700 hover:bg-gray-300"
+                                    }`}
+                            >
+                                <Icon className="w-4 h-4 mr-2" />
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
 
             {/* TABLE VIEW */}
             {view === "table" && (
@@ -117,7 +232,7 @@ const StudentStudySession = () => {
                     <thead>
                         <tr className="bg-gray-100">
                             <th className="border-b py-3 px-4 text-left">Avatar</th>
-                            <th className="border-b py-3 px-4 text-left">#ID</th>
+                            <th className="border-b py-3 px-4 text-left">MSSV</th>
                             <th className="border-b py-3 px-4 text-left">Full Name</th>
                             <th className="border-b py-3 px-4 text-left">Email</th>
                             <th className="border-b py-3 px-4 text-left">Role</th>

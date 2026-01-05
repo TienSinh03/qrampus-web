@@ -11,6 +11,9 @@ import {
   Rocket,
   Mail,
   ChevronDown,
+  UserCheck,
+  UserLock,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useAuth } from "@contexts/AuthContext";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
@@ -254,22 +257,35 @@ const Header = ({ toggleSidebar }) => {
                   className="fixed inset-0 z-40"
                   onClick={() => setOpenUserMenu(false)}
                 />
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-100">
+                <div className="absolute right-0 mt-2 w-100% bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+                  {/* <div className="px-4 py-3 border-b border-gray-100">
                     <p className="font-semibold text-gray-900">{user?.name}</p>
                     <p className="text-sm text-gray-500">{user?.email}</p>
+                  </div> */}
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="font-semibold text-gray-900">Chào mừng đã trở lại</p>
                   </div>
                   <button
                     onClick={() => navigate("/dashboard/account-setting")}
                     className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
                   >
+                    <UserCheck className="w-4 h-4 inline-block mr-2" />
                     Hồ sơ cá nhân
                   </button>
                   <button
                     onClick={() => navigate("/dashboard/change-password")}
                     className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
                   >
+                    <UserLock className="w-4 h-4 inline-block mr-2" />
                     Đổi mật khẩu
+                  </button>
+
+                  <button
+                    onClick={() => navigate("/dashboard/change-password")}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
+                  >
+                    <ArrowLeftRight className="w-4 h-4 inline-block mr-2" />
+                    Đổi vai trò
                   </button>
                   <hr className="my-1" />
                   <button className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
