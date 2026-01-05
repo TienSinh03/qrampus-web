@@ -270,7 +270,7 @@ const SchedulePage = () => {
         {/* TABLE */}
         <div className="bg-white rounded-b-xl shadow border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-blue-900 text-white">
+            <thead className="bg-sky-500 text-white">
               <tr>
                 <th className="py-4 w-32">Ca học</th>
                 {weekDates.map((d) => (

@@ -9,7 +9,7 @@ import {
   AlertCircle,
   ChevronDown,
   TrendingUp,
-  Star, ArrowDown, ArrowUp
+  Star, ArrowDown, ArrowUp, FileSpreadsheet, File, FilterX
 } from "lucide-react";
 
 export default function LeavePage() {
@@ -304,28 +304,28 @@ export default function LeavePage() {
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-3 mt-6">
-          <button className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.3-4.3" />
-            </svg>
-            Lọc
-          </button>
+        <div className="flex flex-wrap gap-3 mt-6 justify-end">
+          <div className="flex flex-wrap items-center gap-3">
+            <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
+              <FileSpreadsheet className="w-5 h-5" />
+              Tải Excel
+            </button>
+            <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none hover:bg-amber-50 focus:ring-1 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
+              <File className="w-5 h-5" />
+              Tải PDF
+            </button>
+            <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+              <FilterX className="w-5 h-5" />
+              Xóa bộ lọc
+            </button>
 
-          <button className="flex items-center gap-2 border border-green-600 text-green-600 px-5 py-2 rounded-lg hover:bg-green-50">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-8 14H8v-4h3v4zm0-6H8V7h3v4zm5 6h-3v-7h3v7zm0-9h-3V7h3v1z" />
-            </svg>
-            Export Excel
-          </button>
 
-          <button className="flex items-center gap-2 border px-5 py-2 rounded-lg hover:bg-gray-100">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Xóa bộ lọc
-          </button>
+
+
+
+
+          </div>
+
         </div>
       </div>
 
