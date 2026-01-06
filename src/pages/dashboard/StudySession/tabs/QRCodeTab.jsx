@@ -4,8 +4,8 @@ const QRCodeTab = () => {
     const qrList = [
         {
             id: 1,
-            maHP: "IT001",
-            tenHP: "Lập trình Web",
+            maHP: "42345677843",
+            tenHP: "Lập trình web nâng cao",
             thoiGianTao: "2025-01-12 08:00",
             thoiGianKT: "2025-01-12 09:30",
             maGV: "GV001",
@@ -15,19 +15,19 @@ const QRCodeTab = () => {
         },
         {
             id: 2,
-            maHP: "IT002",
-            tenHP: "Cơ sở dữ liệu",
+            maHP: "42345677843",
+            tenHP: "Lập trình web nâng cao",
             thoiGianTao: "2025-01-14 10:00",
             thoiGianKT: "2025-01-14 11:30",
-            maGV: "GV002",
+            maGV: "GV001",
             loailich: "LT",
             nhomTH: "",
-            tenGV: "Trần Thị B",
+            tenGV: "Nguyễn Văn A",
         },
         {
             id: 3,
-            maHP: "IT003",
-            tenHP: "Cấu trúc dữ liệu",
+            maHP: "42345677843",
+            tenHP: "Lập trình web nâng cao",
             thoiGianTao: "2025-01-15 13:30",
             thoiGianKT: "2025-01-15 15:00",
             maGV: "GV003",
@@ -38,7 +38,7 @@ const QRCodeTab = () => {
     ];
 
     return (
-        <div className="rounded-xl bg-white p-6 shadow-sm">
+        <div className="rounded-b-xl bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold">QR Điểm danh</h2>
             <p className="mt-2 mb-6 text-gray-600">Danh sách QR đã tạo cho học phần.</p>
 

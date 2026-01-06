@@ -35,6 +35,7 @@ import AdminAccountPage from "@pages/dashboard/admin/AdminAccountPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
+import RoleSwitchPage from "@pages/dashboard/RoleSwitchPage";
 
 import LayoutMain from "@components/layout/LayoutMain";
 
@@ -61,6 +62,12 @@ const router = createBrowserRouter([
       </PublicRoute>
     ),
   },
+  {
+    path: "/role",
+    element: <RoleSwitchPage />,
+  },
+
+
 
   // Private routes (requires login)
   {

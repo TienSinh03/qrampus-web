@@ -281,7 +281,7 @@ const Header = ({ toggleSidebar }) => {
                   </button>
 
                   <button
-                    onClick={() => navigate("/dashboard/change-password")}
+                    onClick={() => navigate("/role")}
                     className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
                   >
                     <ArrowLeftRight className="w-4 h-4 inline-block mr-2" />

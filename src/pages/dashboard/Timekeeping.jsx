@@ -331,10 +331,10 @@ export default function TeacherAttendancePage() {
                 <FileSpreadsheet className="w-5 h-5" />
                 Tải Excel
               </button>
-              <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none hover:bg-amber-50 focus:ring-1 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
+              {/* <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none hover:bg-amber-50 focus:ring-1 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
                 <File className="w-5 h-5" />
                 Tải PDF
-              </button>
+              </button> */}
               <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
                 <FilterX className="w-5 h-5" />
                 Xóa bộ lọc

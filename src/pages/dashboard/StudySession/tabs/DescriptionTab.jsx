@@ -46,7 +46,7 @@ const DescriptionTab = () => {
         <div className="grid gap-6 md:grid-cols-3">
             {/* Left column - About */}
             <div className="space-y-6 md:col-span-1">
-                <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <div className="rounded-b-xl bg-white p-6 shadow-sm">
                     <h2 className="mb-4 text-base font-semibold uppercase tracking-wide text-slate-800">
                         Giảng viên giảng dạy
                     </h2>
@@ -170,7 +170,7 @@ const DescriptionTab = () => {
 
             {/* Middle column - Activity Timeline */}
             <div className="space-y-6 md:col-span-2">
-                <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <div className="rounded-b-xl bg-white p-6 shadow-sm">
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
                             Thông báo gần đây
@@ -222,7 +222,7 @@ const DescriptionTab = () => {
 
                 {/* Bottom cards: Connections & Teams */}
                 <div className="grid gap-6 md:grid-cols-2">
-                    <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="rounded-b-xl bg-white p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <h2 className="mb-5 text-lg font-semibold text-slate-800 flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-blue-600" />
                             Tiến độ học phần
