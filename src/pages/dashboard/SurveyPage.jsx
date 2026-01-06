@@ -7,7 +7,8 @@ import {
   Filter,
   ChevronDown,
   CheckCircle2,
-  Eye, ArrowDownToLine, FileSpreadsheet, FilterX, File, Settings, X, Camera
+  Eye, ArrowDownToLine, FileSpreadsheet, FilterX, File, Settings, X, Camera,
+  Printer
 } from "lucide-react";
 
 export default function LecturerSurveyManagement() {
@@ -225,10 +226,10 @@ export default function LecturerSurveyManagement() {
                 <FileSpreadsheet className="w-5 h-5" />
                 Tải Excel
               </button>
-              <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-50 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
-                <File className="w-5 h-5" />
-                Tải PDF
-              </button>
+              {/* <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-50 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
+                <Printer className="w-5 h-5" />
+                In báo cáo
+              </button> */}
               <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
                 <FilterX className="w-5 h-5" />
                 Xóa bộ lọc
