@@ -442,16 +442,6 @@ export default function LecturerSurveyManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngày sinh
-                </label>
-                <input
-                  type="date"
-                  className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Chọn cột xuất Excel
                 </label>
                 <div className="space-y-2 mt-2">

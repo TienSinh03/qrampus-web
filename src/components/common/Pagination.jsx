@@ -6,7 +6,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const pages = [...Array(totalPages)].map((_, i) => i + 1);
 
   return (
-    <nav role="navigation" aria-label="Pagination Navigation">
+    <nav role="navigation mb-4" aria-label="Pagination Navigation">
       <ul className="flex list-none items-center justify-center text-sm text-slate-700 md:gap-1">
         
         {/* Previous */}

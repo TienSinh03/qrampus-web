@@ -7,7 +7,9 @@ import {
     User,
     Layers,
     X,
-    Download, // Thêm icon X để đóng drawer
+    Download,
+    DownloadCloudIcon,
+    DownloadIcon, // Thêm icon X để đóng drawer
 } from "lucide-react";
 
 const ViewIcon = Eye;
@@ -18,15 +20,42 @@ const AdminDetailSessionQRPage = () => {
     const openDrawer = () => setIsDrawerOpen(true);
     const closeDrawer = () => setIsDrawerOpen(false);
 
+    // XEM Ảnh
+    const [isOpen, setOpen] = useState(false);
+    // Giả lập dữ liệu ảnh (thực tế sẽ lấy từ API/backend)
+    const teacherPhotos = [
+        {
+            id: 1,
+            url: "/public/assets/images/_34A8269.jpg",
+            caption: "Ghi số lượng sv..............",
+        },
+        {
+            id: 2,
+            url: "/public/assets/images/_34A8289.jpg",
+            caption: "Ghi số lượng sv..............",
+        },
+        {
+            id: 3,
+            url: "/public/assets/images/_34A8277.jpg",
+            caption: "Ghi số lượng sv..............",
+        },
+        {
+            id: 4,
+            url: "/public/assets/images/_34A8304.jpg",
+            caption: "Ghi số lượng sv..............",
+        },
+    ];
+
+    const [selectedImage, setSelectedImage] = useState(teacherPhotos[0]);
     return (
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
             {/* ===== MAIN CONTENT ===== */}
-            <div className="xl:col-span-3 bg-white rounded-xl shadow p-6 space-y-6">
+            <div className="xl:col-span-3 bg-white rounded-b-xl shadow p-6">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gray-50 p-5 rounded-lg">
                     <div className="p-4 bg-white rounded-lg shadow-md flex-1">
-                        <h2 className="text-xl font-semibold text-purple-600 flex items-center gap-2 mb-4">
-                            <Book className="w-6 h-6 text-purple-600" />
+                        <h2 className="text-xl font-semibold text-green-600 flex items-center gap-2 mb-4">
+                            <Book className="w-6 h-6 text-green-600" />
                             NHẬP MÔN LẬP TRÌNH WEB
                         </h2>
 
@@ -67,7 +96,7 @@ const AdminDetailSessionQRPage = () => {
                         </div>
                         <div className="flex items-center gap-3">
                             <span className="text-sm text-gray-500 w-24">Trạng thái</span>
-                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
                                 Đang hoạt động
                             </span>
                         </div>
@@ -83,10 +112,10 @@ const AdminDetailSessionQRPage = () => {
                                 <th className="p-3 text-left">Mã học phần</th>
                                 <th className="p-3 text-left">Tạo QR trong</th>
                                 <th className="p-3 text-left">Số QR sinh ra</th>
-                                <th className="p-3 text-left">Điểm danh thành công</th>
-                                <th className="p-3 text-left">Điểm danh cho phép</th>
-                                <th className="p-3 text-left">Điểm danh vượt quá</th>
-                                <th className="p-3 text-left">Điểm danh (vắng)</th>
+                                <th className="p-3 text-left">ĐD thành công</th>
+                                <th className="p-3 text-left">ĐD cho phép</th>
+                                <th className="p-3 text-left">ĐD vượt quá</th>
+                                <th className="p-3 text-left">ĐD (vắng)</th>
                                 <th className="p-3 text-left">Hành động</th>
 
                             </tr>
@@ -111,11 +140,11 @@ const AdminDetailSessionQRPage = () => {
 
                                     <button
                                         aria-label="Download Report"
-                                        title="Tải báo cáo dạng excel"
+                                        title="Tải báo cáo dạng excel, tải danh sách sinh viên điểm danh, ngày hôm đó"
                                         className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
                                     >
                                         <Download size={16} />
-                                    </button>
+                                    </button> 
 
                                 </td>
                             </tr>
@@ -123,15 +152,94 @@ const AdminDetailSessionQRPage = () => {
                     </table>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm">
-                        <ViewIcon size={16} /> Xem ảnh lớp học Giảng viên đã chụp
+                <div className="flex items-center gap-4 mt-2">
+                    <button className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm" onClick={() => setOpen(true)}>
+                        <ViewIcon size={16} /> Xem ảnh đã chụp
                     </button>
+                    <button
+                        aria-label="Download Report"
+                        title="Tải ảnh đã chụp xuống"
+                        className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
+                    >
+                        <DownloadCloudIcon className="w-5 h-5 text-purple-600 hover:text-purple-800 cursor-pointer" />
+                    </button>
+                    <button
+                        aria-label="Download Report"
+                        title="Tải ảnh chụp theo model, phân tích xuống"
+                        className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
+                    >
+                        <DownloadIcon className="w-5 h-5 text-purple-600 hover:text-purple-800 cursor-pointer" />
+                    </button>
+                </div>
+                <div className="mt-2">
                     <p className="text-sm text-gray-900">
                         Số lượng sinh viên từ Model phân tích: <span className="font-semibold text-red-500">40 sinh viên</span>
                     </p>
                 </div>
 
+                {/* MODAL XEM ẢNH */}
+                {/* ===== MODAL XEM ẢNH GIẢNG VIÊN CHỤP ===== */}
+                {isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+                        <div className="relative bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+                            {/* Header */}
+                            <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50 rounded-t-xl">
+                                <h3 className="text-xl font-semibold text-gray-800">
+                                    Ảnh lớp học giảng viên đã chụp ({teacherPhotos.length} ảnh)
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        setOpen(false);
+                                        setSelectedImage(teacherPhotos[0]);
+                                    }}
+                                    className="text-gray-500 hover:text-gray-700 focus:outline-none  rounded-full hover:bg-lime-400 transition-all  duration-300 ease-in-out p-2 hover:rotate-90"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            {/* Body: Thumbnail trái + Ảnh lớn phải */}
+                            <div className="flex flex-1 overflow-hidden">
+                                {/* Danh sách thumbnail */}
+                                <div className="w-full lg:w-80 bg-gray-50 p-4 overflow-y-auto border-r">
+                                    <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+                                        {teacherPhotos.map((photo) => (
+                                            <div
+                                                key={photo.id}
+                                                onClick={() => setSelectedImage(photo)}
+                                                className={`cursor-pointer rounded-lg overflow-hidden border-4 transition-all ${selectedImage?.id === photo.id ? "border-green-500 shadow-lg" : "border-transparent"
+                                                    }`}
+                                            >
+                                                <img
+                                                    src={photo.url}
+                                                    alt={photo.caption}
+                                                    className="w-full h-40 object-cover hover:opacity-90 transition"
+                                                />
+                                                <p className="text-center text-sm mt-2 text-gray-700 font-medium">{photo.caption}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Ảnh chi tiết lớn */}
+                                <div className="flex-1 flex items-center justify-center bg-gray-100 p-8">
+                                    {selectedImage ? (
+                                        <div className="text-center">
+                                            <img
+                                                src={selectedImage.url}
+                                                alt={selectedImage.caption}
+                                                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                                            />
+                                            <p className="mt-6 text-lg font-medium text-gray-800">{selectedImage.caption}</p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-500 text-xl">Chọn ảnh từ danh sách để xem chi tiết</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Footer */}
                 <div className="grid md:grid-cols-2 gap-6 pt-4 border-t">
                     {/* LEFT */}
@@ -183,10 +291,9 @@ const AdminDetailSessionQRPage = () => {
                                         Nhóm 1
                                     </span>
                                 </div>
-
-                                {/* Các nhóm khác */}
                             </div>
                         </div>
+
                     </div>
 
                     {/* RIGHT – INFO CARD */}
@@ -233,19 +340,25 @@ const AdminDetailSessionQRPage = () => {
             </div>
 
             {/* ===== RIGHT ACTION PANEL ===== */}
-            <div className="bg-white rounded-xl shadow p-5 space-y-4 h-fit">
+            <div className="bg-white rounded-b-xl shadow p-5 space-y-4 h-fit">
                 <button
-                    className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white py-2 rounded hover:bg-purple-700"
+                    className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 
+                    py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md 
+                    focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200 w-full"
                     onClick={openDrawer}
                 >
                     <Send size={16} /> Hỗ trợ tạo QR
                 </button>
 
-                <button className="w-full flex items-center justify-center gap-2 bg-red-500 text-white py-2 rounded hover:bg-red-600">
+                <button className="flex items-center gap-2 border border-red-500 text-red-500 px-5 
+                    py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-100 hover:shadow-md 
+                    focus:outline-none focus:ring-1 focus:ring-red-500 focus:ring-offset-1 transition-all duration-200 w-full">
                     <Eye size={16} /> Khóa phiên QR
                 </button>
 
-                <button className="w-full flex items-center justify-center gap-2 border py-2 rounded hover:bg-gray-50">
+                <button className="flex items-center gap-2 border border-gray-500 text-gray-500 px-5 
+                    py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:shadow-md 
+                    focus:outline-none focus:ring-1 focus:ring-gray-500 focus:ring-offset-1 transition-all duration-200 w-full">
                     <Clock size={16} /> Lịch sử tạo QR đã qua
                 </button>
 

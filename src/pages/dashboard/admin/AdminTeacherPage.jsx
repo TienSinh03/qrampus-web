@@ -298,44 +298,65 @@ const AdminTeacherPage = () => {
               <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
                 {/* Nhóm buttons chính bên trái */}
                 <div className="flex flex-wrap items-center gap-3">
+                  {/* Thêm tài khoản */}
                   <button
                     onClick={openDrawer}
-                    className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200"
+                    className="flex items-center gap-2
+      border border-emerald-500 text-emerald-500
+      px-5 py-2.5 rounded-lg font-medium
+      shadow-sm hover:bg-emerald-100 hover:shadow-md
+      focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1
+      transition-all duration-200"
                   >
                     <CirclePlus className="w-5 h-5" />
                     {t("users.addUser")}
                   </button>
 
-                  <button className="flex items-center gap-2 bg-rose-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-all duration-200">
+                  {/* Xóa tài khoản */}
+                  <button
+                    className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200"
+                  >
                     <Trash2 className="w-5 h-5" />
-                    {t("users.deleteUser")}
+                    Xóa tài khoản
                   </button>
 
+                  {/* Upload */}
                   <button
                     onClick={() => setOpenUpload(true)}
-                    className="flex items-center gap-2 bg-amber-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200"
+                    className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
                   >
                     <CloudUpload className="w-5 h-5" />
                     {t("users.upload")}
                   </button>
                 </div>
 
-                {/* Nhóm buttons phụ bên phải: Lọc, Export, Xóa lọc */}
+                {/* Nhóm buttons phụ bên phải */}
                 <div className="flex flex-wrap items-center gap-3">
-                  <button className="flex items-center gap-2 bg-cyan-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-cyan-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-all duration-200">
+                  {/* Tải mẫu Excel */}
+                  <button
+                    className="flex items-center gap-2 border border-cyan-400 text-cyan-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-cyan-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 transition-all duration-200"
+                  >
                     <ArrowDownToLine className="w-5 h-5" />
                     Tải mẫu Excel
                   </button>
-                  <button className="flex items-center gap-2 bg-teal-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
+
+                  {/* Tải Excel */}
+                  <button
+                    className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
+                  >
                     <FileSpreadsheet className="w-5 h-5" />
                     Tải Excel
                   </button>
 
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+                  {/* Xóa bộ lọc */}
+                  <button
+                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                  >
                     <FilterX className="w-5 h-5" />
                     Xóa bộ lọc
                   </button>
                 </div>
+
               </div>
             </div>
 

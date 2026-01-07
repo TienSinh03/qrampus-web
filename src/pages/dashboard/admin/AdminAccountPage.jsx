@@ -314,14 +314,14 @@ const AdminAccountPage = () => {
               <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
                 {/* Nhóm buttons chính bên trái */}
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Kích hoạt tài khoản - Xanh lá hiện đại */}
-                  <button className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200">
+                  { }
+                  <button className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200">
                     <CheckLine className="w-5 h-5" />
                     Kích hoạt tài khoản
                   </button>
 
                   {/* Khóa tài khoản - Đỏ nổi bật nhưng không chói */}
-                  <button className="flex items-center gap-2 bg-rose-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-all duration-200">
+                  <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200">
                     <Lock className="w-5 h-5" />
                     Khóa tài khoản
                   </button>
@@ -330,19 +330,19 @@ const AdminAccountPage = () => {
                 {/* Nhóm buttons phụ bên phải */}
                 <div className="flex flex-wrap items-center gap-3">
                   {/* Tải Excel - Xanh dương lá chuyên nghiệp */}
-                  <button className="flex items-center gap-2 bg-teal-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
+                  <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 transition-all duration-200">
                     <FileSpreadsheet className="w-5 h-5" />
                     Tải Excel
                   </button>
 
                   {/* Tải PDF - Cam/đỏ nhẹ nhàng */}
-                  <button className="flex items-center gap-2 bg-amber-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
+                  <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-amber-500 focus:ring-offset-1 transition-all duration-200">
                     <File className="w-5 h-5" />
                     Tải PDF
                   </button>
 
                   {/* Xóa bộ lọc - Style outline tinh tế */}
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200">
                     <FilterX className="w-5 h-5" />
                     Xóa bộ lọc
                   </button>

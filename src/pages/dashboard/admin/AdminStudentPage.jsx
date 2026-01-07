@@ -295,41 +295,55 @@ const AdminStudentPage = () => {
               <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
                 {/* Nhóm buttons chính bên trái */}
                 <div className="flex flex-wrap items-center gap-3">
+                  {/* Thêm tài khoản */}
                   <button
                     onClick={openDrawer}
-                    className="flex items-center gap-2 bg-blue-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-700 hover:shadow-md transition-all duration-200"
+                    className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 
+                    py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md 
+                    focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
                   >
                     <CirclePlus className="w-5 h-5" />
                     {t("users.addUser")}
                   </button>
 
-                  <button className="flex items-center gap-2 bg-red-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-700 hover:shadow-md transition-all duration-200">
+                  {/* Xóa tài khoản */}
+                  <button
+                    className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200"
+                  >
                     <Trash2 className="w-5 h-5" />
-                    {t("users.deleteUser")}
+                    Xóa tài khoản
                   </button>
 
+                  {/* Upload */}
                   <button
                     onClick={() => setOpenUpload(true)}
-                    className="flex items-center gap-2 bg-indigo-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all duration-200"
+                    className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
                   >
                     <CloudUpload className="w-5 h-5" />
                     {t("users.upload")}
                   </button>
                 </div>
 
+
                 {/* Nhóm buttons phụ bên phải: Lọc, Export, Xóa lọc */}
                 <div className="flex flex-wrap items-center gap-3">
 
-
-                  <button className="flex items-center gap-2 bg-green-400 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow-md transition-all duration-200">
+                  {/* Export Excel */}
+                  <button
+                    className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
+                  >
                     <FileSpreadsheet className="w-5 h-5" />
                     Export Excel
                   </button>
 
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200">
+                  {/* Xóa bộ lọc */}
+                  <button
+                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                  >
                     <FilterX className="w-5 h-5" />
                     Xóa bộ lọc
                   </button>
+
                 </div>
               </div>
             </div>
@@ -344,7 +358,7 @@ const AdminStudentPage = () => {
                       <input type="checkbox" className="ml-4" />
                     </th>
                     <th className="h-12 px-4">Ảnh</th>
-                    <th className="h-12 px-4">ID</th>
+                    <th className="h-12 px-4">MSSV</th>
                     <th className="h-12 px-4">{t("users.name")}</th>
                     <th className="h-12 px-4">{t("users.email")}</th>
                     <th className="h-12 px-4">{t("users.role")}</th>
