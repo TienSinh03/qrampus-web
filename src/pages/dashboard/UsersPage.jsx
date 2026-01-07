@@ -211,7 +211,7 @@ const UsersPage = () => {
           <thead>
             <tr className="bg-slate-100">
               <th className="h-12 px-4">Ảnh</th>
-              <th className="h-12 px-4">ID</th>
+              <th className="h-12 px-4">MSSV</th>
               <th className="h-12 px-4">{t("users.name")}</th>
               <th className="h-12 px-4">{t("users.email")}</th>
               <th className="h-12 px-4">{t("users.role")}</th>
