@@ -356,17 +356,17 @@ const AdminQRPage = () => {
                   {/* Tải Excel */}
                   <button
                     className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
+                    title="Tải file excel, có thể danh sách khi lọc"
                   >
                     <FileSpreadsheet className="w-5 h-5" />
-                    Tải Excel
                   </button>
 
                   {/* Xóa bộ lọc */}
                   <button
                     className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                    title="Xóa bộ lọc"
                   >
                     <FilterX className="w-5 h-5" />
-                    Xóa bộ lọc
                   </button>
                 </div>
 

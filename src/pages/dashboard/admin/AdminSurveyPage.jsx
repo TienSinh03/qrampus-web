@@ -23,10 +23,11 @@ import {
   CheckLine,
   Lock,
   File, Camera, FileSearchIcon,
-  GitPullRequest
+  GitPullRequest,
+  ArrowUpWideNarrow, Settings
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
-const AdminAccountPage = () => {
+const AdminSurveyPage = () => {
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,88 +54,90 @@ const AdminAccountPage = () => {
 
   const totalPages = 5;
 
-  const users = [
+  const survey = [
     {
       id: 1,
-      full_name: "Nguyễn Thị Yến Nhi",
-      email: "nguyenthiyennhi@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=1",
-      role: "Quản trị viên",
-      user_id: "10001234",
-      status: "Inactive",
-    },
-    {
-      id: 2,
-      full_name: "Nguyễn Thị Quỳnh Như",
-      email: "nguyenthiquynhnhu@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=2",
-      role: "Ban chấm công",
-      user_id: "10001235",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      full_name: "Lê Thị Kim Oanh",
-      email: "lethikimoanh@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=3",
-      role: "Ban chấm công",
-      user_id: "10001236",
+      course_code: "4203001549",
+      course_name: "Lập trình nâng cao",
+      semester: "HK1",
+      academic_year: "2024-2025",
       status: "Active",
-    },
-    {
-      id: 4,
-      full_name: "Võ Thanh Sang",
-      email: "vothanhsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=4",
-      role: "Giảng viên",
-      user_id: "10001237",
-      status: "Inactive",
-    },
-    {
-      id: 5,
-      full_name: "Phạm Đoàn Thanh Sang",
-      email: "phamdoanthanhsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=5",
-      role: "Giảng viên",
-      user_id: "10001238",
+      learning_form: "Lý thuyết",
+      practical_group: "",
+      created_at: "2024-09-01",
+      end_at: "2024-10-01",
+      instructor_code: "GV001",
+      instructor: "Nguyễn Văn A",
+      department: "Khoa Công nghệ thông tin",
+      // trung bình điểm dánh giá
+      average_rating: 4.5,
+    }, {
+      id: 2,
+      course_code: "4203001550",
+      course_name: "Cơ sở dữ liệu",
+      semester: "HK1",
+      academic_year: "2024-2025",
       status: "Pending",
-    },
-    {
-      id: 6,
-      full_name: "Nguyễn Phúc Sang",
-      email: "nguyenphucsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=6",
-      role: "Giảng viên",
-      user_id: "10001239",
+      learning_form: "Thực hành",
+      practical_group: "1",
+      created_at: "2024-09-05",
+      end_at: "2024-10-05",
+      instructor_code: "GV002",
+      instructor: "Trần Thị B",
+      department: "Khoa Công nghệ thông tin",
+      average_rating: 4.2,
+    }, {
+      id: 1,
+      course_code: "4203001549",
+      course_name: "Lập trình nâng cao",
+      semester: "HK1",
+      academic_year: "2024-2025",
+      status: "Active",
+      learning_form: "Lý thuyết",
+      practical_group: "",
+      created_at: "2024-09-01",
+      end_at: "2024-10-01",
+      instructor_code: "GV001",
+      instructor: "Nguyễn Văn A",
+      department: "Khoa Công nghệ thông tin",
+      // trung bình điểm dánh giá
+      average_rating: 4.5,
+    }, {
+      id: 2,
+      course_code: "4203001550",
+      course_name: "Cơ sở dữ liệu",
+      semester: "HK1",
+      academic_year: "2024-2025",
       status: "Pending",
-    },
-    {
-      id: 7,
-      full_name: "Dương Thị Thanh Thảo",
-      email: "duongthithanhthao@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=7",
-      role: "Giảng viên",
-      user_id: "10001240",
-      status: "Pending",
-    },
-    {
-      id: 8,
-      full_name: "Trần Thị Thanh Thảo",
-      email: "tranthithanhthao@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=8",
-      role: "Giảng viên",
-      user_id: "10001241",
-      status: "Pending",
-    },
+      learning_form: "Thực hành",
+      practical_group: "1",
+      created_at: "2024-09-05",
+      end_at: "2024-10-05",
+      instructor_code: "GV002",
+      instructor: "Trần Thị B",
+      department: "Khoa Công nghệ thông tin",
+      average_rating: 4.2,
+    }
+
   ];
 
-  const pillStyle = {
-    Active: "bg-green-100 text-green-600",
-    Pending: "bg-yellow-100 text-yellow-600",
-    Inactive: "bg-gray-200 text-gray-600",
-  };
   const [expanded, setExpanded] = useState(false);
-
+  // cột , bảng
+  const [visibleCols, setVisibleCols] = useState({
+    courseCode: true,
+    courseName: true,
+    semester: true,
+    academicYear: true,
+    status: true,
+    learningForm: false,
+    practicalGroup: false,
+    createdAt: false,
+    endAt: false,
+    instructorCode: false,
+    instructor: true,
+    department: false,
+    averageRating: false,
+  });
   return (
 
     <div className="min-h-screen">
@@ -145,41 +148,41 @@ const AdminAccountPage = () => {
           <div className="">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
-                title="Total Users"
+                title="Tổng"
                 value="21,459"
                 percent="(+29%)"
                 positive={true}
-                subtitle="Tổng tài khoản"
+                subtitle="Khảo sát đã tạo"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
               />
 
               <StatsCard
-                title="Users Active"
-                value="4,567"
+                title="Học phần đã tạo"
+                value="4567"
                 percent="(+18%)"
                 positive={true}
-                subtitle="Đang hoạt động"
+                subtitle="kỳ này"
                 icon={<UserPlus className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
               />
 
               <StatsCard
-                title="Inactive Users"
+                title="Đang mở"
                 value="19,860"
                 percent="(-14%)"
                 positive={false}
-                subtitle="Chờ kích hoạt"
+                subtitle="số học phần"
                 icon={<UserCheck className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
               />
 
               <StatsCard
-                title=" Locked Users"
+                title="Đã khóa"
                 value="237"
                 percent="(+42%)"
                 positive={true}
-                subtitle="Đã khóa"
+                subtitle="số học phần"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />
@@ -207,7 +210,7 @@ const AdminAccountPage = () => {
                   ) : (
                     <>
                       <ArrowDown size={16} className="mr-1" />
-                        Mở rộng
+                      Mở rộng
                     </>
                   )}
                 </button>
@@ -217,11 +220,22 @@ const AdminAccountPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Học kỳ
+                  </label>
+                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>HK1_2024-2025</option>
+                    <option>HK2_2023-2024</option>
+                    <option>HK3_2022-2023</option>
 
+
+                  </select>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã số nhân sự
+                    Mã số học phần
                   </label>
                   <input
                     type="text"
@@ -229,26 +243,16 @@ const AdminAccountPage = () => {
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Trạng thái
                   </label>
                   <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Đang hoạt động</option>
-                    <option>Chưa kích hoạt</option>
+                    <option>Đến hạn khảo sát</option>
+                    <option>Đang mở</option>
                     <option>Đã khóa</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phân quyền
-                  </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Sinh viên</option>
-                    <option>Giảng viên</option>
-                    <option>Bộ phận chấm công</option>
-                    <option>Admin</option>
-
+                    <option>Đang lên lịch</option>
                   </select>
                 </div>
                 <div>
@@ -268,26 +272,17 @@ const AdminAccountPage = () => {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Họ và tên
+                        Tên môn học
                       </label>
                       <input
                         type="text"
-                        className="w-full rounded-lg border px-3 py-2"
+                        placeholder="Ví dụ: ....."
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mail
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Số điện thoại
+                        Mã giảng viên
                       </label>
                       <input
                         type="text"
@@ -297,7 +292,17 @@ const AdminAccountPage = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ngày sinh
+                        Họ và tên giảng viên
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: ...."
+                        className="w-full rounded-lg border px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày tạo
                       </label>
                       <input
                         type="date"
@@ -311,33 +316,84 @@ const AdminAccountPage = () => {
 
               </div>
               {/* Actions */}
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 w-full md:w-auto justify-start md:justify-end">
-                <div className="flex flex-wrap items-center gap-3 ">
-                  <button className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Kích hoạt tài khoản">
-                    <CheckLine className="w-5 h-5" />
+              <div className="mt-6 flex flex-wrap items-center gap-4 w-full justify-start md:justify-end md:w-auto">
+                <div className="flex flex-wrap items-center gap-2 ">
+                  <button className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Tạo khảo sát, thủ công">
+                    <CirclePlus className="w-5 h-5" />
                   </button>
-
-                  <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Khóa tài khoản">
+                  <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Khóa khảo sát">
                     <Lock className="w-5 h-5" />
                   </button>
-
-                  <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Reset mật khẩu">
-                    <GitPullRequest className="w-5 h-5" />
+                  <button className="flex items-center gap-2 border border-emerald-400 text-emerald-300 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Tạo khảo sát cho toàn bộ họ phần, khi lọc học phần đã đến hạn">
+                    <ArrowUpWideNarrow className="w-5 h-5" />
                   </button>
 
+                  <button
+                    onClick={() => setOpenUpload(true)}
+                    className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
+                    title="Upload danh sách học phần cần khảo sát"
+                  >
+                    <CloudUpload className="w-5 h-5" />
+                  </button>
                   <button
                     className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
                   >
                     <FileSearchIcon className="w-5 h-5" />
                   </button>
-
                   <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 transition-all duration-200" title="Tải file excel">
                     <FileSpreadsheet className="w-5 h-5" />
                   </button>
-
+                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Tải file mẫu excel">
+                    <File className="w-5 h-5" />
+                  </button>
                   <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Xóa bộ lọc">
                     <FilterX className="w-5 h-5" />
                   </button>
+                  <details className="relative">
+                    <summary className="list-none flex items-center gap-2 border border-sky-300 text-sky-700 bg-sky px-5 py-2.5 rounded-lg font-medium cursor-pointer hover:bg-sky-50 hover:border-sky-400 hover:text-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 transition-all duration-200">
+                      <Settings className="w-5 h-5" />
+                    </summary>
+
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-20 text-sm">
+                      {[
+                        ["courseCode", "Mã học phần"],
+                        ["courseName", "Tên học phần"],
+                        ["semester", "Học kỳ"],
+                        ["academicYear", "Năm học"],
+                        ["learningForm", "Hình thức học"],
+                        ["practicalGroup", "Nhóm TH"],
+                        ["createdAt", "Ngày tạo"],
+                        ["endAt", "Ngày kết thúc"],
+                        ["instructorCode", "Mã GV"],
+                        ["instructor", "Giảng viên"],
+                        ["department", "Khoa"],
+                        ["averageRating", "Điểm đánh giá"],
+                        ["status", "Trạng thái"],
+
+                      ].map(([key, label]) => {
+                        const active = visibleCols[key];
+
+                        return (
+                          <div
+                            key={key}
+                            onClick={() =>
+                              setVisibleCols(prev => ({
+                                ...prev,
+                                [key]: !prev[key],
+                              }))
+                            }
+                            className={`px-3 py-2 rounded cursor-pointer flex items-center justify-between transition
+                                ${active
+                                ? "bg-sky-50 text-sky-600 font-medium"
+                                : "hover:bg-gray-50 text-gray-700"
+                              }`}
+                          >
+                            <span>{label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </details>
                 </div>
               </div>
             </div>
@@ -348,103 +404,210 @@ const AdminAccountPage = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th>
+
+                    {/* Checkbox */}
+                    <th className="w-10">
                       <input type="checkbox" className="ml-4" />
                     </th>
-                    <th className="h-12 px-4">Ảnh</th>
-                    <th className="h-12 px-4">MGV-MSSV</th>
-                    <th className="h-12 px-4">{t("users.name")}</th>
-                    <th className="h-12 px-4">{t("users.email")}</th>
-                    <th className="h-12 px-4">{t("users.role")}</th>
-                    <th className="h-12 px-4">{t("users.status")}</th>
-                    <th className="h-12 px-4">{t("users.actions")}</th>
+
+                    {visibleCols.courseCode && (
+                      <th className="h-12 px-4 whitespace-nowrap">
+                        Mã học phần
+                      </th>
+                    )}
+
+                    {visibleCols.courseName && (
+                      <th className="h-12 px-4 min-w-[220px]">
+                        Tên học phần
+                      </th>
+                    )}
+
+                    {visibleCols.semester && (
+                      <th className="h-12 px-4 whitespace-nowrap">
+                        Học kỳ
+                      </th>
+                    )}
+
+                    {visibleCols.academicYear && (
+                      <th className="h-12 px-4 whitespace-nowrap">
+                        Năm học
+                      </th>
+                    )}
+
+
+
+                    {visibleCols.learningForm && (
+                      <th className="h-12 px-4 whitespace-nowrap hidden lg:table-cell">
+                        Hình thức học
+                      </th>
+                    )}
+
+                    {visibleCols.practicalGroup && (
+                      <th className="h-12 px-4 whitespace-nowrap hidden lg:table-cell">
+                        Nhóm TH
+                      </th>
+                    )}
+
+                    {visibleCols.createdAt && (
+                      <th className="h-12 px-4 whitespace-nowrap hidden md:table-cell">
+                        Ngày tạo
+                      </th>
+                    )}
+
+                    {visibleCols.endAt && (
+                      <th className="h-12 px-4 whitespace-nowrap hidden lg:table-cell">
+                        Ngày kết thúc
+                      </th>
+                    )}
+
+                    {visibleCols.instructorCode && (
+                      <th className="h-12 px-4 min-w-[140px] hidden lg:table-cell">
+                        Mã GV
+                      </th>
+                    )}
+
+                    {visibleCols.instructor && (
+                      <th className="h-12 px-4 min-w-[180px]">
+                        Giảng viên
+                      </th>
+                    )}
+
+                    {visibleCols.department && (
+                      <th className="h-12 px-4 min-w-[160px] hidden xl:table-cell">
+                        Khoa
+                      </th>
+                    )}
+
+                    {visibleCols.averageRating && (
+                      <th className="h-12 px-4 min-w-[120px] hidden xl:table-cell">
+                        Điểm đánh giá
+                      </th>
+                    )}
+                    {visibleCols.status && (
+                      <th className="h-12 px-4 whitespace-nowrap text-center">
+                        Trạng thái
+                      </th>
+                    )}
+                    {/* Hành động */}
+                    <th className="h-12 px-4 whitespace-nowrap text-center">
+                      Hành động
+                    </th>
+
                   </tr>
                 </thead>
 
+
                 <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="border-t hover:bg-slate-50">
+                  {survey.map((u) => (
+                    <tr key={u.id} className="border-t hover:bg-slate-50 h-10">
+
+                      {/* Checkbox */}
                       <td>
-                        <input
-                          type="checkbox"
-                          className="ml-4"
-                        />
-                      </td>
-                      <td className="px-2 h-10 flex items-center gap-2 p-6">
-                        <img src={u.avatar_url} className="w-8 h-8 rounded-full" />
-                      </td>
-                      <td className="px-4">{u.user_id}</td>
-                      <td className="px-4 min-w-max">{u.full_name}</td>
-
-                      <td className="px-4">{u.email}</td>
-                      <td className="px-4">{u.role}</td>
-
-                      <td className="px-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs ${pillStyle[u.status]
-                            }`}
-                        >
-                          {u.status}
-                        </span>
+                        <input type="checkbox" className="ml-4" />
                       </td>
 
-                      <td className="px-4">
-                        <div className="flex gap-3">
-                          <button title="Xóa" alt="Xóa">
-                            <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
-                          </button>
-                          <button title="Xem chi tiết" alt="Xem chi tiết">
-                            <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
-                          </button>
-                          {/* More Menu */}
-                          <div className="relative">
-                            <MoreVertical
-                              className="cursor-pointer w-5 h-5"
-                              onClick={() =>
-                                setOpenMenu(openMenu === u.id ? null : u.id)
+                      {visibleCols.courseCode && (
+                        <td className="px-4 min-w-max">
+                          {u.course_code}
+                        </td>
+                      )}
+
+                      {visibleCols.courseName && (
+                        <td className="px-4 min-w-max">
+                          {u.course_name}
+                        </td>
+                      )}
+
+                      {visibleCols.semester && (
+                        <td className="px-4 min-w-max">
+                          {u.semester}
+                        </td>
+                      )}
+
+                      {visibleCols.academicYear && (
+                        <td className="px-4 min-w-max">
+                          {u.academic_year}
+                        </td>
+                      )}
+
+
+
+                      {visibleCols.learningForm && (
+                        <td className="px-4 min-w-max hidden lg:table-cell">
+                          {u.learning_form}
+                        </td>
+                      )}
+
+                      {visibleCols.practicalGroup && (
+                        <td className="px-4 min-w-max hidden lg:table-cell">
+                          {u.practical_group}
+                        </td>
+                      )}
+
+                      {visibleCols.createdAt && (
+                        <td className="px-4 min-w-max hidden md:table-cell">
+                          {u.created_at}
+                        </td>
+                      )}
+
+                      {visibleCols.endAt && (
+                        <td className="px-4 min-w-max hidden lg:table-cell">
+                          {u.end_at}
+                        </td>
+                      )}
+
+                      {visibleCols.instructorCode && (
+                        <td className="px-4 min-w-max hidden lg:table-cell">
+                          {u.instructor_code}
+                        </td>
+                      )}
+
+                      {visibleCols.instructor && (
+                        <td className="px-4 min-w-max">
+                          {u.instructor}
+                        </td>
+                      )}
+
+                      {visibleCols.department && (
+                        <td className="px-4 min-w-max hidden xl:table-cell">
+                          {u.department}
+                        </td>
+                      )}
+
+                      {visibleCols.averageRating && (
+                        <td className="px-4 min-w-max hidden xl:table-cell">
+                          {u.average_rating}
+                        </td>
+                      )}
+                      {visibleCols.status && (
+                        <td className="px-4 min-w-max text-center">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+              ${u.status === "Active"
+                                ? "bg-green-100 text-green-600"
+                                : u.status === "Pending"
+                                  ? "bg-yellow-100 text-yellow-600"
+                                  : "bg-gray-200 text-gray-600"
                               }
-                            />
-
-                            {/* Dropdown */}
-                            {openMenu === u.id && (
-                              <div className="absolute mt-2 w-25 bg-white shadow-lg rounded-md border z-20">
-                                <button
-                                  className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  title="Chỉnh sửa"
-                                  // onClick={() => console.log("Edit", u.id)}
-                                  onClick={openDrawer}
-                                >
-                                  <PencilLine className="inline w-4 h-4 mr-2" />
-                                </button>
-                                <button
-                                  className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  title="Reset mật khẩu"
-                                  onClick={() =>
-                                    toast.error("Bạn muốn reset", {
-                                      action: {
-                                        label: "Yes",
-                                        onClick: () => {
-                                          console.log("Lock user", u.id);
-                                          toast.success("Đã reset mật khẩu thành công, mặt khẩu là mặc định là 11111111 cho NHÂN SỰ; ngày sinh cho SINH VIÊN");
-                                        },
-                                      },
-                                      cancel: {
-                                        label: "No",
-                                      },
-                                    })
-                                  }
-                                >
-                                  <GitPullRequest className="inline w-4 h-4 mr-2" />
-
-                                </button>
-                              </div>
-                            )}
-                          </div>
+            `}
+                          >
+                            {u.status}
+                          </span>
+                        </td>
+                      )}
+                      {/* Hành động */}
+                      <td className="px-4">
+                        <div className="flex justify-center gap-3">
+                          <button title="Xem chi tiết khảo sát">
+                            <Eye className="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer" />
+                          </button>
                         </div>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             </div>
 
@@ -630,4 +793,4 @@ const AdminAccountPage = () => {
   );
 };
 
-export default AdminAccountPage;
+export default AdminSurveyPage;

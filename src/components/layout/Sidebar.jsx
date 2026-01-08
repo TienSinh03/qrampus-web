@@ -50,7 +50,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { icon: Users, label: 'Quản lý Sinh viên', path: '/dashboard/admin/students' },
 
 
-    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/admin/survey-page' },
+    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/admin/surveys' },
     { icon: ScanQrCode, label: 'Quản lý Điểm danh', path: '/dashboard/admin/qrcode' },
     { icon: BarChart, label: 'Quản lý Thống kê', path: '/dashboard/admin/statistics' },
 
@@ -112,7 +112,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           </div>
 
           {/* Navigation Menu */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-thin scrollbar-thumb-gradient-to-b scrollbar-thumb-blue-400 scrollbar-track-transparent">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);

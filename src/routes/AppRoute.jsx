@@ -32,6 +32,7 @@ import AdminDetailSessionQRPage from "@pages/dashboard/admin/AdminDetailSessionQ
 import AdminStudentPage from "@pages/dashboard/admin/AdminStudentPage";
 import AdminTeacherPage from "@pages/dashboard/admin/AdminTeacherPage";
 import AdminAccountPage from "@pages/dashboard/admin/AdminAccountPage";
+import AdminSurveyPage from "@pages/dashboard/admin/AdminSurveyPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -181,6 +182,9 @@ const router = createBrowserRouter([
         path: "admin/accounts",
         element: <AdminAccountPage />,
 
+      }, {
+        path: "admin/surveys",
+        element: <AdminSurveyPage />,
       }
     ],
   },
