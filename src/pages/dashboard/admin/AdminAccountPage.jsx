@@ -22,7 +22,8 @@ import {
   X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX,
   CheckLine,
   Lock,
-  File, Camera,
+  File, Camera, FileSearchIcon,
+  GitPullRequest
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
 const AdminAccountPage = () => {
@@ -206,7 +207,7 @@ const AdminAccountPage = () => {
                   ) : (
                     <>
                       <ArrowDown size={16} className="mr-1" />
-                      Mở rộng bộ lọc
+                        Mở rộng
                     </>
                   )}
                 </button>
@@ -309,42 +310,52 @@ const AdminAccountPage = () => {
 
 
               </div>
-
               {/* Actions */}
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 w-full md:w-auto">
                 {/* Nhóm buttons chính bên trái */}
-                <div className="flex flex-wrap items-center gap-3">
-                  { }
-                  <button className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200">
+                <div className="flex flex-wrap items-center gap-3 ">
+                  <button className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Kích hoạt tài khoản">
                     <CheckLine className="w-5 h-5" />
-                    Kích hoạt tài khoản
+                    <span className="hidden sm:inline">Kích hoạt tài khoản</span>
                   </button>
 
                   {/* Khóa tài khoản - Đỏ nổi bật nhưng không chói */}
-                  <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200">
+                  <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Khóa tài khoản">
                     <Lock className="w-5 h-5" />
-                    Khóa tài khoản
+                    <span className="hidden sm:inline">Khóa tài khoản</span>
                   </button>
+
+                  {/* RESET MẬT KHẨU */}
+                  <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Reset mật khẩu">
+                    <GitPullRequest className="w-5 h-5" />
+                    <span className="hidden sm:inline">Reset mật khẩu</span>
+                  </button>
+
+
+
+
+
+
                 </div>
 
                 {/* Nhóm buttons phụ bên phải */}
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Tải Excel - Xanh dương lá chuyên nghiệp */}
-                  <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 transition-all duration-200">
-                    <FileSpreadsheet className="w-5 h-5" />
-                    Tải Excel
+                  <button
+                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
+                  >
+                    <FileSearchIcon className="w-5 h-5" />
+                    <span className="hidden sm:inline">Tìm kiếm</span>
                   </button>
-
-                  {/* Tải PDF - Cam/đỏ nhẹ nhàng */}
-                  <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-amber-500 focus:ring-offset-1 transition-all duration-200">
-                    <File className="w-5 h-5" />
-                    Tải PDF
+                  {/* Tải Excel - Xanh dương lá chuyên nghiệp */}
+                  <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 transition-all duration-200" title="Tải file excel">
+                    <FileSpreadsheet className="w-5 h-5" />
+                    <span className="hidden sm:inline">Tải excel</span>
                   </button>
 
                   {/* Xóa bộ lọc - Style outline tinh tế */}
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200">
+                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Xóa bộ lọc">
                     <FilterX className="w-5 h-5" />
-                    Xóa bộ lọc
+                    <span className="hidden sm:inline">Xóa bộ lọc</span>
                   </button>
                 </div>
               </div>
@@ -426,15 +437,14 @@ const AdminAccountPage = () => {
                                 </button>
                                 <button
                                   className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  title="Khóa tài khoản"
+                                  title="Reset mật khẩu"
                                   onClick={() =>
-                                    toast.error("Bạn muốn khóa tài khoản này?", {
+                                    toast.error("Bạn muốn reset", {
                                       action: {
                                         label: "Yes",
                                         onClick: () => {
-                                          // xử lý khóa tài khoản
                                           console.log("Lock user", u.id);
-                                          toast.success("Đã khóa tài khoản");
+                                          toast.success("Đã reset mật khẩu thành công, mặt khẩu là mặc định là 11111111 cho NHÂN SỰ; ngày sinh cho SINH VIÊN");
                                         },
                                       },
                                       cancel: {
@@ -443,7 +453,7 @@ const AdminAccountPage = () => {
                                     })
                                   }
                                 >
-                                  <LockKeyhole className="inline w-4 h-4 mr-2" />
+                                  <GitPullRequest className="inline w-4 h-4 mr-2" />
 
                                 </button>
                               </div>

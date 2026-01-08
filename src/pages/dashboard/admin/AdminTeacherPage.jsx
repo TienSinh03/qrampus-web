@@ -15,8 +15,8 @@ import {
   UserCheck,
   UserX,
   UserPlus,
-  X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX,
-  ArrowDownToLine
+  X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX, FileSearchIcon,
+  ArrowDownToLine,
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
 const AdminTeacherPage = () => {
@@ -202,7 +202,7 @@ const AdminTeacherPage = () => {
                   ) : (
                     <>
                       <ArrowDown size={16} className="mr-1" />
-                      Mở rộng bộ lọc
+                        Mở rộng
                     </>
                   )}
                 </button>
@@ -302,58 +302,64 @@ const AdminTeacherPage = () => {
                   <button
                     onClick={openDrawer}
                     className="flex items-center gap-2
-      border border-emerald-500 text-emerald-500
-      px-5 py-2.5 rounded-lg font-medium
-      shadow-sm hover:bg-emerald-100 hover:shadow-md
-      focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1
-      transition-all duration-200"
+                  border border-emerald-500 text-emerald-500
+                  px-5 py-2.5 rounded-lg font-medium
+                  shadow-sm hover:bg-emerald-100 hover:shadow-md
+                  focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1
+                  transition-all duration-200"
+                    title="thêm giảng viên, thủ công"
                   >
                     <CirclePlus className="w-5 h-5" />
-                    {t("users.addUser")}
+                    <span className="hidden sm:inline">Thêm Giảng viên</span>
                   </button>
 
                   {/* Xóa tài khoản */}
                   <button
                     className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200"
+                    title="Xóa giảng viên viên, chuyển thành trạng thái tạm ngưng"
+
                   >
                     <Trash2 className="w-5 h-5" />
-                    Xóa tài khoản
+                    <span className="hidden sm:inline">Xóa tài khoản</span>
                   </button>
 
                   {/* Upload */}
                   <button
                     onClick={() => setOpenUpload(true)}
                     className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
+                    title="Upload danh sách giảng viên, vui lòng tải mẫu excel bên dưới"
+
                   >
                     <CloudUpload className="w-5 h-5" />
-                    {t("users.upload")}
+                    <span className="hidden sm:inline">Upload danh sách</span>
                   </button>
                 </div>
 
                 {/* Nhóm buttons phụ bên phải */}
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Tải mẫu Excel */}
                   <button
-                    className="flex items-center gap-2 border border-cyan-400 text-cyan-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-cyan-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 transition-all duration-200"
+                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
                   >
-                    <ArrowDownToLine className="w-5 h-5" />
-                    Tải mẫu Excel
+                    <FileSearchIcon className="w-5 h-5" />
+                    <span className="hidden sm:inline">Tìm kiếm</span>
                   </button>
-
-                  {/* Tải Excel */}
+                  {/* Export Excel */}
                   <button
                     className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
+                    title="Xuất danh sách excel"
+
                   >
                     <FileSpreadsheet className="w-5 h-5" />
-                    Tải Excel
+                    <span className="hidden sm:inline">Tải excel</span>
                   </button>
 
                   {/* Xóa bộ lọc */}
                   <button
                     className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                    title="Xóa bộ lọc, truy vấn bộ lọc khác"
                   >
                     <FilterX className="w-5 h-5" />
-                    Xóa bộ lọc
+                    <span className="hidden sm:inline">Xóa bộ lọc</span>
                   </button>
                 </div>
 

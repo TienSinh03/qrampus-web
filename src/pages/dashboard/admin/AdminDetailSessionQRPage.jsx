@@ -117,7 +117,6 @@ const AdminDetailSessionQRPage = () => {
                                 <th className="p-3 text-left">ĐD vượt quá</th>
                                 <th className="p-3 text-left">ĐD (vắng)</th>
                                 <th className="p-3 text-left">Hành động</th>
-
                             </tr>
                         </thead>
                         <tbody>

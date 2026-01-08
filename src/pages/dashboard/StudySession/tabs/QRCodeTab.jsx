@@ -4,7 +4,7 @@ import {
     ArrowUp,
     FileSpreadsheet,
     FilterX,
-    Settings, X,
+    Settings, X, FileSearchIcon
 } from "lucide-react";
 
 const QRCodeTab = () => {
@@ -147,50 +147,57 @@ const QRCodeTab = () => {
                     )}
                 </div>
 
-                <div className="flex flex-wrap gap-3 mt-6 justify-end">
-                    <button className="flex items-center gap-2 border border-teal-500 text-teal-600 px-5 py-2.5 rounded-lg hover:bg-teal-50" onClick={() => setIsDrawerOpen(true)}>
-                        <FileSpreadsheet className="w-5 h-5" />
-                        Tải Excel
-                    </button>
+                <div className="mt-6 flex flex-wrap items-center justify-start md:justify-end gap-4">
+                    <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
+                        {/* Xóa bộ lọc */}
+                        <button className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" >
+                            <FileSearchIcon className="w-5 h-5" />
+                            Tìm kiếm
+                        </button>
+                        <button className="flex items-center gap-2 border border-teal-500 text-teal-600 px-5 py-2.5 rounded-lg hover:bg-teal-50" onClick={() => setIsDrawerOpen(true)}>
+                            <FileSpreadsheet className="w-5 h-5" />
+                            Tải Excel
+                        </button>
 
-                    <button className="flex items-center gap-2 border px-5 py-2.5 rounded-lg hover:bg-gray-50">
-                        <FilterX className="w-5 h-5" />
-                        Xóa bộ lọc
-                    </button>
+                        <button className="flex items-center gap-2 border px-5 py-2.5 rounded-lg hover:bg-gray-50">
+                            <FilterX className="w-5 h-5" />
+                            Xóa bộ lọc
+                        </button>
 
-                    <details className="relative">
-                        <summary className="list-none cursor-pointer flex items-center gap-2 border px-5 py-2.5 rounded-lg hover:bg-gray-50">
-                            <Settings className="w-5 h-5" />
-                            Hiển thị cột
-                        </summary>
+                        <details className="relative">
+                            <summary className="list-none cursor-pointer flex items-center gap-2 border px-5 py-2.5 rounded-lg hover:bg-gray-50">
+                                <Settings className="w-5 h-5" />
+                                Hiển thị cột
+                            </summary>
 
-                        <div className="absolute right-0 mt-2 w-100% bg-white border rounded-lg shadow p-2 z-20">
-                            {[
-                                ["mahocphan", "Mã học phần"],
-                                ["tenhocphan", "Tên học phần"],
-                                ["thoigiantao", "Thời gian tạo"],
-                                ["ketthucqr", "Kết thúc QR"],
-                                ["magv", "Mã GV"],
-                                ["loailich", "Loại lịch"],
-                                ["nhomth", "Nhóm TH"],
-                                ["tengiangvien", "Tên giảng viên"],
-                                ["nguoitao", "Người tạo"],
-                            ].map(([key, label]) => (
-                                <div
-                                    key={key}
-                                    onClick={() =>
-                                        setVisibleCols((p) => ({ ...p, [key]: !p[key] }))
-                                    }
-                                    className={`px-3 py-2 rounded cursor-pointer ${visibleCols[key]
-                                        ? "bg-sky-50 text-sky-600 font-medium"
-                                        : "hover:bg-gray-50"
-                                        }`}
-                                >
-                                    {label}
-                                </div>
-                            ))}
-                        </div>
-                    </details>
+                            <div className="absolute right-0 mt-2 w-100% bg-white border rounded-lg shadow p-2 z-20">
+                                {[
+                                    ["mahocphan", "Mã học phần"],
+                                    ["tenhocphan", "Tên học phần"],
+                                    ["thoigiantao", "Thời gian tạo"],
+                                    ["ketthucqr", "Kết thúc QR"],
+                                    ["magv", "Mã GV"],
+                                    ["loailich", "Loại lịch"],
+                                    ["nhomth", "Nhóm TH"],
+                                    ["tengiangvien", "Tên giảng viên"],
+                                    ["nguoitao", "Người tạo"],
+                                ].map(([key, label]) => (
+                                    <div
+                                        key={key}
+                                        onClick={() =>
+                                            setVisibleCols((p) => ({ ...p, [key]: !p[key] }))
+                                        }
+                                        className={`px-3 py-2 rounded cursor-pointer ${visibleCols[key]
+                                            ? "bg-sky-50 text-sky-600 font-medium"
+                                            : "hover:bg-gray-50"
+                                            }`}
+                                    >
+                                        {label}
+                                    </div>
+                                ))}
+                            </div>
+                        </details>
+                </div>
                 </div>
 
             </div>
