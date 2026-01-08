@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
 import {
     Edit, Eye, IdCard, Table2,
-    ArrowDown, ArrowUp
+    ArrowDown, ArrowUp, FileSpreadsheet, FilterX,
+    FileSearchIcon
 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -110,7 +111,7 @@ const StudentStudySession = () => {
                         ) : (
                             <>
                                 <ArrowDown size={16} className="mr-1" />
-                                Mở rộng bộ lọc
+                                    Mở rộng
                             </>
                         )}
                     </button>
@@ -195,7 +196,35 @@ const StudentStudySession = () => {
                         </>
                     )}
 
+                </div>
+                {/* Actions */}
+                <div className="mt-6 flex flex-wrap items-center justify-start md:justify-end gap-4">
+                    <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
+                        {/* Xóa bộ lọc */}
+                        <button
+                            className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
+                        >
+                            <FileSearchIcon className="w-5 h-5" />
+                            Tìm kiếm
+                        </button>
 
+                        {/* Export Excel */}
+                        <button
+                            className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
+                        >
+                            <FileSpreadsheet className="w-5 h-5" />
+                            Export Excel
+                        </button>
+
+                        {/* Xóa bộ lọc */}
+                        <button
+                            className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                        >
+                            <FilterX className="w-5 h-5" />
+                            Xóa bộ lọc
+                        </button>
+
+                    </div>
                 </div>
             </div>
 
@@ -242,10 +271,12 @@ const StudentStudySession = () => {
                     </thead>
                     <tbody>
                         {filteredStudents.map((student) => (
+
                             <tr key={student.id} className="hover:bg-gray-50"
                                 onClick={() => navigate('/dashboard/results-qr-detail-user')}
                                 style={{ cursor: "pointer" }}
                             >
+
                                 <td className="py-3 px-4">
                                     <img
                                         src={student.avatar_url}
@@ -271,7 +302,9 @@ const StudentStudySession = () => {
 
             {/* CARD VIEW */}
             {view === "card" && (
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
                     {filteredStudents.map((student) => (
                         <div key={student.id} className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition"
                             onClick={() => navigate('/dashboard/results-qr-detail-user')}

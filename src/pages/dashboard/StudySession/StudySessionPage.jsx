@@ -66,13 +66,12 @@ const StudySessionPage = () => {
                             </div>
                         </div>
                     </div>
-
-
-            <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200" title="Tạo điểm danh, sẽ được truy cập vào tab điểm danh" onClick={openDrawer}>
+            <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200 w-full md:w-auto"
+              title="Tạo điểm danh, sẽ được truy cập vào tab điểm danh" onClick={openDrawer}>
               <ScanQrCode className="w-5 h-5" />
               <span>Tạo điểm danh</span>
-                    </button>
-                </div>
+            </button>
+          </div>
 
                 {/* Tabs */}
                 <div className="px-6 py-3 border-t border-slate-100 md:hidden">

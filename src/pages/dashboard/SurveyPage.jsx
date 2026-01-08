@@ -8,7 +8,7 @@ import {
   ChevronDown,
   CheckCircle2,
   Eye, ArrowDownToLine, FileSpreadsheet, FilterX, File, Settings, X, Camera,
-  Printer
+  Printer, FileSearchIcon
 } from "lucide-react";
 
 export default function LecturerSurveyManagement() {
@@ -220,8 +220,13 @@ export default function LecturerSurveyManagement() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-3 mt-6 justify-end">
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center justify-start md:justify-end gap-4">
+            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
+              {/* Xóa bộ lọc */}
+              <button className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" >
+                <FileSearchIcon className="w-5 h-5" />
+                Tìm kiếm
+              </button>
               <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200" onClick={() => setIsDrawerOpen(true)}>
                 <FileSpreadsheet className="w-5 h-5" />
                 Tải Excel
