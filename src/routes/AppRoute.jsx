@@ -33,6 +33,9 @@ import AdminStudentPage from "@pages/dashboard/admin/AdminStudentPage";
 import AdminTeacherPage from "@pages/dashboard/admin/AdminTeacherPage";
 import AdminAccountPage from "@pages/dashboard/admin/AdminAccountPage";
 import AdminSurveyPage from "@pages/dashboard/admin/AdminSurveyPage";
+import AdminSchedulePage from "@pages/dashboard/admin/AdminSchedulePage";
+import AdminCoursePage from "@pages/dashboard/admin/AdminCoursePage";
+import AdminEnrollPage from "@pages/dashboard/admin/AdminEnrollPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -185,7 +188,16 @@ const router = createBrowserRouter([
       }, {
         path: "admin/surveys",
         element: <AdminSurveyPage />,
-      }
+      }, {
+        path: "admin/schedules",
+        element: <AdminSchedulePage />,
+      }, {
+        path: "admin/courses",
+        element: <AdminCoursePage />,
+      }, {
+        path: "admin/enrollments",
+        element: <AdminEnrollPage />,
+      },
     ],
   },
 

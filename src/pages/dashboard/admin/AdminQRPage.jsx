@@ -374,87 +374,109 @@ const AdminQRPage = () => {
             </div>
 
             {/* TABLE */}
-            <div className="w-full overflow-x-auto bg-white rounded-b-xl shadow">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-100 sticky top-0 z-10">
-                  <tr>
-                    <th className="h-12 px-4 font-semibold text-slate-600">Mã nhân sự</th>
-                    <th className="h-12 px-4 font-semibold text-slate-600">Giảng viên</th>
-                    <th className="h-12 px-4 font-semibold text-slate-600">Khoa</th>
-                    <th className="h-12 px-4 font-semibold text-slate-600">Tiết dạy</th>
-                    <th className="h-12 px-4 font-semibold text-slate-600 text-center">Ngày dạy</th>
-                    <th className="h-12 px-4 font-semibold text-slate-600 text-center">
+            <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow">
+              <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
+
+                {/* ================== HEADER ================== */}
+                <thead className="sticky top-0 z-10 bg-slate-100">
+                  <tr className="border-b">
+
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Mã nhân sự
+                    </th>
+
+                    <th className="h-12 px-4 min-w-[220px] text-xs font-semibold text-slate-600 uppercase">
+                      Giảng viên
+                    </th>
+
+                    <th className="h-12 px-4 min-w-[160px] text-xs font-semibold text-slate-600 uppercase hidden lg:table-cell">
+                      Khoa
+                    </th>
+
+                    <th className="h-12 px-4 min-w-[180px] text-xs font-semibold text-slate-600 uppercase">
+                      Tiết dạy
+                    </th>
+
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase text-center">
+                      Ngày dạy
+                    </th>
+
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase text-center">
                       Trạng thái học phần
                     </th>
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-slate-200">
+                {/* ================== BODY ================== */}
+                <tbody>
                   {giangvien.map((gv) => (
                     <tr
                       key={gv.maNhanSu}
-                      onClick={() => navigate(`/dashboard/admin/qrcode/session/qrcode-detail`)}
-
-                      className="hover:bg-slate-50 transition-colors cursor-pointer"
+                      onClick={() =>
+                        navigate(`/dashboard/admin/qrcode/session/qrcode-detail`)
+                      }
+                      className="border-b hover:bg-slate-50 transition-colors cursor-pointer h-12"
                     >
                       {/* Mã nhân sự */}
-                      <td className="px-4 py-3 font-medium text-slate-700">
+                      <td className="px-4 py-2 font-medium text-slate-700">
                         {gv.maNhanSu}
                       </td>
 
                       {/* Giảng viên */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3" >
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-3 max-w-[240px]">
                           <img
                             src={gv.avatar_url}
                             alt={gv.hoTen}
-                            className="w-9 h-9 rounded-full object-cover border"
+                            className="w-9 h-9 rounded-full object-cover border shrink-0"
                           />
-                          <div>
-                            <div className="font-medium text-slate-800">
+                          <div className="truncate" title={gv.hoTen}>
+                            <div className="font-medium text-slate-800 truncate">
                               {gv.hoTen}
                             </div>
-
                           </div>
                         </div>
                       </td>
 
                       {/* Khoa */}
-                      <td className="px-4 py-3 text-slate-700">
+                      <td
+                        className="px-4 py-2 text-slate-700 hidden lg:table-cell truncate max-w-[180px]"
+                        title={gv.khoa}
+                      >
                         {gv.khoa}
                       </td>
 
                       {/* Tiết dạy */}
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
+                      <td className="px-4 py-2">
+                        <div className="flex gap-1 flex-nowrap">
                           {gv.tietDay.map((tiet, index) => (
                             <span
                               key={index}
-                              className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700"
+                              className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 shrink-0"
                             >
                               {tiet}
                             </span>
                           ))}
                         </div>
                       </td>
+
                       {/* Ngày dạy */}
-                      <td className="px-4 py-3 text-center text-slate-700">
+                      <td className="px-4 py-2 text-center text-slate-700">
                         {gv.ngayday}
                       </td>
 
-                      {/* Actions */}
-                      <td className="px-4 py-3">
-
-                        <span className="px-4 py-1 text-sm rounded-full bg-green-100 text-green-600">
+                      {/* Trạng thái */}
+                      <td className="px-4 py-2 text-center">
+                        <span className="inline-flex items-center justify-center min-w-[90px] px-3 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-600">
                           {gv.trangthaihocphan}
                         </span>
-
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+
 
             {/* PAGINATION */}
             <Pagination

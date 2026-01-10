@@ -27,7 +27,7 @@ import {
   ArrowUpWideNarrow, Settings
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
-const AdminSurveyPage = () => {
+const AdminSchedulePage = () => {
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -138,6 +138,115 @@ const AdminSurveyPage = () => {
     department: false,
     averageRating: false,
   });
+
+  //lịch
+  const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
+  const sessions = [
+    {
+      name: "BUỔI SÁNG",
+      color: "bg-emerald-100 text-emerald-700",
+      slots: [
+        { period: "1", time: "6h30 - 7h20" },
+        { period: "2", time: "7h20 - 8h10" },
+        { period: "3", time: "8h10 - 9h00" },
+        { period: "Nghỉ", time: "Giải lao 10 phút", break: true },
+        { period: "4", time: "9h10 - 10h00" },
+        { period: "5", time: "10h00 - 10h50" },
+        { period: "6", time: "10h50 - 11h40" },
+      ],
+    },
+    {
+      name: "BUỔI CHIỀU",
+      color: "bg-amber-100 text-amber-700",
+      slots: [
+        { period: "7", time: "12h30 - 13h20" },
+        { period: "8", time: "13h20 - 14h10" },
+        { period: "9", time: "14h10 - 15h00" },
+        { period: "Nghỉ", time: "Giải lao 10 phút", break: true },
+        { period: "10", time: "15h10 - 16h00" },
+        { period: "11", time: "16h00 - 16h50" },
+        { period: "12", time: "16h50 - 17h40" },
+      ],
+    },
+    {
+      name: "BUỔI TỐI",
+      color: "bg-indigo-100 text-indigo-700",
+      slots: [
+        { period: "13", time: "18h00 - 18h50" },
+        { period: "14", time: "18h50 - 19h40" },
+        { period: "Nghỉ", time: "Giải lao 10 phút", break: true },
+        { period: "15", time: "19h50 - 20h40" },
+        { period: "16", time: "20h40 - 21h30" },
+      ],
+    },
+  ];
+  // ================= LỊCH - KÉO CHỌN TIẾT =================
+  const [isDragging, setIsDragging] = useState(false);
+  const [startCell, setStartCell] = useState(null);
+  const [selectedCells, setSelectedCells] = useState([]);
+
+  const handleMouseDown = (cell) => {
+    setIsDragging(true);
+    setStartCell(cell);
+    setSelectedCells([cell]);
+  };
+
+  const handleMouseEnter = (cell) => {
+    if (!isDragging || !startCell) return;
+    if (cell.day !== startCell.day) return;
+
+    const start = Number(startCell.period);
+    const end = Number(cell.period);
+
+    const min = Math.min(start, end);
+    const max = Math.max(start, end);
+
+    const range = [];
+    for (let i = min; i <= max; i++) {
+      range.push({ day: cell.day, period: i });
+    }
+
+    setSelectedCells(range);
+  };
+
+  const handleMouseUp = () => {
+    if (selectedCells.length > 0) {
+      openDrawer({
+        day: selectedCells[0].day,
+        from: selectedCells[0].period,
+        to: selectedCells[selectedCells.length - 1].period,
+        onCancel: clearSelection,
+      });
+      console.log("Selected:", selectedCells);
+    }
+    setIsDragging(false);
+    setStartCell(null);
+  };
+
+  const isSelected = (day, period) =>
+    selectedCells.some(
+      (c) => c.day === day && c.period === Number(period)
+    );
+
+  const clearSelection = () => {
+    setSelectedCells([]);
+    setIsDragging(false);
+    setStartCell(null);
+  };
+
+
+  // chọn nhóm modal
+  const [isTheory, setIsTheory] = React.useState(false);
+  const [isPractice, setIsPractice] = React.useState(false);
+
+  const [practiceGroups, setPracticeGroups] = React.useState({
+    group1: { checked: false, quantity: "" },
+    group2: { checked: false, quantity: "" },
+    group3: { checked: false, quantity: "" },
+    group4: { checked: false, quantity: "" },
+  });
+
+
   return (
 
     <div className="min-h-screen">
@@ -152,13 +261,13 @@ const AdminSurveyPage = () => {
                 value="21,459"
                 percent="(+29%)"
                 positive={true}
-                subtitle="Khảo sát đã tạo"
+                subtitle="lịch dạy đã tạo"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
               />
 
               <StatsCard
-                title="Học phần đã tạo"
+                title="Lịch dạy"
                 value="4567"
                 percent="(+18%)"
                 positive={true}
@@ -168,21 +277,21 @@ const AdminSurveyPage = () => {
               />
 
               <StatsCard
-                title="Đang mở"
+                title="Tổng lịch dạy"
                 value="19,860"
                 percent="(-14%)"
                 positive={false}
-                subtitle="số học phần"
+                subtitle="tồn tại sinh viên"
                 icon={<UserCheck className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
               />
 
               <StatsCard
-                title="Đã khóa"
+                title="Tổng lịch dạy"
                 value="237"
                 percent="(+42%)"
                 positive={true}
-                subtitle="số học phần"
+                subtitle="chưa có sinh viên"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />
@@ -243,7 +352,6 @@ const AdminSurveyPage = () => {
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Trạng thái
@@ -272,6 +380,16 @@ const AdminSurveyPage = () => {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mã giảng viên
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: ...."
+                        className="w-full rounded-lg border px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Tên môn học
                       </label>
                       <input
@@ -282,7 +400,7 @@ const AdminSurveyPage = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mã giảng viên
+                        Phòng học
                       </label>
                       <input
                         type="text"
@@ -302,10 +420,43 @@ const AdminSurveyPage = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ngày tạo
+                        Thời gian dạy
+                      </label>
+                      <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>(1-3) 6:30 </option>
+                        <option>(4-6) 9:10 </option>
+                        <option>(7-9) 12:30 </option>
+                        <option>(10-12) 15:10 </option>
+                        <option>(13-15) 18:00 </option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Thời gian dạy kết thúc
+                      </label>
+                      <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>(1-3) 9:00</option>
+                        <option>(4-6) 11:40</option>
+                        <option>(7-9)  15:00</option>
+                        <option>(10-12) 17:40</option>
+                        <option>(13-15) 20:30</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Hình thức học
+                      </label>
+                      <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>Lý thuyết</option>
+                        <option>Thực hành</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nhóm thực hành
                       </label>
                       <input
-                        type="date"
+                        type="text"
                         placeholder="Ví dụ: ...."
                         className="w-full rounded-lg border px-3 py-2"
                       />
@@ -318,12 +469,12 @@ const AdminSurveyPage = () => {
               {/* Actions */}
               <div className="mt-6 flex flex-wrap items-center gap-4 w-full justify-start md:justify-end md:w-auto">
                 <div className="flex flex-wrap items-center gap-2 ">
-                  <button className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Tạo khảo sát, thủ công">
+                  {/* <button className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Tạo lịch dạy cho 1 giảng viên, thủ công">
                     <CirclePlus className="w-5 h-5" />
                   </button>
                   <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Khóa khảo sát">
                     <Lock className="w-5 h-5" />
-                  </button>
+                  </button> */}
                   <button className="flex items-center gap-2 border border-emerald-400 text-emerald-300 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Tạo khảo sát cho toàn bộ họ phần, khi lọc học phần đã đến hạn">
                     <ArrowUpWideNarrow className="w-5 h-5" />
                   </button>
@@ -400,97 +551,98 @@ const AdminSurveyPage = () => {
 
 
             {/* TABLE */}
-            <div className="w-full overflow-x-auto rounded-b-lg border border-gray-200">
+            <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow mb-6">
               <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
+
                 {/* ================== HEADER ================== */}
-                <thead className="sticky top-0 bg-gray-100 z-10">
+                <thead className="sticky top-0 z-10 bg-gray-100">
                   <tr className="border-b">
 
                     {/* Checkbox */}
-                    <th className="w-12 px-4 text-xs font-semibold text-gray-600 uppercase">
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
                       <input type="checkbox" />
                     </th>
 
                     {visibleCols.courseCode && (
-                      <th className="h-12 px-4 text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
                         Mã học phần
                       </th>
                     )}
 
                     {visibleCols.courseName && (
-                      <th className="h-12 px-4 min-w-[220px] text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 min-w-[220px] text-xs font-semibold text-slate-600 uppercase">
                         Tên học phần
                       </th>
                     )}
 
                     {visibleCols.semester && (
-                      <th className="h-12 px-4 text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
                         Học kỳ
                       </th>
                     )}
 
                     {visibleCols.academicYear && (
-                      <th className="h-12 px-4 text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
                         Năm học
                       </th>
                     )}
 
                     {visibleCols.learningForm && (
-                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
                         Hình thức học
                       </th>
                     )}
 
                     {visibleCols.practicalGroup && (
-                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
                         Nhóm TH
                       </th>
                     )}
 
                     {visibleCols.createdAt && (
-                      <th className="h-12 px-4 hidden md:table-cell text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 hidden md:table-cell text-xs font-semibold text-slate-600 uppercase">
                         Ngày tạo
                       </th>
                     )}
 
                     {visibleCols.endAt && (
-                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
                         Ngày kết thúc
                       </th>
                     )}
 
                     {visibleCols.instructorCode && (
-                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
                         Mã GV
                       </th>
                     )}
 
                     {visibleCols.instructor && (
-                      <th className="h-12 px-4 min-w-[180px] text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 min-w-[180px] text-xs font-semibold text-slate-600 uppercase">
                         Giảng viên
                       </th>
                     )}
 
                     {visibleCols.department && (
-                      <th className="h-12 px-4 hidden xl:table-cell text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 hidden xl:table-cell text-xs font-semibold text-slate-600 uppercase">
                         Khoa
                       </th>
                     )}
 
                     {visibleCols.averageRating && (
-                      <th className="h-12 px-4 hidden xl:table-cell text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 hidden xl:table-cell text-xs font-semibold text-slate-600 uppercase">
                         Điểm ĐG
                       </th>
                     )}
 
                     {visibleCols.status && (
-                      <th className="h-12 px-4 text-center text-xs font-semibold text-gray-600 uppercase">
+                      <th className="h-12 px-4 text-center text-xs font-semibold text-slate-600 uppercase">
                         Trạng thái
                       </th>
                     )}
 
-                    {/* Action */}
-                    <th className="h-12 px-4 text-center text-xs font-semibold text-gray-600 uppercase">
+                    {/* Actions */}
+                    <th className="h-12 px-4 text-center text-xs font-semibold text-slate-600 uppercase">
                       Hành động
                     </th>
                   </tr>
@@ -575,7 +727,10 @@ const AdminSurveyPage = () => {
                       )}
 
                       {visibleCols.department && (
-                        <td className="px-4 py-2 hidden xl:table-cell">
+                        <td
+                          className="px-4 py-2 hidden xl:table-cell truncate max-w-[180px]"
+                          title={u.department}
+                        >
                           {u.department}
                         </td>
                       )}
@@ -589,7 +744,7 @@ const AdminSurveyPage = () => {
                       {visibleCols.status && (
                         <td className="px-4 py-2 text-center">
                           <span
-                            className={`inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-full text-xs font-medium
+                            className={`inline-flex items-center justify-center min-w-[80px] px-3 py-0.5 rounded-full text-xs font-medium
                   ${u.status === "Active"
                                 ? "bg-green-100 text-green-600"
                                 : u.status === "Pending"
@@ -603,7 +758,7 @@ const AdminSurveyPage = () => {
                         </td>
                       )}
 
-                      {/* Action */}
+                      {/* Actions */}
                       <td className="px-4 py-2">
                         <div className="flex justify-center gap-3">
                           <button title="Xem chi tiết khảo sát">
@@ -615,8 +770,8 @@ const AdminSurveyPage = () => {
                   ))}
                 </tbody>
               </table>
-
             </div>
+
 
             {/* PAGINATION */}
             <Pagination
@@ -624,6 +779,100 @@ const AdminSurveyPage = () => {
               totalPages={totalPages}
               onPageChange={(page) => setCurrentPage(page)}
             />
+
+
+            {/* TIMETABLE */}
+            <div className="p-6 bg-white shadow-lg overflow-x-auto">
+              <h2 className="text-xl font-bold mb-4 text-gray-800">
+                Thời khóa biểu
+              </h2>
+
+              <table className="min-w-full border border-gray-200 text-sm select-none">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border px-3 py-2">Buổi</th>
+                    <th className="border px-3 py-2">Tiết</th>
+                    <th className="border px-3 py-2">Thời gian</th>
+                    {days.map((day) => (
+                      <th key={day} className="border px-3 py-2">
+                        {day}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody onMouseLeave={handleMouseUp}>
+                  {sessions.map((session) =>
+                    session.slots.map((slot, idx) => (
+                      <tr key={session.name + idx}>
+                        {idx === 0 && (
+                          <td
+                            rowSpan={session.slots.length}
+                            className={`border px-3 py-2 font-semibold text-center ${session.color}`}
+                          >
+                            {session.name}
+                          </td>
+                        )}
+
+                        <td className="border px-3 py-2 text-center font-medium">
+                          {slot.period}
+                        </td>
+
+                        <td className="border px-3 py-2">
+                          {slot.break ? (
+                            <span className="italic text-gray-500">
+                              {slot.time}
+                            </span>
+                          ) : (
+                            slot.time
+                          )}
+                        </td>
+
+                        {days.map((day) =>
+                          slot.break ? (
+                            <td
+                              key={day}
+                              className="border bg-gray-50"
+                            />
+                          ) : (
+                            <td
+                              key={day}
+                              onMouseDown={() =>
+                                handleMouseDown({
+                                  day,
+                                  period: slot.period,
+                                })
+                              }
+                              onMouseEnter={() =>
+                                handleMouseEnter({
+                                  day,
+                                  period: slot.period,
+                                })
+                              }
+                              onMouseUp={handleMouseUp}
+                              className={`
+                        border px-3 py-3 text-center cursor-pointer
+                        transition
+                        ${isSelected(day, slot.period)
+                                  ? "bg-emerald-500 text-white"
+                                  : "hover:bg-emerald-100"
+                                }
+                      `}
+                            >
+                              <span className="text-sm ">
+                                Kéo tạo lịch
+                              </span>
+                            </td>
+                          )
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+
 
             {/* MODAL UPLOAD */}
             <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
@@ -641,11 +890,14 @@ const AdminSurveyPage = () => {
                   {/* ================= HEADER ================= */}
                   <div className="flex items-center justify-between px-6 py-5 border-b bg-blue-300">
                     <h3 className="text-xl font-semibold text-gray-800">
-                      Cập nhật hồ sơ tài khoản
+                      Tạo lịch dạy
                     </h3>
 
                     <button
-                      onClick={closeDrawer}
+                      onClick={() => {
+                        closeDrawer();
+                        clearSelection();
+                      }}
                       className="p-2 rounded-full text-gray-600 hover:text-gray-800 hover:bg-lime-300 transition-all duration-300 hover:rotate-90"
                     >
                       <X size={18} />
@@ -656,57 +908,70 @@ const AdminSurveyPage = () => {
                   <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Cập nhật mật khẩu mới
-                      </label>
-                      <input
-                        type="password"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Xác nhận mật khẩu mới
-                      </label>
-                      <input
-                        type="password"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mã giảng viên / Sinh viên
+                        Thứ dạy
                       </label>
                       <input
                         type="text"
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Họ tên Giảng viên
+                        Thời gian bắt đầu tiết
                       </label>
                       <input
                         type="text"
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ngày sinh
+                        Thời gian kết thúc tiết
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mã học phần
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mã giảng viên
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày bắt đầu
                       </label>
                       <input
                         type="date"
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
+                        Ngày kết thúc
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phòng học
                       </label>
                       <input
                         type="text"
@@ -714,69 +979,132 @@ const AdminSurveyPage = () => {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Khoa / Viện
+                    <div className="flex items-center space-x-6">
+                      <label className="inline-flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={isTheory}
+                          onChange={(e) => setIsTheory(e.target.checked)}
+                          className="h-5 w-5 text-blue-600"
+                        />
+                        <span className="ml-2 text-gray-700 font-medium">
+                          Lý thuyết
+                        </span>
                       </label>
-                      <select className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
-                        <option>Khoa Công nghệ thông tin</option>
-                        <option>Khoa Điện tử - Viễn thông</option>
-                        <option>Khoa Cơ khí</option>
-                        <option>Khoa Kinh tế</option>
-                      </select>
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Số điện thoại
+                      <label className="inline-flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={isPractice}
+                          onChange={(e) => setIsPractice(e.target.checked)}
+                          className="h-5 w-5 text-blue-600"
+                        />
+                        <span className="ml-2 text-gray-700 font-medium">
+                          Thực hành
+                        </span>
                       </label>
-                      <input
-                        type="text"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
                     </div>
+                    {/* NẾU CHỌN LÝ THUYẾT → HIỂN THỊ SỐ LƯỢNG SV */}
+                    {isTheory && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Số lượng SVHP lý thuyết
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="Ví dụ: 120"
+                          className="w-full rounded-lg border border-blue-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        />
+                      </div>
+                    )}
+                    {/* NẾU CHỌN THỰC HÀNH → HIỂN THỊ SỐ LƯỢNG SV */}
+                    {isPractice && (
+                      <div className="space-y-3">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Nhóm thực hành
+                        </label>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phân quyền tài khoản
-                      </label>
-                      <select className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-                        <option>Giảng viên</option>
-                        <option>Quản trị viên</option>
-                        <option>Bộ phận chấm công</option>
-                      </select>
-                    </div>
+                        {[
+                          { key: "group1", label: "Nhóm TH 1" },
+                          { key: "group2", label: "Nhóm TH 2" },
+                          { key: "group3", label: "Nhóm TH 3" },
+                          { key: "group4", label: "Nhóm TH 4" },
+                        ].map((g) => {
+                          const group = practiceGroups[g.key];
 
-                    {/* Ảnh đại diện */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ảnh đại diện
-                      </label>
-                      <input
-                        type="file"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-                    {/* thiết kế khung ảnh hiện tại */}
-                    <div className="relative w-28 h-28 mx-auto">
-                      <img
-                        src={"https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png"}
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                      <label
-                        htmlFor="avatar-upload"
-                        className="absolute bottom-0 right-0 bg-sky-500 p-2 rounded-full text-white shadow hover:bg-sky-600 cursor-pointer"
-                      >
-                        <Camera size={16} />
-                      </label>
-                    </div>
+                          return (
+                            <div
+                              key={g.key}
+                              className="flex items-center gap-4 p-3 border rounded-lg hover:bg-gray-50"
+                            >
+                              {/* Checkbox */}
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={group.checked}
+                                  onChange={(e) =>
+                                    setPracticeGroups({
+                                      ...practiceGroups,
+                                      [g.key]: {
+                                        ...group,
+                                        checked: e.target.checked,
+                                      },
+                                    })
+                                  }
+                                  className="h-4 w-4 text-blue-600"
+                                />
+                                <span className="ml-2 text-gray-700">
+                                  {g.label}
+                                </span>
+                              </label>
+
+                              {/* Input số lượng */}
+                              <input
+                                type="number"
+                                min={0}
+                                placeholder="Số SV"
+                                disabled={!group.checked}
+                                value={group.quantity}
+                                onChange={(e) =>
+                                  setPracticeGroups({
+                                    ...practiceGroups,
+                                    [g.key]: {
+                                      ...group,
+                                      quantity: e.target.value,
+                                    },
+                                  })
+                                }
+                                className={`w-28 rounded-lg border px-3 py-1.5
+              ${group.checked
+                                    ? "border-blue-300 focus:ring-2 focus:ring-blue-200"
+                                    : "bg-gray-100 border-gray-200 cursor-not-allowed"
+                                  }
+            `}
+                              />
+
+                              <span className="text-sm text-gray-500">
+                                SV
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+
+
+
+
 
                   </div>
 
                   {/* ================= FOOTER ================= */}
                   <div className=" sticky bottom-0 flex justify-end gap-4 px-6 py-4 border-t bg-white/90 backdrop-blur">
                     <button
-                      onClick={closeDrawer}
+                      onClick={() => {
+                        closeDrawer();
+                        clearSelection();
+                      }}
                       className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
                     >
                       Hủy
@@ -785,7 +1113,7 @@ const AdminSurveyPage = () => {
                     <button
                       className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md"
                     >
-                      Lưu thay đổi
+                      Tạo lịch học
                     </button>
                   </div>
                 </div>
@@ -795,9 +1123,9 @@ const AdminSurveyPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
 
   );
 };
 
-export default AdminSurveyPage;
+export default AdminSchedulePage;
