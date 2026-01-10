@@ -36,6 +36,7 @@ import AdminSurveyPage from "@pages/dashboard/admin/AdminSurveyPage";
 import AdminSchedulePage from "@pages/dashboard/admin/AdminSchedulePage";
 import AdminCoursePage from "@pages/dashboard/admin/AdminCoursePage";
 import AdminEnrollPage from "@pages/dashboard/admin/AdminEnrollPage";
+import AdminRoomPage from "../pages/dashboard/admin/AdminRoomPage";
 
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
@@ -197,7 +198,10 @@ const router = createBrowserRouter([
       }, {
         path: "admin/enrollments",
         element: <AdminEnrollPage />,
-      },
+      },{
+        path: "admin/rooms",
+        element: <AdminRoomPage />,
+      }
     ],
   },
 
