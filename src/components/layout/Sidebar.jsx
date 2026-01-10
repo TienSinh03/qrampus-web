@@ -21,6 +21,7 @@ import {
   CalendarClock,
   FolderOpenDot,
   UserStar,
+  Grid2X2,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useState, useEffect } from 'react';
@@ -62,6 +63,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { icon: FolderOpenDot, label: 'Quản lý Khóa học', path: '/dashboard/admin/courses' },
     { icon: CalendarClock, label: 'Quản lý Lịch dạy', path: '/dashboard/admin/schedules' },
     { icon: UserStar, label: 'Quản lý Đăng ký', path: '/dashboard/admin/enrollments' },
+    { icon: Grid2X2, label: 'Quản lý Phòng học', path: '/dashboard/admin/rooms' },
     { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/admin/notifications' },
   ];
 
