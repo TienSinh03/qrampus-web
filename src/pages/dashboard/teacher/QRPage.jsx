@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 // import { useTranslation } from 'react-i18next';
-import StatsCard from "../../components/common/StatsCard";
+import StatsCard from "../../../components/common/StatsCard";
 import {
   CirclePlus, Trash2, LockKeyhole, CloudUpload, Eye, MoreVertical,
   PencilLine, Users, UserCheck, UserX, UserPlus, SquareStar, SquareCheck,

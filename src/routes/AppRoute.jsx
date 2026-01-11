@@ -7,23 +7,24 @@ import {
 import LoginPage from "@pages/auth/LoginPage";
 import RegisterPage from "@pages/auth/RegisterPage";
 import ChangePasswordPage from "@pages/dashboard/AccountSetting/ChangePasswordPage";
-import DashboardPage from "@pages/dashboard/DashboardPage";
-import SchedulePage from "@pages/dashboard/SchedulePage";
-import UsersPage from "@pages/dashboard/UsersPage";
-import QRPage from "@pages/dashboard/QRPage";
+
+// giảng viên
+import DashboardPage from "@pages/dashboard/teacher/DashboardPage";
+import SchedulePage from "@pages/dashboard/teacher/SchedulePage";
+import QRPage from "@pages/dashboard/teacher/QRPage";
 import StudySessionPage from "@pages/dashboard/StudySession/StudySessionPage";
 import ResultQRPage from "@pages/dashboard/ResultsQR/ResultQRPage";
 import ResultQRextendPage from "../pages/dashboard/ResultsQR/ResultQRextendPage";
 import ResultQRDetailUserPage from "../pages/dashboard/ResultsQR/ResultQRDetailUserPage";
 import ResultQRextendStudentPage from "../pages/dashboard/ResultsQR/ResultQRextendStudentPage";
 import AccountPage from "@pages/dashboard/AccountSetting/AccountPage";
-import QRViewPage from "../pages/dashboard/QRViewPage";
-import Timekeeping from "../pages/dashboard/Timekeeping";
-import SurveyPage from "../pages/dashboard/SurveyPage";
-import LeavePage from "../pages/dashboard/LeavePage";
-import AnnouncementPage from "../pages/dashboard/AnnouncementPage";
-import Setting from "../pages/dashboard/SettingPage";
-import ReportPage from "../pages/dashboard/ReportPage";
+import QRViewPage from "../pages/dashboard/teacher/QRViewPage";
+import Timekeeping from "../pages/dashboard/teacher/Timekeeping";
+import SurveyPage from "../pages/dashboard/teacher/SurveyPage";
+import LeavePage from "../pages/dashboard/teacher/LeavePage";
+import AnnouncementPage from "../pages/dashboard/teacher/AnnouncementPage";
+import Setting from "../pages/dashboard/teacher/SettingPage";
+import ReportPage from "../pages/dashboard/teacher/ReportPage";
 
 // ADMIN
 import AdminQRPage from "@pages/dashboard/admin/AdminQRPage";
@@ -91,10 +92,6 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <DashboardPage />,
-      },
-      {
-        path: "users",
-        element: <UsersPage />,
       },
       {
         path: "schedule",
