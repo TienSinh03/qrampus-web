@@ -38,6 +38,11 @@ import AdminCoursePage from "@pages/dashboard/admin/AdminCoursePage";
 import AdminEnrollPage from "@pages/dashboard/admin/AdminEnrollPage";
 import AdminRoomPage from "../pages/dashboard/admin/AdminRoomPage";
 
+
+
+// attendance 
+import AttendanceDashboardPage from "@pages/dashboard/departmentAttendance/AttendanceDashboardPage";
+
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
 import RoleSwitchPage from "@pages/dashboard/RoleSwitchPage";
@@ -201,6 +206,26 @@ const router = createBrowserRouter([
       },{
         path: "admin/rooms",
         element: <AdminRoomPage />,
+      },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      // attendance department dashboard
+      {
+        path: "attendance-dashboard",
+        element: <AttendanceDashboardPage />,
       }
     ],
   },

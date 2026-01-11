@@ -771,6 +771,156 @@ const AdminSchedulePage = () => {
                 </tbody>
               </table>
             </div>
+            <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow mb-6">
+              <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
+
+                {/* ================== HEADER ================== */}
+                <thead className="sticky top-0 z-10 bg-gray-100">
+                  <tr className="border-b">
+
+                    {/* Checkbox */}
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      <input type="checkbox" />
+                    </th>
+
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Mã giảng viên
+                    </th>
+
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Họ tên giảng viên
+                    </th>
+
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Khoa
+                    </th>
+
+                  </tr>
+                </thead>
+
+                {/* ================== BODY ================== */}
+                <tbody>
+                  {survey.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="border-b hover:bg-slate-50 transition-colors h-11"
+                    >
+                      {/* Checkbox */}
+                      <td className="px-4 py-2">
+                        <input type="checkbox" />
+                      </td>
+
+                      {visibleCols.courseCode && (
+                        <td className="px-4 py-2">
+                          {u.course_code}
+                        </td>
+                      )}
+
+                      {visibleCols.courseName && (
+                        <td
+                          className="px-4 py-2 max-w-[260px] truncate"
+                          title={u.course_name}
+                        >
+                          {u.course_name}
+                        </td>
+                      )}
+
+                      {visibleCols.semester && (
+                        <td className="px-4 py-2">
+                          {u.semester}
+                        </td>
+                      )}
+
+                      {visibleCols.academicYear && (
+                        <td className="px-4 py-2">
+                          {u.academic_year}
+                        </td>
+                      )}
+
+                      {visibleCols.learningForm && (
+                        <td className="px-4 py-2 hidden lg:table-cell">
+                          {u.learning_form}
+                        </td>
+                      )}
+
+                      {visibleCols.practicalGroup && (
+                        <td className="px-4 py-2 hidden lg:table-cell">
+                          {u.practical_group}
+                        </td>
+                      )}
+
+                      {visibleCols.createdAt && (
+                        <td className="px-4 py-2 hidden md:table-cell">
+                          {u.created_at}
+                        </td>
+                      )}
+
+                      {visibleCols.endAt && (
+                        <td className="px-4 py-2 hidden lg:table-cell">
+                          {u.end_at}
+                        </td>
+                      )}
+
+                      {visibleCols.instructorCode && (
+                        <td className="px-4 py-2 hidden lg:table-cell">
+                          {u.instructor_code}
+                        </td>
+                      )}
+
+                      {visibleCols.instructor && (
+                        <td
+                          className="px-4 py-2 max-w-[180px] truncate"
+                          title={u.instructor}
+                        >
+                          {u.instructor}
+                        </td>
+                      )}
+
+                      {visibleCols.department && (
+                        <td
+                          className="px-4 py-2 hidden xl:table-cell truncate max-w-[180px]"
+                          title={u.department}
+                        >
+                          {u.department}
+                        </td>
+                      )}
+
+                      {visibleCols.averageRating && (
+                        <td className="px-4 py-2 hidden xl:table-cell">
+                          {u.average_rating}
+                        </td>
+                      )}
+
+                      {visibleCols.status && (
+                        <td className="px-4 py-2 text-center">
+                          <span
+                            className={`inline-flex items-center justify-center min-w-[80px] px-3 py-0.5 rounded-full text-xs font-medium
+                  ${u.status === "Active"
+                                ? "bg-green-100 text-green-600"
+                                : u.status === "Pending"
+                                  ? "bg-yellow-100 text-yellow-600"
+                                  : "bg-gray-200 text-gray-600"
+                              }
+                `}
+                          >
+                            {u.status}
+                          </span>
+                        </td>
+                      )}
+
+                      {/* Actions */}
+                      <td className="px-4 py-2">
+                        <div className="flex justify-center gap-3">
+                          <button title="Xem chi tiết khảo sát">
+                            <Eye className="w-5 h-5 text-blue-500 hover:text-blue-700" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
 
             {/* PAGINATION */}
