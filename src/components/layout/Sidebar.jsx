@@ -65,6 +65,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { icon: UserStar, label: 'Quản lý Đăng ký', path: '/dashboard/admin/enrollments' },
     { icon: Grid2X2, label: 'Quản lý Phòng học', path: '/dashboard/admin/rooms' },
     { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/admin/notifications' },
+
+
+    // Attendance Department Dashboard
+    { icon: FolderCog, label: 'Dashboard Attendance', path: '/dashboard/attendance-dashboard' },
   ];
 
   const isActive = (path) => location.pathname === path;
