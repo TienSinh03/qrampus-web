@@ -36,108 +36,134 @@ const AdminSchedulePage = () => {
   const [openMenu, setOpenMenu] = useState(null);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerProps, setDrawerProps] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [schedules, setSchedules] = useState([]);
+  const [formData, setFormData] = useState({
+    day: '',
+    startTime: '',
+    endTime: '',
+    courseCode: '',
+    instructorCode: '',
+    startDate: '',
+    endDate: '',
+    room: '',
+    theoryQuantity: '',
+  });
 
-  const openDrawer = () => setIsDrawerOpen(true);
-  const closeDrawer = () => setIsDrawerOpen(false);
+  const openDrawer = (props) => {
+    setDrawerProps(props);
+    setIsDrawerOpen(true);
+  };
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setDrawerProps(null);
+  };
 
-  //gọi userfetch open
-  // useEffect(() => {
-  //   const handleClick = (e) => {
-  //     if (!e.target.closest(".dropdown-menu")) {
-  //       setOpenMenu(null);
-  //     }
-  //   };
 
-  //   document.addEventListener("click", handleClick);
-  //   return () => document.removeEventListener("click", handleClick);
-  // }, []);
 
   const totalPages = 5;
 
-  const survey = [
+  const monhoc = [
     {
       id: 1,
       course_code: "4203001549",
-      course_name: "Lập trình nâng cao",
+      course_name: "Lập trình Web nâng cao",
       semester: "HK1",
       academic_year: "2024-2025",
       status: "Active",
-      learning_form: "Lý thuyết",
-      practical_group: "",
-      created_at: "2024-09-01",
-      end_at: "2024-10-01",
-      instructor_code: "GV001",
-      instructor: "Nguyễn Văn A",
+      learning_code: 3,
+      learning_form: "Kết hợp",
       department: "Khoa Công nghệ thông tin",
-      // trung bình điểm dánh giá
-      average_rating: 4.5,
-    }, {
+    },
+    {
       id: 2,
-      course_code: "4203001550",
-      course_name: "Cơ sở dữ liệu",
-      semester: "HK1",
-      academic_year: "2024-2025",
-      status: "Pending",
-      learning_form: "Thực hành",
-      practical_group: "1",
-      created_at: "2024-09-05",
-      end_at: "2024-10-05",
-      instructor_code: "GV002",
-      instructor: "Trần Thị B",
-      department: "Khoa Công nghệ thông tin",
-      average_rating: 4.2,
-    }, {
-      id: 1,
-      course_code: "4203001549",
-      course_name: "Lập trình nâng cao",
+      course_code: "4203002010",
+      course_name: "Hệ quản trị Cơ sở dữ liệu",
       semester: "HK1",
       academic_year: "2024-2025",
       status: "Active",
-      learning_form: "Lý thuyết",
-      practical_group: "",
-      created_at: "2024-09-01",
-      end_at: "2024-10-01",
-      instructor_code: "GV001",
-      instructor: "Nguyễn Văn A",
-      department: "Khoa Công nghệ thông tin",
-      // trung bình điểm dánh giá
-      average_rating: 4.5,
-    }, {
-      id: 2,
-      course_code: "4203001550",
-      course_name: "Cơ sở dữ liệu",
-      semester: "HK1",
-      academic_year: "2024-2025",
-      status: "Pending",
+      learning_code: 2,
       learning_form: "Thực hành",
-      practical_group: "1",
-      created_at: "2024-09-05",
-      end_at: "2024-10-05",
-      instructor_code: "GV002",
-      instructor: "Trần Thị B",
       department: "Khoa Công nghệ thông tin",
-      average_rating: 4.2,
-    }
 
+    },
+    {
+      id: 3,
+      course_code: "4203003122",
+      course_name: "Phân tích và Thiết kế hệ thống",
+      semester: "HK2",
+      academic_year: "2024-2025",
+      status: "Pending",
+      learning_code: 1,
+      learning_form: "Lý thuyết",
+      department: "Khoa Công nghệ thông tin",
+
+    },
+    {
+      id: 4,
+      course_code: "4203014501",
+      course_name: "Đồ án chuyên ngành CNTT",
+      semester: "HK2",
+      academic_year: "2024-2025",
+      status: "Active",
+      learning_code: 3,
+      learning_form: "Kết hợp",
+      department: "Khoa Công nghệ thông tin",
+
+    },
+    {
+      id: 5,
+      course_code: "4203001588",
+      course_name: "An toàn và Bảo mật thông tin",
+      semester: "HK3",
+      academic_year: "2024-2025",
+      status: "Closed",
+      learning_code: 1,
+      learning_form: "Lý thuyết",
+      department: "Khoa Công nghệ thông tin",
+    }
   ];
 
-  const [expanded, setExpanded] = useState(false);
-  // cột , bảng
-  const [visibleCols, setVisibleCols] = useState({
-    courseCode: true,
-    courseName: true,
-    semester: true,
-    academicYear: true,
-    status: true,
-    learningForm: false,
-    practicalGroup: false,
-    createdAt: false,
-    endAt: false,
-    instructorCode: false,
-    instructor: true,
-    department: false,
-    averageRating: false,
-  });
+  const teacher = [
+    {
+      id: 1,
+      instructor_code: "1000001",
+      instructor: "Nguyễn Văn A",
+      email: "nguyenvana@example.com",
+      department: "Khoa Công nghệ thông tin",
+    },
+    {
+      id: 2,
+      instructor_code: "1000002",
+      instructor: "Trần Thị B",
+      email: "tranthib@example.com",
+      department: "Khoa Công nghệ thông tin",
+    },
+    {
+      id: 3,
+      instructor_code: "1000003",
+      instructor: "Lê Hoàng C",
+      email: "lehoangc@example.com",
+      department: "Khoa Thương mại Du lịch",
+    },
+    {
+      id: 4,
+      instructor_code: "1000004",
+      instructor: "Phạm Minh D",
+      email: "phamminhd@example.com",
+      department: "Khoa Điện tử",
+    },
+    {
+      id: 5,
+      instructor_code: "1000005",
+      instructor: "Vũ Thị E",
+      email: "vuthie@example.com",
+      department: "Khoa Tài chính Ngân hàng",
+    }
+  ];
+
 
   //lịch
   const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
@@ -180,12 +206,29 @@ const AdminSchedulePage = () => {
       ],
     },
   ];
+
+  const [periodToTime, setPeriodToTime] = useState({});
+
+  useEffect(() => {
+    const map = {};
+    sessions.forEach((session) => {
+      session.slots.forEach((slot) => {
+        if (!slot.break) {
+          const [start, end] = slot.time.split(" - ");
+          map[slot.period] = { start, end };
+        }
+      });
+    });
+    setPeriodToTime(map);
+  }, []);
+
   // ================= LỊCH - KÉO CHỌN TIẾT =================
   const [isDragging, setIsDragging] = useState(false);
   const [startCell, setStartCell] = useState(null);
   const [selectedCells, setSelectedCells] = useState([]);
 
   const handleMouseDown = (cell) => {
+    if (getScheduleForCell(cell.day, cell.period)) return; // Không cho kéo nếu đã có lịch
     setIsDragging(true);
     setStartCell(cell);
     setSelectedCells([cell]);
@@ -203,6 +246,7 @@ const AdminSchedulePage = () => {
 
     const range = [];
     for (let i = min; i <= max; i++) {
+      if (getScheduleForCell(cell.day, i)) continue; // Bỏ qua nếu có lịch
       range.push({ day: cell.day, period: i });
     }
 
@@ -245,6 +289,99 @@ const AdminSchedulePage = () => {
     group3: { checked: false, quantity: "" },
     group4: { checked: false, quantity: "" },
   });
+
+  const [theoryAssigned, setTheoryAssigned] = useState(false);
+  const [assignedGroups, setAssignedGroups] = useState({
+    group1: false,
+    group2: false,
+    group3: false,
+    group4: false,
+  });
+
+  useEffect(() => {
+    if (isDrawerOpen && selectedCourse) {
+      const courseCode = selectedCourse.course_code;
+      const hasTheory = schedules.some(s => s.courseCode === courseCode && s.isTheory);
+      setTheoryAssigned(hasTheory);
+
+      const assigned = {};
+      ['group1', 'group2', 'group3', 'group4'].forEach(g => {
+        assigned[g] = schedules.some(s => s.courseCode === courseCode && s.practiceGroups?.[g]?.checked);
+      });
+      setAssignedGroups(assigned);
+
+      const form = selectedCourse.learning_form;
+      let theory = false;
+      let practice = false;
+      if (form === "Lý thuyết") {
+        theory = true;
+      } else if (form === "Thực hành") {
+        practice = true;
+      } else if (form === "Kết hợp") {
+        theory = true;
+        practice = true;
+      }
+      setIsTheory(theory && !hasTheory);
+      setIsPractice(practice);
+
+      if (!practice) {
+        setPracticeGroups({
+          group1: { checked: false, quantity: "" },
+          group2: { checked: false, quantity: "" },
+          group3: { checked: false, quantity: "" },
+          group4: { checked: false, quantity: "" },
+        });
+      }
+    }
+  }, [isDrawerOpen, selectedCourse, schedules]);
+
+  useEffect(() => {
+    if (isDrawerOpen && drawerProps) {
+      const { day, from, to } = drawerProps;
+      const startT = periodToTime[from]?.start || "";
+      const endT = periodToTime[to]?.end || "";
+      setFormData({
+        day: day || "",
+        startTime: startT,
+        endTime: endT,
+        courseCode: selectedCourse?.course_code || "",
+        instructorCode: selectedTeacher?.instructor_code || "",
+        startDate: "",
+        endDate: "",
+        room: "",
+        theoryQuantity: "",
+      });
+    }
+  }, [isDrawerOpen, drawerProps, selectedCourse, selectedTeacher, periodToTime]);
+
+  const handleCreateSchedule = () => {
+    const newSchedule = {
+      ...formData,
+      fromPeriod: drawerProps?.from,
+      toPeriod: drawerProps?.to,
+      isTheory,
+      isPractice,
+      practiceGroups: isPractice ? practiceGroups : null,
+    };
+    setSchedules((prev) => [...prev, newSchedule]);
+    toast.success("Lịch dạy đã được tạo");
+    closeDrawer();
+    clearSelection();
+  };
+
+  const getScheduleForCell = (day, period) => {
+    if (!selectedTeacher) return null;
+    return schedules.find(s =>
+      s.instructorCode === selectedTeacher.instructor_code &&
+      s.day === day &&
+      Number(s.fromPeriod) <= Number(period) &&
+      Number(s.toPeriod) >= Number(period)
+    );
+  };
+
+  const learningForm = selectedCourse?.learning_form;
+  const theoryDisabled = learningForm === "Thực hành" || theoryAssigned;
+  const practiceDisabled = learningForm === "Lý thuyết";
 
 
   return (
@@ -296,7 +433,9 @@ const AdminSchedulePage = () => {
                 iconBg="bg-yellow-100"
               />
             </div>
-            {/* FILTERS */}
+
+
+            {/* FILTERS  MÔN*/}
             <div className="bg-white border  p-6">
               {/* Header */}
               <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
@@ -310,25 +449,10 @@ const AdminSchedulePage = () => {
                   <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
                 </svg>
                 <span>Bộ lọc thống kê</span>
-                <button onClick={() => setExpanded(!expanded)} className="flex items-center text-blue-600 hover:text-blue-800 ml-auto">
-                  {expanded ? (
-                    <>
-                      <ArrowUp size={16} className="mr-1" />
-                      Thu gọn
-                    </>
-                  ) : (
-                    <>
-                      <ArrowDown size={16} className="mr-1" />
-                      Mở rộng
-                    </>
-                  )}
-                </button>
               </div>
 
               {/* Form */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Học kỳ
@@ -354,14 +478,13 @@ const AdminSchedulePage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Trạng thái
+                    Tên môn học
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Đến hạn khảo sát</option>
-                    <option>Đang mở</option>
-                    <option>Đã khóa</option>
-                    <option>Đang lên lịch</option>
-                  </select>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: ....."
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -375,97 +498,8 @@ const AdminSchedulePage = () => {
                   </select>
                 </div>
 
-
-                {expanded && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mã giảng viên
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tên môn học
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ví dụ: ....."
-                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phòng học
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Họ và tên giảng viên
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Thời gian dạy
-                      </label>
-                      <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>(1-3) 6:30 </option>
-                        <option>(4-6) 9:10 </option>
-                        <option>(7-9) 12:30 </option>
-                        <option>(10-12) 15:10 </option>
-                        <option>(13-15) 18:00 </option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Thời gian dạy kết thúc
-                      </label>
-                      <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>(1-3) 9:00</option>
-                        <option>(4-6) 11:40</option>
-                        <option>(7-9)  15:00</option>
-                        <option>(10-12) 17:40</option>
-                        <option>(13-15) 20:30</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Hình thức học
-                      </label>
-                      <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>Lý thuyết</option>
-                        <option>Thực hành</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nhóm thực hành
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
-                      />
-                    </div>
-                  </>
-                )}
-
-
               </div>
+
               {/* Actions */}
               <div className="mt-6 flex flex-wrap items-center gap-4 w-full justify-start md:justify-end md:w-auto">
                 <div className="flex flex-wrap items-center gap-2 ">
@@ -500,57 +534,159 @@ const AdminSchedulePage = () => {
                   <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Xóa bộ lọc">
                     <FilterX className="w-5 h-5" />
                   </button>
-                  <details className="relative">
-                    <summary className="list-none flex items-center gap-2 border border-sky-300 text-sky-700 bg-sky px-5 py-2.5 rounded-lg font-medium cursor-pointer hover:bg-sky-50 hover:border-sky-400 hover:text-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 transition-all duration-200">
-                      <Settings className="w-5 h-5" />
-                    </summary>
-
-                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-20 text-sm">
-                      {[
-                        ["courseCode", "Mã học phần"],
-                        ["courseName", "Tên học phần"],
-                        ["semester", "Học kỳ"],
-                        ["academicYear", "Năm học"],
-                        ["learningForm", "Hình thức học"],
-                        ["practicalGroup", "Nhóm TH"],
-                        ["createdAt", "Ngày tạo"],
-                        ["endAt", "Ngày kết thúc"],
-                        ["instructorCode", "Mã GV"],
-                        ["instructor", "Giảng viên"],
-                        ["department", "Khoa"],
-                        ["averageRating", "Điểm đánh giá"],
-                        ["status", "Trạng thái"],
-
-                      ].map(([key, label]) => {
-                        const active = visibleCols[key];
-
-                        return (
-                          <div
-                            key={key}
-                            onClick={() =>
-                              setVisibleCols(prev => ({
-                                ...prev,
-                                [key]: !prev[key],
-                              }))
-                            }
-                            className={`px-3 py-2 rounded cursor-pointer flex items-center justify-between transition
-                                ${active
-                                ? "bg-sky-50 text-sky-600 font-medium"
-                                : "hover:bg-gray-50 text-gray-700"
-                              }`}
-                          >
-                            <span>{label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </details>
                 </div>
               </div>
             </div>
+            {/* TABLE Môn */}
+            <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow mb-6">
+              <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
 
+                {/* ================== HEADER ================== */}
+                <thead className="sticky top-0 z-10 bg-gray-100">
+                  <tr className="border-b">
+                    {/* Checkbox */}
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      <input
+                        type="radio"
+                        name="course"
+                      />
+                    </th>
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Mã học phần
+                    </th>
+                    <th className="h-12 px-4 min-w-[220px] text-xs font-semibold text-slate-600 uppercase">
+                      Tên học phần
+                    </th>
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Học kỳ
+                    </th>
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Năm học
+                    </th>
+                    <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
+                      Hình thức học
+                    </th>
+                    <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
+                      Khoa/Viện
+                    </th>
+                    {/* Actions */}
+                    <th className="h-12 px-4 text-center text-xs font-semibold text-slate-600 uppercase">
+                      Hành động
+                    </th>
+                  </tr>
+                </thead>
 
-            {/* TABLE */}
+                {/* ================== BODY ================== */}
+                <tbody>
+                  {monhoc.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="border-b hover:bg-slate-50 transition-colors h-11"
+                    >
+                      {/* Checkbox */}
+                      <td className="px-4 py-2">
+                        <input type="radio" name="course" onChange={() => setSelectedCourse(u)} />
+                      </td>
+                      <td className="px-4 py-2">
+                        {u.course_code}
+                      </td>
+                      <td className="px-4 py-2 max-w-[260px] truncate" title={u.course_name}>
+                        {u.course_name}
+                      </td>
+                      <td className="px-4 py-2">
+                        {u.semester}
+                      </td>
+                      <td className="px-4 py-2">
+                        {u.academic_year}
+                      </td>
+
+                      <td className="px-4 py-2 hidden lg:table-cell">
+                        {u.learning_form}
+                      </td>
+                      <td
+                        className="px-4 py-2 hidden lg:table-cell"
+                      >
+                        {u.department}
+                      </td>
+                      {/* Actions */}
+                      <td className="px-4 py-2">
+                        <div className="flex justify-center gap-3">
+                          <button title="Xem chi tiết khảo sát">
+                            <Eye className="w-5 h-5 text-blue-500 hover:text-blue-700" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {/* PAGINATION */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+            </div>
+
+            {/* FILTERS  GV*/}
+            <div className="bg-white border  p-6">
+              <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+                </svg>
+                <span>Bộ lọc thống kê</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mã giảng viên
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: 4203001549"
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tên giảng viên
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: ....."
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email giảng viên
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Ví dụ: ....."
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Khoa/Viện
+                  </label>
+                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>Khoa Công nghệ thông tin</option>
+                    <option>Khoa Điện tử - Viễn thông</option>
+                    <option>Khoa Cơ khí</option>
+                    <option>Khoa Kinh tế</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            {/* TABLE giảng viên */}
             <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow mb-6">
               <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
 
@@ -560,86 +696,22 @@ const AdminSchedulePage = () => {
 
                     {/* Checkbox */}
                     <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      <input type="checkbox" />
+                      <input type="radio" name="teacher" />
+                    </th>
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Mã giảng viên
+                    </th>
+                    <th className="h-12 px-4 min-w-[220px] text-xs font-semibold text-slate-600 uppercase">
+                      Tên giảng viên
                     </th>
 
-                    {visibleCols.courseCode && (
-                      <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                        Mã học phần
-                      </th>
-                    )}
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Mail
+                    </th>
 
-                    {visibleCols.courseName && (
-                      <th className="h-12 px-4 min-w-[220px] text-xs font-semibold text-slate-600 uppercase">
-                        Tên học phần
-                      </th>
-                    )}
-
-                    {visibleCols.semester && (
-                      <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                        Học kỳ
-                      </th>
-                    )}
-
-                    {visibleCols.academicYear && (
-                      <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                        Năm học
-                      </th>
-                    )}
-
-                    {visibleCols.learningForm && (
-                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
-                        Hình thức học
-                      </th>
-                    )}
-
-                    {visibleCols.practicalGroup && (
-                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
-                        Nhóm TH
-                      </th>
-                    )}
-
-                    {visibleCols.createdAt && (
-                      <th className="h-12 px-4 hidden md:table-cell text-xs font-semibold text-slate-600 uppercase">
-                        Ngày tạo
-                      </th>
-                    )}
-
-                    {visibleCols.endAt && (
-                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
-                        Ngày kết thúc
-                      </th>
-                    )}
-
-                    {visibleCols.instructorCode && (
-                      <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
-                        Mã GV
-                      </th>
-                    )}
-
-                    {visibleCols.instructor && (
-                      <th className="h-12 px-4 min-w-[180px] text-xs font-semibold text-slate-600 uppercase">
-                        Giảng viên
-                      </th>
-                    )}
-
-                    {visibleCols.department && (
-                      <th className="h-12 px-4 hidden xl:table-cell text-xs font-semibold text-slate-600 uppercase">
-                        Khoa
-                      </th>
-                    )}
-
-                    {visibleCols.averageRating && (
-                      <th className="h-12 px-4 hidden xl:table-cell text-xs font-semibold text-slate-600 uppercase">
-                        Điểm ĐG
-                      </th>
-                    )}
-
-                    {visibleCols.status && (
-                      <th className="h-12 px-4 text-center text-xs font-semibold text-slate-600 uppercase">
-                        Trạng thái
-                      </th>
-                    )}
+                    <th className="h-12 px-4 hidden lg:table-cell text-xs font-semibold text-slate-600 uppercase">
+                      Khoa/Viện
+                    </th>
 
                     {/* Actions */}
                     <th className="h-12 px-4 text-center text-xs font-semibold text-slate-600 uppercase">
@@ -650,118 +722,31 @@ const AdminSchedulePage = () => {
 
                 {/* ================== BODY ================== */}
                 <tbody>
-                  {survey.map((u) => (
+                  {teacher.map((u) => (
                     <tr
                       key={u.id}
                       className="border-b hover:bg-slate-50 transition-colors h-11"
                     >
                       {/* Checkbox */}
                       <td className="px-4 py-2">
-                        <input type="checkbox" />
+                        <input type="radio" name="teacher" onChange={() => setSelectedTeacher(u)} />
                       </td>
-
-                      {visibleCols.courseCode && (
-                        <td className="px-4 py-2">
-                          {u.course_code}
-                        </td>
-                      )}
-
-                      {visibleCols.courseName && (
-                        <td
-                          className="px-4 py-2 max-w-[260px] truncate"
-                          title={u.course_name}
-                        >
-                          {u.course_name}
-                        </td>
-                      )}
-
-                      {visibleCols.semester && (
-                        <td className="px-4 py-2">
-                          {u.semester}
-                        </td>
-                      )}
-
-                      {visibleCols.academicYear && (
-                        <td className="px-4 py-2">
-                          {u.academic_year}
-                        </td>
-                      )}
-
-                      {visibleCols.learningForm && (
-                        <td className="px-4 py-2 hidden lg:table-cell">
-                          {u.learning_form}
-                        </td>
-                      )}
-
-                      {visibleCols.practicalGroup && (
-                        <td className="px-4 py-2 hidden lg:table-cell">
-                          {u.practical_group}
-                        </td>
-                      )}
-
-                      {visibleCols.createdAt && (
-                        <td className="px-4 py-2 hidden md:table-cell">
-                          {u.created_at}
-                        </td>
-                      )}
-
-                      {visibleCols.endAt && (
-                        <td className="px-4 py-2 hidden lg:table-cell">
-                          {u.end_at}
-                        </td>
-                      )}
-
-                      {visibleCols.instructorCode && (
-                        <td className="px-4 py-2 hidden lg:table-cell">
-                          {u.instructor_code}
-                        </td>
-                      )}
-
-                      {visibleCols.instructor && (
-                        <td
-                          className="px-4 py-2 max-w-[180px] truncate"
-                          title={u.instructor}
-                        >
-                          {u.instructor}
-                        </td>
-                      )}
-
-                      {visibleCols.department && (
-                        <td
-                          className="px-4 py-2 hidden xl:table-cell truncate max-w-[180px]"
-                          title={u.department}
-                        >
-                          {u.department}
-                        </td>
-                      )}
-
-                      {visibleCols.averageRating && (
-                        <td className="px-4 py-2 hidden xl:table-cell">
-                          {u.average_rating}
-                        </td>
-                      )}
-
-                      {visibleCols.status && (
-                        <td className="px-4 py-2 text-center">
-                          <span
-                            className={`inline-flex items-center justify-center min-w-[80px] px-3 py-0.5 rounded-full text-xs font-medium
-                  ${u.status === "Active"
-                                ? "bg-green-100 text-green-600"
-                                : u.status === "Pending"
-                                  ? "bg-yellow-100 text-yellow-600"
-                                  : "bg-gray-200 text-gray-600"
-                              }
-                `}
-                          >
-                            {u.status}
-                          </span>
-                        </td>
-                      )}
-
+                      <td className="px-4 py-2">
+                        {u.instructor_code}
+                      </td>
+                      <td className="px-4 py-2 max-w-[260px] truncate" title={u.instructor}>
+                        {u.instructor}
+                      </td>
+                      <td className="px-4 py-2">
+                        {u.email}
+                      </td>
+                      <td className="px-4 py-2 hidden lg:table-cell">
+                        {u.department}
+                      </td>
                       {/* Actions */}
                       <td className="px-4 py-2">
                         <div className="flex justify-center gap-3">
-                          <button title="Xem chi tiết khảo sát">
+                          <button title="Xem chi tiết giảng viên">
                             <Eye className="w-5 h-5 text-blue-500 hover:text-blue-700" />
                           </button>
                         </div>
@@ -770,165 +755,15 @@ const AdminSchedulePage = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
-            <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow mb-6">
-              <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
+              {/* PAGINATION */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
 
-                {/* ================== HEADER ================== */}
-                <thead className="sticky top-0 z-10 bg-gray-100">
-                  <tr className="border-b">
-
-                    {/* Checkbox */}
-                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      <input type="checkbox" />
-                    </th>
-
-                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      Mã giảng viên
-                    </th>
-
-                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      Họ tên giảng viên
-                    </th>
-
-                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      Khoa
-                    </th>
-
-                  </tr>
-                </thead>
-
-                {/* ================== BODY ================== */}
-                <tbody>
-                  {survey.map((u) => (
-                    <tr
-                      key={u.id}
-                      className="border-b hover:bg-slate-50 transition-colors h-11"
-                    >
-                      {/* Checkbox */}
-                      <td className="px-4 py-2">
-                        <input type="checkbox" />
-                      </td>
-
-                      {visibleCols.courseCode && (
-                        <td className="px-4 py-2">
-                          {u.course_code}
-                        </td>
-                      )}
-
-                      {visibleCols.courseName && (
-                        <td
-                          className="px-4 py-2 max-w-[260px] truncate"
-                          title={u.course_name}
-                        >
-                          {u.course_name}
-                        </td>
-                      )}
-
-                      {visibleCols.semester && (
-                        <td className="px-4 py-2">
-                          {u.semester}
-                        </td>
-                      )}
-
-                      {visibleCols.academicYear && (
-                        <td className="px-4 py-2">
-                          {u.academic_year}
-                        </td>
-                      )}
-
-                      {visibleCols.learningForm && (
-                        <td className="px-4 py-2 hidden lg:table-cell">
-                          {u.learning_form}
-                        </td>
-                      )}
-
-                      {visibleCols.practicalGroup && (
-                        <td className="px-4 py-2 hidden lg:table-cell">
-                          {u.practical_group}
-                        </td>
-                      )}
-
-                      {visibleCols.createdAt && (
-                        <td className="px-4 py-2 hidden md:table-cell">
-                          {u.created_at}
-                        </td>
-                      )}
-
-                      {visibleCols.endAt && (
-                        <td className="px-4 py-2 hidden lg:table-cell">
-                          {u.end_at}
-                        </td>
-                      )}
-
-                      {visibleCols.instructorCode && (
-                        <td className="px-4 py-2 hidden lg:table-cell">
-                          {u.instructor_code}
-                        </td>
-                      )}
-
-                      {visibleCols.instructor && (
-                        <td
-                          className="px-4 py-2 max-w-[180px] truncate"
-                          title={u.instructor}
-                        >
-                          {u.instructor}
-                        </td>
-                      )}
-
-                      {visibleCols.department && (
-                        <td
-                          className="px-4 py-2 hidden xl:table-cell truncate max-w-[180px]"
-                          title={u.department}
-                        >
-                          {u.department}
-                        </td>
-                      )}
-
-                      {visibleCols.averageRating && (
-                        <td className="px-4 py-2 hidden xl:table-cell">
-                          {u.average_rating}
-                        </td>
-                      )}
-
-                      {visibleCols.status && (
-                        <td className="px-4 py-2 text-center">
-                          <span
-                            className={`inline-flex items-center justify-center min-w-[80px] px-3 py-0.5 rounded-full text-xs font-medium
-                  ${u.status === "Active"
-                                ? "bg-green-100 text-green-600"
-                                : u.status === "Pending"
-                                  ? "bg-yellow-100 text-yellow-600"
-                                  : "bg-gray-200 text-gray-600"
-                              }
-                `}
-                          >
-                            {u.status}
-                          </span>
-                        </td>
-                      )}
-
-                      {/* Actions */}
-                      <td className="px-4 py-2">
-                        <div className="flex justify-center gap-3">
-                          <button title="Xem chi tiết khảo sát">
-                            <Eye className="w-5 h-5 text-blue-500 hover:text-blue-700" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
 
-
-            {/* PAGINATION */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
 
 
             {/* TIMETABLE */}
@@ -1005,13 +840,21 @@ const AdminSchedulePage = () => {
                         transition
                         ${isSelected(day, slot.period)
                                   ? "bg-emerald-500 text-white"
-                                  : "hover:bg-emerald-100"
+                                : getScheduleForCell(day, slot.period) ? "bg-blue-200 text-blue-800" : "hover:bg-emerald-100"
                                 }
                       `}
                             >
-                              <span className="text-sm ">
-                                Kéo tạo lịch
-                              </span>
+                                {getScheduleForCell(day, slot.period) ? (
+                                  <div className="text-sm">
+                                    <p>{getScheduleForCell(day, slot.period).courseCode}</p>
+                                    <p>Phòng: {getScheduleForCell(day, slot.period).room}</p>
+                                    {/* Thêm thông tin khác nếu cần */}
+                                  </div>
+                                ) : (
+                                    <span className="text-sm ">
+                                      Kéo tạo lịch
+                                    </span>
+                                )}
                             </td>
                           )
                         )}
@@ -1062,7 +905,10 @@ const AdminSchedulePage = () => {
                       </label>
                       <input
                         type="text"
+                        value={formData.day}
+                        onChange={(e) => setFormData({ ...formData, day: e.target.value })}
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        readOnly
                       />
                     </div>
                     <div>
@@ -1071,7 +917,10 @@ const AdminSchedulePage = () => {
                       </label>
                       <input
                         type="text"
+                        value={formData.startTime}
+                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        readOnly
                       />
                     </div>
                     <div>
@@ -1080,7 +929,10 @@ const AdminSchedulePage = () => {
                       </label>
                       <input
                         type="text"
+                        value={formData.endTime}
+                        onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        readOnly
                       />
                     </div>
                     <div>
@@ -1089,7 +941,10 @@ const AdminSchedulePage = () => {
                       </label>
                       <input
                         type="text"
+                        value={formData.courseCode}
+                        onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })}
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        readOnly
                       />
                     </div>
                     <div>
@@ -1098,7 +953,10 @@ const AdminSchedulePage = () => {
                       </label>
                       <input
                         type="text"
+                        value={formData.instructorCode}
+                        onChange={(e) => setFormData({ ...formData, instructorCode: e.target.value })}
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        readOnly
                       />
                     </div>
                     <div>
@@ -1107,6 +965,8 @@ const AdminSchedulePage = () => {
                       </label>
                       <input
                         type="date"
+                        value={formData.startDate}
+                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
@@ -1116,6 +976,8 @@ const AdminSchedulePage = () => {
                       </label>
                       <input
                         type="date"
+                        value={formData.endDate}
+                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
@@ -1125,6 +987,8 @@ const AdminSchedulePage = () => {
                       </label>
                       <input
                         type="text"
+                        value={formData.room}
+                        onChange={(e) => setFormData({ ...formData, room: e.target.value })}
                         className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
@@ -1136,6 +1000,7 @@ const AdminSchedulePage = () => {
                           checked={isTheory}
                           onChange={(e) => setIsTheory(e.target.checked)}
                           className="h-5 w-5 text-blue-600"
+                          disabled={theoryDisabled}
                         />
                         <span className="ml-2 text-gray-700 font-medium">
                           Lý thuyết
@@ -1148,6 +1013,7 @@ const AdminSchedulePage = () => {
                           checked={isPractice}
                           onChange={(e) => setIsPractice(e.target.checked)}
                           className="h-5 w-5 text-blue-600"
+                          disabled={practiceDisabled}
                         />
                         <span className="ml-2 text-gray-700 font-medium">
                           Thực hành
@@ -1163,6 +1029,8 @@ const AdminSchedulePage = () => {
                         <input
                           type="number"
                           placeholder="Ví dụ: 120"
+                          value={formData.theoryQuantity}
+                          onChange={(e) => setFormData({ ...formData, theoryQuantity: e.target.value })}
                           className="w-full rounded-lg border border-blue-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                         />
                       </div>
@@ -1181,6 +1049,7 @@ const AdminSchedulePage = () => {
                           { key: "group4", label: "Nhóm TH 4" },
                         ].map((g) => {
                           const group = practiceGroups[g.key];
+                          const disabled = assignedGroups[g.key];
 
                           return (
                             <div
@@ -1202,6 +1071,7 @@ const AdminSchedulePage = () => {
                                     })
                                   }
                                   className="h-4 w-4 text-blue-600"
+                                  disabled={disabled}
                                 />
                                 <span className="ml-2 text-gray-700">
                                   {g.label}
@@ -1213,7 +1083,7 @@ const AdminSchedulePage = () => {
                                 type="number"
                                 min={0}
                                 placeholder="Số SV"
-                                disabled={!group.checked}
+                                disabled={!group.checked || disabled}
                                 value={group.quantity}
                                 onChange={(e) =>
                                   setPracticeGroups({
@@ -1224,14 +1094,12 @@ const AdminSchedulePage = () => {
                                     },
                                   })
                                 }
-                                className={`w-28 rounded-lg border px-3 py-1.5
-              ${group.checked
+                                className={`w-28 rounded-lg border px-3 py-1.5 ${group.checked && !disabled
                                     ? "border-blue-300 focus:ring-2 focus:ring-blue-200"
                                     : "bg-gray-100 border-gray-200 cursor-not-allowed"
                                   }
-            `}
+                                  `}
                               />
-
                               <span className="text-sm text-gray-500">
                                 SV
                               </span>
@@ -1240,14 +1108,7 @@ const AdminSchedulePage = () => {
                         })}
                       </div>
                     )}
-
-
-
-
-
-
                   </div>
-
                   {/* ================= FOOTER ================= */}
                   <div className=" sticky bottom-0 flex justify-end gap-4 px-6 py-4 border-t bg-white/90 backdrop-blur">
                     <button
@@ -1261,6 +1122,7 @@ const AdminSchedulePage = () => {
                     </button>
 
                     <button
+                      onClick={handleCreateSchedule}
                       className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md"
                     >
                       Tạo lịch học
@@ -1269,12 +1131,10 @@ const AdminSchedulePage = () => {
                 </div>
               </>
             )}
-
           </div>
         </div>
       </div>
     </div >
-
   );
 };
 

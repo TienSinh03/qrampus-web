@@ -1,0 +1,607 @@
+import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import Pagination from "../../../components/common/Pagination";
+import ModalUpload from "../../../components/common/ModalUpload";
+
+import {
+  CirclePlus,
+  Trash2,
+  Lock,
+  CloudUpload,
+  Eye,
+  MoreVertical,
+  PencilLine,
+  Users,
+  UserCheck,
+  UserX,
+  UserPlus,
+  X,
+  ArrowUpWideNarrow,
+  FileSpreadsheet,
+  FilterX,
+  File,
+  FileSearchIcon,
+} from "lucide-react";
+import StatsCard from "../../../components/common/StatsCard";
+
+const AdminSchedulePage = () => {
+  const { t } = useTranslation();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [openUpload, setOpenUpload] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Lựa chọn độc quyền
+  const [selectedCourseId, setSelectedCourseId] = useState(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState(null);
+
+  // Dữ liệu lịch hiển thị
+  const [timetableData, setTimetableData] = useState([]);
+
+  const monhoc = [
+    {
+      id: 1,
+      course_code: "4203001549",
+      course_name: "Lập trình Web nâng cao",
+      semester: "HK1",
+      academic_year: "2024-2025",
+      status: "Active",
+      learning_code: 3,
+      learning_form: "Kết hợp",
+      department: "Khoa Công nghệ thông tin",
+    },
+    {
+      id: 2,
+      course_code: "4203002010",
+      course_name: "Hệ quản trị Cơ sở dữ liệu",
+      semester: "HK1",
+      academic_year: "2024-2025",
+      status: "Active",
+      learning_code: 2,
+      learning_form: "Thực hành",
+      department: "Khoa Công nghệ thông tin",
+
+    },
+    {
+      id: 3,
+      course_code: "4203003122",
+      course_name: "Phân tích và Thiết kế hệ thống",
+      semester: "HK2",
+      academic_year: "2024-2025",
+      status: "Pending",
+      learning_code: 1,
+      learning_form: "Lý thuyết",
+      department: "Khoa Công nghệ thông tin",
+
+    },
+    {
+      id: 4,
+      course_code: "4203014501",
+      course_name: "Đồ án chuyên ngành CNTT",
+      semester: "HK2",
+      academic_year: "2024-2025",
+      status: "Active",
+      learning_code: 3,
+      learning_form: "Kết hợp",
+      department: "Khoa Công nghệ thông tin",
+
+    },
+    {
+      id: 5,
+      course_code: "4203001588",
+      course_name: "An toàn và Bảo mật thông tin",
+      semester: "HK3",
+      academic_year: "2024-2025",
+      status: "Closed",
+      learning_code: 1,
+      learning_form: "Lý thuyết",
+      department: "Khoa Công nghệ thông tin",
+    }
+  ];
+
+  const teacher = [
+    {
+      id: 1,
+      instructor_code: "1000001",
+      instructor: "Nguyễn Văn A",
+      email: "nguyenvana@example.com",
+      department: "Khoa Công nghệ thông tin",
+    },
+    {
+      id: 2,
+      instructor_code: "1000002",
+      instructor: "Trần Thị B",
+      email: "tranthib@example.com",
+      department: "Khoa Công nghệ thông tin",
+    },
+    {
+      id: 3,
+      instructor_code: "1000003",
+      instructor: "Lê Hoàng C",
+      email: "lehoangc@example.com",
+      department: "Khoa Thương mại Du lịch",
+    },
+    {
+      id: 4,
+      instructor_code: "1000004",
+      instructor: "Phạm Minh D",
+      email: "phamminhd@example.com",
+      department: "Khoa Điện tử",
+    },
+    {
+      id: 5,
+      instructor_code: "1000005",
+      instructor: "Vũ Thị E",
+      email: "vuthie@example.com",
+      department: "Khoa Tài chính Ngân hàng",
+    }
+  ];
+  // Days & Sessions (giữ nguyên)
+  const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
+  const sessions = [
+    {
+      name: "BUỔI SÁNG",
+      color: "bg-emerald-100 text-emerald-700",
+      slots: [
+        { period: "1", time: "6h30 - 7h20" },
+        { period: "2", time: "7h20 - 8h10" },
+        { period: "3", time: "8h10 - 9h00" },
+        { period: "Nghỉ", time: "Giải lao 10 phút", break: true },
+        { period: "4", time: "9h10 - 10h00" },
+        { period: "5", time: "10h00 - 10h50" },
+        { period: "6", time: "10h50 - 11h40" },
+      ],
+    },
+    // Buổi chiều & tối giữ nguyên như code cũ...
+  ];
+
+  // ================== KÉO CHỌN TIẾT =================
+  const [isDragging, setIsDragging] = useState(false);
+  const [startCell, setStartCell] = useState(null);
+  const [selectedCells, setSelectedCells] = useState([]);
+
+  const handleMouseDown = (cell) => {
+    setIsDragging(true);
+    setStartCell(cell);
+    setSelectedCells([cell]);
+  };
+
+  const handleMouseEnter = (cell) => {
+    if (!isDragging || !startCell) return;
+    if (cell.day !== startCell.day) return;
+
+    const start = Number(startCell.period);
+    const end = Number(cell.period);
+    const min = Math.min(start, end);
+    const max = Math.max(start, end);
+
+    const range = [];
+    for (let i = min; i <= max; i++) {
+      range.push({ day: cell.day, period: i.toString() });
+    }
+    setSelectedCells(range);
+  };
+
+  const handleMouseUp = () => {
+    if (selectedCells.length > 0 && selectedCourseId) {
+      setIsDrawerOpen(true);
+    }
+    setIsDragging(false);
+    setStartCell(null);
+  };
+
+  const isSelected = (day, period) =>
+    selectedCells.some((c) => c.day === day && c.period === period);
+
+  const clearSelection = () => {
+    setSelectedCells([]);
+    setIsDragging(false);
+    setStartCell(null);
+  };
+
+  // Load lịch khi thay đổi lựa chọn
+  useEffect(() => {
+    if (selectedCourseId) {
+      const course = courses.find((c) => c.id === selectedCourseId);
+      // Giả lập dữ liệu lịch của môn học
+      setTimetableData([
+        {
+          day: "Thứ 3",
+          periodFrom: "1",
+          periodTo: "3",
+          teacher: "Nguyễn Văn A",
+          type: "Lý thuyết",
+          room: "A301",
+        },
+        {
+          day: "Thứ 5",
+          periodFrom: "7",
+          periodTo: "9",
+          teacher: "Trần Thị B",
+          type: "Thực hành",
+          group: "Nhóm 1",
+          room: "Lab 102",
+        },
+      ]);
+    } else if (selectedTeacherId) {
+      const teacher = teachers.find((t) => t.id === selectedTeacherId);
+      // Giả lập dữ liệu lịch của giảng viên
+      setTimetableData([
+        {
+          day: "Thứ 2",
+          periodFrom: "4",
+          periodTo: "6",
+          course: "Lập trình Web nâng cao",
+          type: "Lý thuyết",
+          room: "B201",
+        },
+        {
+          day: "Thứ 4",
+          periodFrom: "10",
+          periodTo: "12",
+          course: "Hệ quản trị CSDL",
+          type: "Thực hành",
+          room: "Lab 105",
+        },
+      ]);
+    } else {
+      setTimetableData([]);
+    }
+  }, [selectedCourseId, selectedTeacherId]);
+
+  // Drawer states
+  const [lessonType, setLessonType] = useState("theory"); // theory | practice
+  const [practiceGroups, setPracticeGroups] = useState({
+    group1: { checked: false, quantity: "" },
+    group2: { checked: false, quantity: "" },
+    group3: { checked: false, quantity: "" },
+    group4: { checked: false, quantity: "" },
+  });
+
+  const selectedCourse = courses.find((c) => c.id === selectedCourseId);
+  const isCombined = selectedCourse?.learning_form === "Kết hợp";
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* 4 StatsCard giữ nguyên như code cũ */}
+        </div>
+
+        {/* Bộ lọc môn học */}
+        <div className="bg-white border rounded-xl p-6 mb-8 shadow-sm">
+          {/* Bộ lọc form giữ nguyên */}
+        </div>
+
+        {/* Bảng MÔN HỌC */}
+        <div className="bg-white border rounded-xl shadow-sm mb-10 overflow-hidden">
+          <div className="p-5 border-b bg-gray-50">
+            <h2 className="text-lg font-semibold text-gray-800">Danh sách học phần</h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-6 py-4 text-left w-12"></th>
+                  <th className="px-6 py-4 text-left">Mã học phần</th>
+                  <th className="px-6 py-4 text-left">Tên học phần</th>
+                  <th className="px-6 py-4 text-left">Học kỳ</th>
+                  <th className="px-6 py-4 text-left">Hình thức</th>
+                  <th className="px-6 py-4 text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courses.map((course) => (
+                  <tr key={course.id} className="border-b hover:bg-blue-50/30">
+                    <td className="px-6 py-4">
+                      <input
+                        type="radio"
+                        name="selectedCourse"
+                        checked={selectedCourseId === course.id}
+                        onChange={() => {
+                          setSelectedCourseId(course.id);
+                          setSelectedTeacherId(null);
+                          clearSelection();
+                        }}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                    </td>
+                    <td className="px-6 py-4 font-medium">{course.course_code}</td>
+                    <td className="px-6 py-4">{course.course_name}</td>
+                    <td className="px-6 py-4">{course.semester}</td>
+                    <td className="px-6 py-4">{course.learning_form}</td>
+                    <td className="px-6 py-4 text-center">
+                      <Eye className="inline h-5 w-5 text-blue-600 hover:text-blue-800 cursor-pointer" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination currentPage={currentPage} totalPages={5} onPageChange={setCurrentPage} />
+        </div>
+
+        {/* Bảng GIẢNG VIÊN */}
+        <div className="bg-white border rounded-xl shadow-sm mb-10 overflow-hidden">
+          {/* Tương tự, thay checkbox bằng radio */}
+          <tbody>
+            {teachers.map((teacher) => (
+              <tr key={teacher.id} className="border-b hover:bg-blue-50/30">
+                <td className="px-6 py-4">
+                  <input
+                    type="radio"
+                    name="selectedTeacher"
+                    checked={selectedTeacherId === teacher.id}
+                    onChange={() => {
+                      setSelectedTeacherId(teacher.id);
+                      setSelectedCourseId(null);
+                      clearSelection();
+                    }}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                </td>
+                      <td className="px-4 py-2">
+                        {u.instructor_code}
+                      </td>
+                      <td className="px-4 py-2 max-w-[260px] truncate" title={u.instructor}>
+                        {u.instructor}
+                      </td>
+                      <td className="px-4 py-2">
+                        {u.email}
+                      </td>
+                      <td className="px-4 py-2 hidden lg:table-cell">
+                        {u.department}
+                      </td>
+                      {/* Actions */}
+                      <td className="px-4 py-2">
+                        <div className="flex justify-center gap-3">
+                          <button title="Xem chi tiết giảng viên">
+                            <Eye className="w-5 h-5 text-blue-500 hover:text-blue-700" />
+                          </button>
+                        </div>
+                      </td>              
+                </tr>
+            ))}
+          </tbody>
+        </div>
+
+        {/* LỊCH ĐÃ CHỌN */}
+        {timetableData.length > 0 && (
+          <div className="bg-white border rounded-xl shadow-sm mb-10 p-6">
+            <h2 className="text-xl font-bold mb-6 text-gray-800">
+              {selectedCourseId
+                ? `Lịch giảng dạy môn: ${selectedCourse?.course_name}`
+                : `Lịch giảng dạy của GV: ${teachers.find(t => t.id === selectedTeacherId)?.instructor}`}
+            </h2>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border px-4 py-3">Thứ</th>
+                    <th className="border px-4 py-3">Tiết</th>
+                    <th className="border px-4 py-3">{selectedCourseId ? "Giảng viên" : "Môn học"}</th>
+                    <th className="border px-4 py-3">Loại</th>
+                    <th className="border px-4 py-3">Nhóm</th>
+                    <th className="border px-4 py-3">Phòng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {timetableData.map((item, idx) => (
+                    <tr key={idx} className="border-b hover:bg-gray-50">
+                      <td className="border px-4 py-3">{item.day}</td>
+                      <td className="border px-4 py-3">{item.periodFrom} - {item.periodTo}</td>
+                      <td className="border px-4 py-3">
+                        {selectedCourseId ? item.teacher : item.course}
+                      </td>
+                      <td className="border px-4 py-3">{item.type}</td>
+                      <td className="border px-4 py-3">{item.group || "-"}</td>
+                      <td className="border px-4 py-3">{item.room || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Thời khóa biểu - Kéo chọn tiết */}
+        <div className="bg-white border rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-bold mb-6 text-gray-800">Thời khóa biểu</h2>
+
+          <table className="min-w-full border-collapse select-none" onMouseLeave={handleMouseUp}>
+            {/* Giữ nguyên phần thead và tbody như code cũ của bạn */}
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border px-3 py-2">Buổi</th>
+                    <th className="border px-3 py-2">Tiết</th>
+                    <th className="border px-3 py-2">Thời gian</th>
+                    {days.map((day) => (
+                      <th key={day} className="border px-3 py-2">
+                        {day}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody onMouseLeave={handleMouseUp}>
+                  {sessions.map((session) =>
+                    session.slots.map((slot, idx) => (
+                      <tr key={session.name + idx}>
+                        {idx === 0 && (
+                          <td
+                            rowSpan={session.slots.length}
+                            className={`border px-3 py-2 font-semibold text-center ${session.color}`}
+                          >
+                            {session.name}
+                          </td>
+                        )}
+
+                        <td className="border px-3 py-2 text-center font-medium">
+                          {slot.period}
+                        </td>
+
+                        <td className="border px-3 py-2">
+                          {slot.break ? (
+                            <span className="italic text-gray-500">
+                              {slot.time}
+                            </span>
+                          ) : (
+                            slot.time
+                          )}
+                        </td>
+
+                        {days.map((day) =>
+                          slot.break ? (
+                            <td
+                              key={day}
+                              className="border bg-gray-50"
+                            />
+                          ) : (
+                            <td
+                              key={day}
+                              onMouseDown={() =>
+                                handleMouseDown({
+                                  day,
+                                  period: slot.period,
+                                })
+                              }
+                              onMouseEnter={() =>
+                                handleMouseEnter({
+                                  day,
+                                  period: slot.period,
+                                })
+                              }
+                              onMouseUp={handleMouseUp}
+                              className={`
+                        border px-3 py-3 text-center cursor-pointer
+                        transition
+                        ${isSelected(day, slot.period)
+                                  ? "bg-emerald-500 text-white"
+                                  : "hover:bg-emerald-100"
+                                }
+                      `}
+                            >
+                              <span className="text-sm ">
+                                Kéo tạo lịch
+                              </span>
+                            </td>
+                          )
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+          </table>
+        </div>
+
+        {/* DRAWER TẠO LỊCH */}
+        {isDrawerOpen && selectedCourseId && (
+          <>
+            <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsDrawerOpen(false)} />
+            <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+              <div className="p-6 border-b bg-blue-600 text-white flex justify-between items-center">
+                <h3 className="text-xl font-semibold">Tạo lịch dạy</h3>
+                <button onClick={() => setIsDrawerOpen(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="flex-1 p-6 overflow-y-auto space-y-6">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="font-medium text-lg">{selectedCourse?.course_name}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Hình thức: <strong>{selectedCourse?.learning_form}</strong>
+                  </div>
+                </div>
+
+                {isCombined && (
+                  <div className="space-y-4">
+                    <label className="block font-medium text-gray-700">Loại tiết</label>
+                    <div className="flex gap-8">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="lessonType"
+                          value="theory"
+                          checked={lessonType === "theory"}
+                          onChange={() => setLessonType("theory")}
+                          className="h-4 w-4 text-blue-600"
+                        />
+                        Lý thuyết
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="lessonType"
+                          value="practice"
+                          checked={lessonType === "practice"}
+                          onChange={() => setLessonType("practice")}
+                          className="h-4 w-4 text-blue-600"
+                        />
+                        Thực hành
+                      </label>
+                    </div>
+
+                    {lessonType === "practice" && (
+                      <div className="space-y-3 mt-4">
+                        <label className="block font-medium text-gray-700">Chọn nhóm thực hành</label>
+                        {["group1", "group2", "group3", "group4"].map((key, i) => (
+                          <div key={key} className="flex items-center gap-4 p-3 border rounded-lg">
+                            <input
+                              type="checkbox"
+                              checked={practiceGroups[key].checked}
+                              onChange={(e) =>
+                                setPracticeGroups({
+                                  ...practiceGroups,
+                                  [key]: { ...practiceGroups[key], checked: e.target.checked },
+                                })
+                              }
+                              className="h-4 w-4 text-blue-600"
+                            />
+                            <span>Nhóm TH {i + 1}</span>
+                            <input
+                              type="number"
+                              placeholder="Số SV"
+                              value={practiceGroups[key].quantity}
+                              disabled={!practiceGroups[key].checked}
+                              onChange={(e) =>
+                                setPracticeGroups({
+                                  ...practiceGroups,
+                                  [key]: { ...practiceGroups[key], quantity: e.target.value },
+                                })
+                              }
+                              className="w-24 px-3 py-1 border rounded-lg disabled:bg-gray-100"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t flex justify-end gap-4">
+                <button
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="px-6 py-2 border rounded-lg hover:bg-gray-100"
+                >
+                  Hủy
+                </button>
+                <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  Tạo lịch
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
+      </div>
+    </div>
+  );
+};
+
+export default AdminSchedulePage;
