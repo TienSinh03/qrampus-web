@@ -38,6 +38,7 @@ import AdminSchedulePage from "@pages/dashboard/admin/AdminSchedulePage";
 import AdminCoursePage from "@pages/dashboard/admin/AdminCoursePage";
 import AdminEnrollPage from "@pages/dashboard/admin/AdminEnrollPage";
 import AdminRoomPage from "../pages/dashboard/admin/AdminRoomPage";
+import AdminDetailSurveyPage from "../pages/dashboard/admin/AdminDetailSurveyPage";
 
 
 
@@ -203,6 +204,9 @@ const router = createBrowserRouter([
       },{
         path: "admin/rooms",
         element: <AdminRoomPage />,
+      },{
+        path: "admin/surveys/detail-survey",
+        element: <AdminDetailSurveyPage />,
       },
 
 

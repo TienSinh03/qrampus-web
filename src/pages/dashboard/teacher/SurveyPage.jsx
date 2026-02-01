@@ -24,63 +24,48 @@ export default function LecturerSurveyManagement() {
   const surveyData = [
     {
       id: 1,
-      maHP: "4203001549",
-      tenHP: "Lập trình thiết bị di động",
-      lop: "20TCLC_DT3",
-      ky: "hk1-2024-2025",
-      soSV: 68,
-      daKhaoSat: 64,
-      tyLe: 94,
-      trungbinhdanhgia: 9.1,
+      course_section_code: "4203001549",
+      course_section_name: "Lập trình thiết bị di động",
+      semester: "hk1-2024-2025",
+      total_students_surveyed: 68,
+      total_survey_students: 64,
+      avg_rating: 94,
+      practice_group_id: null,
     },
     {
       id: 2,
-      maHP: "4203002009",
-      tenHP: "Phát triển ứng dụng Web",
-      lop: "21TCLC_DT1",
-      ky: "hk1-2024-2025",
-      soSV: 54,
-      daKhaoSat: 48,
-      tyLe: 89,
-      trungbinhdanhgia: 8.7,
+      course_section_code: "4203002009",
+      course_section_name: "Phát triển ứng dụng Web",
+      semester: "hk1-2024-2025",
+      total_students_surveyed: 54,
+      total_survey_students: 48,
+      avg_rating: 89,
+      practice_group_id: 1,
     },
     {
       id: 3,
-      maHP: "4203003259",
-      tenHP: "Nhập môn AI",
-      lop: "22TCLC_DT2",
-      ky: "hk1-2024-2025",
-      soSV: 42,
-      daKhaoSat: 28,
-      tyLe: 67,
-      trungbinhdanhgia: 8.2,
+      course_section_code: "4203003259",
+      course_section_name: "Nhập môn AI",
+      semester: "hk1-2024-2025",
+      total_students_surveyed: 42,
+      total_survey_students: 28,
+      avg_rating: 67,
+      practice_group_id: 2,
     },
   ];
 
   const filtered =
     selectedSemester === "all"
       ? surveyData
-      : surveyData.filter((i) => i.ky === selectedSemester);
+      : surveyData.filter((i) => i.semester === selectedSemester);
 
-  const totalSV = filtered.reduce((s, i) => s + i.soSV, 0);
-  const totalKS = filtered.reduce((s, i) => s + i.daKhaoSat, 0);
+  const totalSV = filtered.reduce((s, i) => s + i.total_students_surveyed, 0);
+  const totalKS = filtered.reduce((s, i) => s + i.total_survey_students, 0);
   const avgRate = totalSV ? Math.round((totalKS / totalSV) * 100) : 0;
   const avgScore = filtered.length
-    ? (filtered.reduce((s, i) => s + i.trungbinhdanhgia, 0) / filtered.length).toFixed(1)
+    ? (filtered.reduce((s, i) => s + (i.practice_group_id || 0), 0) / filtered.length).toFixed(1)
     : "0.0";
 
-
-  // cột , bảng
-  const [visibleCols, setVisibleCols] = useState({
-    mahocphan: true,
-    lop: true,
-    nhomthuchanh: true,
-    sobuoidiemdanh: false,
-    svkhaosat: true,
-    tyle: true,
-    tbkhaosat: true,
-    detail: true,
-  });
   // drawer xuất excel
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const closeDrawer = () => setIsDrawerOpen(false);
@@ -192,13 +177,17 @@ export default function LecturerSurveyManagement() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tên lớp
+                Hình thức học
               </label>
-              <input
-                type="text"
-                placeholder="Ví dụ: 20TCLC_DT3"
-                className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <select
+                className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option key="LT" value="LT">
+                    LÝ THUYẾT
+                  </option>
+                  <option key="TH" value="TH">
+                    THỰC HÀNH
+                  </option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -219,10 +208,9 @@ export default function LecturerSurveyManagement() {
 
           </div>
 
-          {/* Actions */}
+          {/* Actions - đã bỏ phần hiển thị cột */}
           <div className="mt-6 flex flex-wrap items-center justify-start md:justify-end gap-4">
             <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
-              {/* Xóa bộ lọc */}
               <button className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" >
                 <FileSearchIcon className="w-5 h-5" />
                 Tìm kiếm
@@ -231,185 +219,83 @@ export default function LecturerSurveyManagement() {
                 <FileSpreadsheet className="w-5 h-5" />
                 Tải Excel
               </button>
-              {/* <button className="flex items-center gap-2 border border-amber-400 text-amber-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-amber-50 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-amber-500 focus:ring-offset-2 transition-all duration-200">
-                <Printer className="w-5 h-5" />
-                In báo cáo
-              </button> */}
               <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
                 <FilterX className="w-5 h-5" />
                 Xóa bộ lọc
               </button>
-
-              <details className="relative">
-                <summary className="list-none flex items-center gap-2 border border-sky-300 text-sky-700 bg-white px-5 py-2.5 rounded-lg font-medium cursor-pointer hover:bg-sky-50 hover:border-sky-400 hover:text-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 transition-all duration-200">
-                  <Settings className="w-5 h-5" />
-                  Hiển thị cột
-                </summary>
-
-                <div className="absolute right-0 mt-2 w-100% bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-20 text-sm">
-                  {[
-                    ["mahocphan", "Học phần"],
-                    ["lop", "Lớp"],
-                    ["nhomthuchanh", "Nhóm thực hành"],
-                    ["sobuoidiemdanh", "Số buổi điểm danh"],
-                    ["svkhaosat", "SV khảo sát"],
-                    ["tyle", "Tỷ lệ"],
-                    ["tbkhaosat", "TB khảo sát"],
-                    ["detail", "Chi tiết"],
-                  ].map(([key, label]) => {
-                    const active = visibleCols[key];
-
-                    return (
-                      <div
-                        key={key}
-                        onClick={() =>
-                          setVisibleCols(prev => ({
-                            ...prev,
-                            [key]: !prev[key],
-                          }))
-                        }
-                        className={`px-3 py-2 rounded cursor-pointer flex items-center justify-between transition
-            ${active
-                            ? "bg-sky-50 text-sky-600 font-medium"
-                            : "hover:bg-gray-50 text-gray-700"
-                          }`}
-                      >
-                        <span>{label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </details>
-
-
             </div>
           </div>
         </div>
 
-        {/* ===== TABLE ===== */}
+        {/* ===== TABLE - cột cố định, không còn visibleCols ===== */}
         <div className="bg-white shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-100">
                 <tr>
-                  {visibleCols.mahocphan && (
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Học phần
-                    </th>
-                  )}
-
-                  {visibleCols.lop && (
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Lớp
-                    </th>
-                  )}
-
-                  {visibleCols.nhomthuchanh && (
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Nhóm thực hành
-                    </th>
-                  )}
-
-                  {visibleCols.sobuoidiemdanh && (
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
-                      Số buổi điểm danh
-                    </th>
-                  )}
-
-                  {visibleCols.svkhaosat && (
-                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                      SV khảo sát
-                    </th>
-                  )}
-
-                  {visibleCols.tyle && (
-                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                      Tỷ lệ
-                    </th>
-                  )}
-
-                  {visibleCols.tbkhaosat && (
-                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                      TB khảo sát
-                    </th>
-                  )}
-
-                  {visibleCols.detail && (
-                    <th className="px-6 py-4 text-center text-sm font-semibold">
-                      Chi tiết
-                    </th>
-                  )}
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Mã học phần</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Tên học phần</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">SV khảo sát</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">Tỷ lệ</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">Nhóm</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">Học kỳ</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">Chi tiết</th>
                 </tr>
               </thead>
-
 
               <tbody className="divide-y">
                 {filtered.map(item => (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    {visibleCols.mahocphan && (
-                      <td className="px-6 py-4 font-medium">
-                        {item.tenHP}
-                        <div className="text-sm text-gray-500">{item.maHP}</div>
-                      </td>
-                    )}
+                    <td className="px-6 py-4 font-medium">
+                      {item.course_section_code}
+                    </td>
+                    <td className="px-6 py-4 font-medium">
+                      {item.course_section_name}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {item.total_survey_students}/{item.total_students_surveyed}
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold">
+                      {item.avg_rating}%
+                    </td>
+                    <td className="px-6 py-4 text-center text-amber-600 font-bold">
+                      {item.practice_group_id !== null ? item.practice_group_id : "—"}
+                    </td>
 
-                    {visibleCols.lop && (
-                      <td className="px-6 py-4">{item.lop}</td>
-                    )}
+                    <td className="px-6 py-4 text-center">
+                      {item.semester}
+                    </td>
 
-                    {visibleCols.nhomthuchanh && (
-                      <td className="px-6 py-4">ĐIỀN SỐ NHÓM</td>
-                    )}
-
-                    {visibleCols.sobuoidiemdanh && (
-                      <td className="px-6 py-4">LẤY SỐ BUỔI TẠO QR</td>
-                    )}
-
-                    {visibleCols.svkhaosat && (
-                      <td className="px-6 py-4 text-center">
-                        {item.daKhaoSat}/{item.soSV}
-                      </td>
-                    )}
-
-                    {visibleCols.tyle && (
-                      <td className="px-6 py-4 text-center font-bold">
-                        {item.tyLe}%
-                      </td>
-                    )}
-
-                    {visibleCols.tbkhaosat && (
-                      <td className="px-6 py-4 text-center text-amber-600 font-bold">
-                        {item.trungbinhdanhgia}
-                      </td>
-                    )}
-
-                    {visibleCols.detail && (
-                      <td className="px-6 py-4 text-center">
-                        <button className="p-2 rounded-full hover:bg-gray-100">
-                          <Eye size={18} />
-                        </button>
-                      </td>
-                    )}
+                    <td className="px-6 py-4 text-center">
+                      <button className="p-2 rounded-full hover:bg-gray-100">
+                        <Eye size={18} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
-              </tbody>
 
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-10 text-center text-gray-500">
+                      Không có dữ liệu trong học kỳ được chọn
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
         </div>
       </div>
-      {/* xuất excel */}
+
+      {/* xuất excel - giữ nguyên */}
       {isDrawerOpen && (
         <>
-          {/* Overlay */}
           <div
             className="fixed inset-0 bg-black/50 z-[999]"
             onClick={closeDrawer}
           />
 
-          {/* Drawer */}
-          <div className=" fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl  flex flex-col">
-            {/* ================= HEADER ================= */}
+          <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col">
             <div className="flex items-center justify-between px-6 py-5 border-b bg-blue-300">
               <h3 className="text-xl font-semibold text-gray-800">
                 Hỗ trợ xuất Excel
@@ -423,7 +309,6 @@ export default function LecturerSurveyManagement() {
               </button>
             </div>
 
-            {/* ================= BODY (SCROLL) ================= */}
             <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -450,32 +335,28 @@ export default function LecturerSurveyManagement() {
                   Chọn cột xuất Excel
                 </label>
                 <div className="space-y-2 mt-2">
-                  {Object.entries(visibleCols).map(([key, isVisible]) => (
-                    <div key={key} className="flex items-center gap-2">
+                  {[
+                    { key: "mahocphan", label: "Mã học phần" },
+                    { key: "tenhocphan", label: "Tên học phần" },
+                    { key: "svkhaosat", label: "SV khảo sát" },
+                    { key: "tyle", label: "Tỷ lệ" },
+                    { key: "tbkhaosat", label: "TB khảo sát" },
+                    { key: "detail", label: "Chi tiết" },
+                  ].map((col) => (
+                    <div key={col.key} className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        checked={isVisible}
-                        onChange={() =>
-                          setVisibleCols((prev) => ({
-                            ...prev,
-                            [key]: !prev[key],
-
-                          }))
-                        }
+                        defaultChecked={true}
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
-                      <span className="text-gray-700 capitalize">
-                        {key.replace(/([A-Z])/g, ' $1')}
-                      </span>
+                      <span className="text-gray-700">{col.label}</span>
                     </div>
                   ))}
                 </div>
-
               </div>
             </div>
 
-            {/* ================= FOOTER ================= */}
-            <div className=" sticky bottom-0 flex justify-end gap-4 px-6 py-4 border-t bg-white/90 backdrop-blur">
+            <div className="sticsemester bottom-0 flex justify-end gap-4 px-6 py-4 border-t bg-white/90 backdrop-blur">
               <button
                 onClick={closeDrawer}
                 className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
