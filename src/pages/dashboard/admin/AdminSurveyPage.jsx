@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useState } from "react";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
-
-import { toast } from "sonner";
-
 
 import {
   CirclePlus,
@@ -28,16 +24,13 @@ import {
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
 const AdminSurveyPage = () => {
-  const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
   // const [checked, setChecked] = useState(false);
-  const [openMenu, setOpenMenu] = useState(null);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const openDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
 
   //gọi userfetch open
@@ -604,10 +597,23 @@ const AdminSurveyPage = () => {
                       )}
 
                       {/* Action */}
-                      <td className="px-4 py-2">
-                        <div className="flex justify-center gap-3">
-                          <button title="Xem chi tiết khảo sát">
-                            <Eye className="w-5 h-5 text-blue-500 hover:text-blue-700" />
+                      <td className="px-4 py-2 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          {/* Nút Xem chi tiết */}
+                          <button 
+                            title="Xem chi tiết câu hỏi" 
+                            onClick={() => window.location.href = "/dashboard/admin/surveys/detail-survey"}
+                            className="p-2 transition-colors duration-200 rounded-lg hover:bg-blue-50 group"
+                          >
+                            <Eye className="w-5 h-5 text-blue-500 group-hover:text-blue-600" />
+                          </button>
+
+                          {/* Nút Chỉnh sửa */}
+                          <button 
+                            title="Xem chi tiết câu trả lời"
+                            className="p-2 transition-colors duration-200 rounded-lg hover:bg-green-50 group"
+                          >
+                            <FileSearchIcon className="w-5 h-5 text-green-500 group-hover:text-green-600" />
                           </button>
                         </div>
                       </td>
