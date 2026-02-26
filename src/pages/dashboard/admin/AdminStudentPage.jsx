@@ -3,6 +3,11 @@ import { useTranslation } from "react-i18next";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
+import ModalAddStudent from "../../../components/modal/ModalAddStudent";
+import ModalEditStudent from "../../../components/modal/ModalEditStudent";
+import ModalViewStudent from "../../../components/modal/ModalViewStudent";
+import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import { toast } from "sonner";
 import {
   CirclePlus,
   Trash2,
@@ -25,11 +30,49 @@ const AdminStudentPage = () => {
   const [openUpload, setOpenUpload] = useState(false);
   // const [checked, setChecked] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // Modal states
+  const [modalAddStudent, setModalAddStudent] = useState(false);
+  const [modalEditStudent, setModalEditStudent] = useState({ isOpen: false, studentData: null });
+  const [modalViewStudent, setModalViewStudent] = useState({ isOpen: false, studentData: null });
+  const [modalConfirmAction, setModalConfirmAction] = useState({
+    isOpen: false,
+    actionType: null,
+    title: "",
+    message: "",
+    confirmText: "",
+    onConfirm: null,
+  });
 
-  const openDrawer = () => setIsDrawerOpen(true);
-  const closeDrawer = () => setIsDrawerOpen(false);
+  // Modal handlers
+  const openAddStudentModal = () => setModalAddStudent(true);
+  const closeAddStudentModal = () => setModalAddStudent(false);
+
+  const openEditStudentModal = (student) => {
+    setModalEditStudent({ isOpen: true, studentData: student });
+    setOpenMenu(null);
+  };
+  const closeEditStudentModal = () => setModalEditStudent({ isOpen: false, studentData: null });
+
+  const openViewStudentModal = (student) => setModalViewStudent({ isOpen: true, studentData: student });
+  const closeViewStudentModal = () => setModalViewStudent({ isOpen: false, studentData: null });
+
+  const openConfirmActionModal = (actionType, title, message, confirmText, onConfirm) => {
+    setModalConfirmAction({ isOpen: true, actionType, title, message, confirmText, onConfirm });
+    setOpenMenu(null);
+  };
+  const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
+
+  const handleAddStudent = (formData) => {
+    console.log("Add student:", formData);
+    toast.success("Đã thêm sinh viên thành công!");
+  };
+
+  const handleEditStudent = (formData) => {
+    console.log("Edit student:", formData);
+    toast.success("Đã cập nhật thông tin sinh viên thành công!");
+  };
 
   //gọi userfetch open
   // useEffect(() => {
@@ -125,6 +168,27 @@ const AdminStudentPage = () => {
     Pending: "bg-yellow-100 text-yellow-600",
     Inactive: "bg-gray-200 text-gray-600",
   };
+
+  // Checkbox handlers
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(users.map(item => item.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const isAllSelected = users.length > 0 && selectedIds.length === users.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < users.length;
+
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -295,7 +359,7 @@ const AdminStudentPage = () => {
               <div className="mt-6 flex flex-wrap items-center justify-between justify-start md:justify-end">
                 <div className="flex flex-wrap items-center gap-3">
                   <button
-                    onClick={openDrawer}
+                    onClick={openAddStudentModal}
                     className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 
                     py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md 
                     focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
@@ -351,13 +415,71 @@ const AdminStudentPage = () => {
             </div>
 
 
+            {/* Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-blue-900">
+                    Đã chọn {selectedIds.length} mục
+                  </span>
+                  <button
+                    onClick={() => setSelectedIds([])}
+                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Bỏ chọn tất cả
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      console.log("Export selected:", selectedIds);
+                      toast.success("Xuất dữ liệu thành công");
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Xuất dữ liệu
+                  </button>
+                  <button
+                    onClick={() => {
+                      openConfirmActionModal(
+                        "delete",
+                        "Xác nhận xóa nhiều sinh viên",
+                        `Bạn có chắc chắn muốn xóa ${selectedIds.length} sinh viên đã chọn? Hành động này không thể hoàn tác.`,
+                        "Xóa tất cả",
+                        () => {
+                          console.log("Delete selected:", selectedIds);
+                          toast.success(`Đã xóa ${selectedIds.length} sinh viên thành công`);
+                          setSelectedIds([]);
+                        }
+                      );
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Xóa đã chọn
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* TABLE */}
             <div className="w-full overflow-x-auto bg-white rounded-xl shadow mb-6">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="w-12">
-                      <input type="checkbox" className="ml-4" />
+                      <input 
+                        type="checkbox" 
+                        className="ml-4 cursor-pointer"
+                        checked={isAllSelected}
+                        ref={(input) => {
+                          if (input) {
+                            input.indeterminate = isSomeSelected;
+                          }
+                        }}
+                        onChange={handleSelectAll}
+                      />
                     </th>
                     <th className="h-12 px-4">Ảnh</th>
                     <th className="h-12 px-4">MSSV</th>
@@ -371,11 +493,15 @@ const AdminStudentPage = () => {
 
                 <tbody>
                   {users.map((u) => (
-                    <tr key={u.id} className="border-t hover:bg-slate-50">
+                    <tr key={u.id} className={`border-t hover:bg-slate-50 ${
+                      selectedIds.includes(u.id) ? 'bg-blue-50' : ''
+                    }`}>
                       <td>
                         <input
                           type="checkbox"
-                          className="ml-4"
+                          className="ml-4 cursor-pointer"
+                          checked={selectedIds.includes(u.id)}
+                          onChange={() => handleSelectOne(u.id)}
                         />
                       </td>
                       <td className="px-2 h-10 flex items-center gap-2 p-6">
@@ -398,8 +524,27 @@ const AdminStudentPage = () => {
 
                       <td className="px-4">
                         <div className="flex gap-3">
-                          <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
-                          <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
+                          <button
+                            title="Xóa"
+                            onClick={() => openConfirmActionModal(
+                              "delete",
+                              "Xác nhận xóa sinh viên",
+                              `Bạn có chắc chắn muốn xóa sinh viên ${u.full_name}? Trạng thái sẽ chuyển thành tạm ngưng.`,
+                              "Xóa sinh viên",
+                              () => {
+                                console.log("Delete student", u.id);
+                                toast.success("Đã xóa sinh viên thành công");
+                              }
+                            )}
+                          >
+                            <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
+                          </button>
+                          <button
+                            title="Xem chi tiết"
+                            onClick={() => openViewStudentModal(u)}
+                          >
+                            <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
+                          </button>
                           {/* More Menu */}
                           <div className="relative">
                             <MoreVertical
@@ -414,13 +559,24 @@ const AdminStudentPage = () => {
                               <div className="absolute mt-2 w-25 bg-white shadow-lg rounded-md border z-20">
                                 <button
                                   className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  onClick={() => console.log("Edit", u.id)}
+                                  title="Chỉnh sửa"
+                                  onClick={() => openEditStudentModal(u)}
                                 >
                                   <PencilLine className="inline w-4 h-4 mr-2" />
                                 </button>
                                 <button
                                   className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  onClick={() => console.log("Lock", u.id)}
+                                  title="Khóa tài khoản"
+                                  onClick={() => openConfirmActionModal(
+                                    "lock",
+                                    "Xác nhận khóa tài khoản",
+                                    `Bạn có chắc chắn muốn khóa tài khoản của ${u.full_name}?`,
+                                    "Khóa tài khoản",
+                                    () => {
+                                      console.log("Lock student", u.id);
+                                      toast.success("Đã khóa tài khoản thành công");
+                                    }
+                                  )}
                                 >
                                   <LockKeyhole className="inline w-4 h-4 mr-2" />
                                 </button>
@@ -442,10 +598,40 @@ const AdminStudentPage = () => {
               onPageChange={(page) => setCurrentPage(page)}
             />
 
-            {/* MODAL UPLOAD */}
+            {/* MODALS */}
             <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
+            
+            <ModalAddStudent
+              isOpen={modalAddStudent}
+              onClose={closeAddStudentModal}
+              onSubmit={handleAddStudent}
+            />
 
-            {isDrawerOpen && (
+            <ModalEditStudent
+              isOpen={modalEditStudent.isOpen}
+              onClose={closeEditStudentModal}
+              studentData={modalEditStudent.studentData}
+              onSubmit={handleEditStudent}
+            />
+
+            <ModalViewStudent
+              isOpen={modalViewStudent.isOpen}
+              onClose={closeViewStudentModal}
+              studentData={modalViewStudent.studentData}
+            />
+
+            <ModalConfirmAction
+              isOpen={modalConfirmAction.isOpen}
+              onClose={closeConfirmActionModal}
+              actionType={modalConfirmAction.actionType}
+              title={modalConfirmAction.title}
+              message={modalConfirmAction.message}
+              confirmText={modalConfirmAction.confirmText}
+              onConfirm={modalConfirmAction.onConfirm}
+            />
+
+            {/* OLD DRAWER REMOVED - Now using ModalAddStudent */}
+            {false && (
               <>
                 <div
                   className="fixed inset-0 bg-black bg-opacity-50 z-[1000]"
@@ -573,7 +759,6 @@ const AdminStudentPage = () => {
         </div>
       </div>
     </div>
-
   );
 };
 

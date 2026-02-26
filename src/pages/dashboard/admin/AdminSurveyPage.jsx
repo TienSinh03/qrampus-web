@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
+import ModalAddSurvey from "../../../components/modal/ModalAddSurvey";
+import ModalEditSurvey from "../../../components/modal/ModalEditSurvey";
+import ModalViewSurvey from "../../../components/modal/ModalViewSurvey";
+import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import { toast } from "sonner";
 
 import {
   CirclePlus,
@@ -27,11 +32,76 @@ const AdminSurveyPage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
-  // const [checked, setChecked] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // Modal states
+  const [modalAddSurvey, setModalAddSurvey] = useState({ isOpen: false });
+  const [modalEditSurvey, setModalEditSurvey] = useState({ isOpen: false, surveyData: null });
+  const [modalViewSurvey, setModalViewSurvey] = useState({ isOpen: false, surveyData: null });
+  const [modalConfirmAction, setModalConfirmAction] = useState({
+    isOpen: false,
+    actionType: "",
+    surveyData: null,
+  });
 
-  const closeDrawer = () => setIsDrawerOpen(false);
+  // Modal handlers
+  const openAddSurveyModal = () => {
+    setModalAddSurvey({ isOpen: true });
+  };
+
+  const openEditSurveyModal = (survey) => {
+    setModalEditSurvey({ isOpen: true, surveyData: survey });
+  };
+
+  const openViewSurveyModal = (survey) => {
+    setModalViewSurvey({ isOpen: true, surveyData: survey });
+  };
+
+  const openConfirmActionModal = (actionType, survey) => {
+    setModalConfirmAction({ isOpen: true, actionType, surveyData: survey });
+  };
+
+  const closeAddSurveyModal = () => {
+    setModalAddSurvey({ isOpen: false });
+  };
+
+  const closeEditSurveyModal = () => {
+    setModalEditSurvey({ isOpen: false, surveyData: null });
+  };
+
+  const closeViewSurveyModal = () => {
+    setModalViewSurvey({ isOpen: false, surveyData: null });
+  };
+
+  const closeConfirmActionModal = () => {
+    setModalConfirmAction({ isOpen: false, actionType: "", surveyData: null });
+  };
+
+  // Handle actions
+  const handleAddSurvey = (surveyData) => {
+    console.log("Creating survey:", surveyData);
+    toast.success("Tạo khảo sát thành công!");
+    closeAddSurveyModal();
+  };
+
+  const handleEditSurvey = (surveyData) => {
+    console.log("Updating survey:", surveyData);
+    toast.success("Cập nhật khảo sát thành công!");
+    closeEditSurveyModal();
+  };
+
+  const handleConfirmAction = () => {
+    const { actionType, surveyData } = modalConfirmAction;
+    console.log(`${actionType} survey:`, surveyData);
+    
+    if (actionType === "delete") {
+      toast.success("Xóa khảo sát thành công!");
+    } else if (actionType === "lock") {
+      toast.success("Khóa khảo sát thành công!");
+    }
+    
+    closeConfirmActionModal();
+  };
 
   //gọi userfetch open
   // useEffect(() => {
@@ -113,6 +183,26 @@ const AdminSurveyPage = () => {
     }
 
   ];
+
+  // Checkbox handlers
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(survey.map(item => item.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const isAllSelected = survey.length > 0 && selectedIds.length === survey.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < survey.length;
 
   const [expanded, setExpanded] = useState(false);
   // cột , bảng
@@ -311,7 +401,11 @@ const AdminSurveyPage = () => {
               {/* Actions */}
               <div className="mt-6 flex flex-wrap items-center gap-4 w-full justify-start md:justify-end md:w-auto">
                 <div className="flex flex-wrap items-center gap-2 ">
-                  <button className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Tạo khảo sát, thủ công">
+                  <button 
+                    onClick={openAddSurveyModal}
+                    className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" 
+                    title="Tạo khảo sát, thủ công"
+                  >
                     <CirclePlus className="w-5 h-5" />
                   </button>
                   <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Khóa khảo sát">
@@ -392,6 +486,50 @@ const AdminSurveyPage = () => {
             </div>
 
 
+            {/* Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-blue-900">
+                    Đã chọn {selectedIds.length} mục
+                  </span>
+                  <button
+                    onClick={() => setSelectedIds([])}
+                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Bỏ chọn tất cả
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      console.log("Export selected:", selectedIds);
+                      toast.success("Xuất dữ liệu thành công");
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Xuất dữ liệu
+                  </button>
+                  <button
+                    onClick={() => {
+                      openConfirmActionModal(
+                        "delete",
+                        {
+                          ids: selectedIds,
+                          count: selectedIds.length
+                        }
+                      );
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Xóa đã chọn
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* TABLE */}
             <div className="w-full overflow-x-auto rounded-b-lg border border-gray-200">
               <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
@@ -401,7 +539,17 @@ const AdminSurveyPage = () => {
 
                     {/* Checkbox */}
                     <th className="w-12 px-4 text-xs font-semibold text-gray-600 uppercase">
-                      <input type="checkbox" />
+                      <input 
+                        type="checkbox"
+                        checked={isAllSelected}
+                        ref={(input) => {
+                          if (input) {
+                            input.indeterminate = isSomeSelected;
+                          }
+                        }}
+                        onChange={handleSelectAll}
+                        className="cursor-pointer"
+                      />
                     </th>
 
                     {visibleCols.courseCode && (
@@ -494,11 +642,18 @@ const AdminSurveyPage = () => {
                   {survey.map((u) => (
                     <tr
                       key={u.id}
-                      className="border-b hover:bg-slate-50 transition-colors h-11"
+                      className={`border-b hover:bg-slate-50 transition-colors h-11 ${
+                        selectedIds.includes(u.id) ? 'bg-blue-50' : ''
+                      }`}
                     >
                       {/* Checkbox */}
                       <td className="px-4 py-2">
-                        <input type="checkbox" />
+                        <input 
+                          type="checkbox"
+                          checked={selectedIds.includes(u.id)}
+                          onChange={() => handleSelectOne(u.id)}
+                          className="cursor-pointer"
+                        />
                       </td>
 
                       {visibleCols.courseCode && (
@@ -602,7 +757,7 @@ const AdminSurveyPage = () => {
                           {/* Nút Xem chi tiết */}
                           <button 
                             title="Xem chi tiết câu hỏi" 
-                            onClick={() => window.location.href = "/dashboard/admin/surveys/detail-survey"}
+                            onClick={() => openViewSurveyModal(u)}
                             className="p-2 transition-colors duration-200 rounded-lg hover:bg-blue-50 group"
                           >
                             <Eye className="w-5 h-5 text-blue-500 group-hover:text-blue-600" />
@@ -610,10 +765,20 @@ const AdminSurveyPage = () => {
 
                           {/* Nút Chỉnh sửa */}
                           <button 
-                            title="Xem chi tiết câu trả lời"
+                            title="Chỉnh sửa khảo sát"
+                            onClick={() => openEditSurveyModal(u)}
                             className="p-2 transition-colors duration-200 rounded-lg hover:bg-green-50 group"
                           >
-                            <FileSearchIcon className="w-5 h-5 text-green-500 group-hover:text-green-600" />
+                            <PencilLine className="w-5 h-5 text-green-500 group-hover:text-green-600" />
+                          </button>
+
+                          {/* Nút Khóa */}
+                          <button 
+                            title="Khóa khảo sát"
+                            onClick={() => openConfirmActionModal("lock", u)}
+                            className="p-2 transition-colors duration-200 rounded-lg hover:bg-rose-50 group"
+                          >
+                            <Lock className="w-5 h-5 text-rose-500 group-hover:text-rose-600" />
                           </button>
                         </div>
                       </td>
@@ -634,169 +799,33 @@ const AdminSurveyPage = () => {
             {/* MODAL UPLOAD */}
             <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
 
-            {isDrawerOpen && (
-              <>
-                {/* Overlay */}
-                <div
-                  className="fixed inset-0 bg-black/50 z-[999]"
-                  onClick={closeDrawer}
-                />
-
-                {/* Drawer */}
-                <div className=" fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl  flex flex-col">
-                  {/* ================= HEADER ================= */}
-                  <div className="flex items-center justify-between px-6 py-5 border-b bg-blue-300">
-                    <h3 className="text-xl font-semibold text-gray-800">
-                      Cập nhật hồ sơ tài khoản
-                    </h3>
-
-                    <button
-                      onClick={closeDrawer}
-                      className="p-2 rounded-full text-gray-600 hover:text-gray-800 hover:bg-lime-300 transition-all duration-300 hover:rotate-90"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-
-                  {/* ================= BODY (SCROLL) ================= */}
-                  <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Cập nhật mật khẩu mới
-                      </label>
-                      <input
-                        type="password"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Xác nhận mật khẩu mới
-                      </label>
-                      <input
-                        type="password"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mã giảng viên / Sinh viên
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Họ tên Giảng viên
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ngày sinh
-                      </label>
-                      <input
-                        type="date"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Khoa / Viện
-                      </label>
-                      <select className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
-                        <option>Khoa Công nghệ thông tin</option>
-                        <option>Khoa Điện tử - Viễn thông</option>
-                        <option>Khoa Cơ khí</option>
-                        <option>Khoa Kinh tế</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Số điện thoại
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phân quyền tài khoản
-                      </label>
-                      <select className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-                        <option>Giảng viên</option>
-                        <option>Quản trị viên</option>
-                        <option>Bộ phận chấm công</option>
-                      </select>
-                    </div>
-
-                    {/* Ảnh đại diện */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ảnh đại diện
-                      </label>
-                      <input
-                        type="file"
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-                    {/* thiết kế khung ảnh hiện tại */}
-                    <div className="relative w-28 h-28 mx-auto">
-                      <img
-                        src={"https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png"}
-                        className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                      <label
-                        htmlFor="avatar-upload"
-                        className="absolute bottom-0 right-0 bg-sky-500 p-2 rounded-full text-white shadow hover:bg-sky-600 cursor-pointer"
-                      >
-                        <Camera size={16} />
-                      </label>
-                    </div>
-
-                  </div>
-
-                  {/* ================= FOOTER ================= */}
-                  <div className=" sticky bottom-0 flex justify-end gap-4 px-6 py-4 border-t bg-white/90 backdrop-blur">
-                    <button
-                      onClick={closeDrawer}
-                      className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
-                    >
-                      Hủy
-                    </button>
-
-                    <button
-                      className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md"
-                    >
-                      Lưu thay đổi
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
+            {/* MODAL COMPONENTS */}
+            <ModalAddSurvey
+              isOpen={modalAddSurvey.isOpen}
+              onClose={closeAddSurveyModal}
+              onSubmit={handleAddSurvey}
+            />
+            
+            <ModalEditSurvey
+              isOpen={modalEditSurvey.isOpen}
+              onClose={closeEditSurveyModal}
+              surveyData={modalEditSurvey.surveyData}
+              onSubmit={handleEditSurvey}
+            />
+            
+            <ModalViewSurvey
+              isOpen={modalViewSurvey.isOpen}
+              onClose={closeViewSurveyModal}
+              surveyData={modalViewSurvey.surveyData}
+            />
+            
+            <ModalConfirmAction
+              isOpen={modalConfirmAction.isOpen}
+              onClose={closeConfirmActionModal}
+              actionType={modalConfirmAction.actionType}
+              userData={modalConfirmAction.surveyData}
+              onConfirm={handleConfirmAction}
+            />
 
           </div>
         </div>
@@ -807,3 +836,4 @@ const AdminSurveyPage = () => {
 };
 
 export default AdminSurveyPage;
+
