@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
+import ModalEditUser from "../../../components/modal/ModalEditUser";
+import ModalViewUser from "../../../components/modal/ModalViewUser";
+import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
 
 import { toast } from "sonner";
 
@@ -33,11 +36,31 @@ const AdminAccountPage = () => {
   const [openUpload, setOpenUpload] = useState(false);
   // const [checked, setChecked] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // Modal states
+  const [modalEditUser, setModalEditUser] = useState({ isOpen: false, userData: null });
+  const [modalViewUser, setModalViewUser] = useState({ isOpen: false, userData: null });
+  const [modalConfirmAction, setModalConfirmAction] = useState({
+    isOpen: false,
+    actionType: null,
+    title: "",
+    message: "",
+    confirmText: "",
+    onConfirm: null,
+  });
 
-  const openDrawer = () => setIsDrawerOpen(true);
-  const closeDrawer = () => setIsDrawerOpen(false);
+  // Modal handlers
+  const openEditUserModal = (user) => setModalEditUser({ isOpen: true, userData: user });
+  const closeEditUserModal = () => setModalEditUser({ isOpen: false, userData: null });
+
+  const openViewUserModal = (user) => setModalViewUser({ isOpen: true, userData: user });
+  const closeViewUserModal = () => setModalViewUser({ isOpen: false, userData: null });
+
+  const openConfirmActionModal = (actionType, title, message, confirmText, onConfirm) => {
+    setModalConfirmAction({ isOpen: true, actionType, title, message, confirmText, onConfirm });
+  };
+  const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
 
   //gọi userfetch open
   // useEffect(() => {
@@ -133,6 +156,27 @@ const AdminAccountPage = () => {
     Pending: "bg-yellow-100 text-yellow-600",
     Inactive: "bg-gray-200 text-gray-600",
   };
+
+  // Checkbox handlers
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(users.map(item => item.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const isAllSelected = users.length > 0 && selectedIds.length === users.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < users.length;
+
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -343,13 +387,71 @@ const AdminAccountPage = () => {
             </div>
 
 
+            {/* Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-blue-900">
+                    Đã chọn {selectedIds.length} mục
+                  </span>
+                  <button
+                    onClick={() => setSelectedIds([])}
+                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Bỏ chọn tất cả
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      console.log("Export selected:", selectedIds);
+                      toast.success("Xuất dữ liệu thành công");
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Xuất dữ liệu
+                  </button>
+                  <button
+                    onClick={() => {
+                      openConfirmActionModal(
+                        "delete",
+                        "Xác nhận xóa nhiều tài khoản",
+                        `Bạn có chắc chắn muốn xóa ${selectedIds.length} tài khoản đã chọn? Hành động này không thể hoàn tác.`,
+                        "Xóa tất cả",
+                        () => {
+                          console.log("Delete selected:", selectedIds);
+                          toast.success(`Đã xóa ${selectedIds.length} tài khoản thành công`);
+                          setSelectedIds([]);
+                        }
+                      );
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Xóa đã chọn
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* TABLE */}
             <div className="w-full overflow-x-auto bg-white  shadow mb-6">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-100">
                     <th>
-                      <input type="checkbox" className="ml-4" />
+                      <input 
+                        type="checkbox" 
+                        className="ml-4 cursor-pointer"
+                        checked={isAllSelected}
+                        ref={(input) => {
+                          if (input) {
+                            input.indeterminate = isSomeSelected;
+                          }
+                        }}
+                        onChange={handleSelectAll}
+                      />
                     </th>
                     <th className="h-12 px-4">Ảnh</th>
                     <th className="h-12 px-4">MGV-MSSV</th>
@@ -363,11 +465,15 @@ const AdminAccountPage = () => {
 
                 <tbody>
                   {users.map((u) => (
-                    <tr key={u.id} className="border-t hover:bg-slate-50">
+                    <tr key={u.id} className={`border-t hover:bg-slate-50 ${
+                      selectedIds.includes(u.id) ? 'bg-blue-50' : ''
+                    }`}>
                       <td>
                         <input
                           type="checkbox"
-                          className="ml-4"
+                          className="ml-4 cursor-pointer"
+                          checked={selectedIds.includes(u.id)}
+                          onChange={() => handleSelectOne(u.id)}
                         />
                       </td>
                       <td className="px-2 h-10 flex items-center gap-2 p-6">
@@ -390,10 +496,27 @@ const AdminAccountPage = () => {
 
                       <td className="px-4">
                         <div className="flex gap-3">
-                          <button title="Xóa" alt="Xóa">
+                          <button 
+                            title="Xóa" 
+                            alt="Xóa"
+                            onClick={() => openConfirmActionModal(
+                              "delete",
+                              "Xác nhận xóa tài khoản",
+                              `Bạn có chắc chắn muốn xóa tài khoản ${u.full_name}? Hành động này không thể hoàn tác.`,
+                              "Xóa tài khoản",
+                              () => {
+                                console.log("Delete user", u.id);
+                                toast.success("Đã xóa tài khoản thành công");
+                              }
+                            )}
+                          >
                             <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
                           </button>
-                          <button title="Xem chi tiết" alt="Xem chi tiết">
+                          <button 
+                            title="Xem chi tiết" 
+                            alt="Xem chi tiết"
+                            onClick={() => openViewUserModal(u)}
+                          >
                             <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
                           </button>
                           {/* More Menu */}
@@ -411,31 +534,31 @@ const AdminAccountPage = () => {
                                 <button
                                   className="w-full text-left px-4 py-2 hover:bg-slate-100"
                                   title="Chỉnh sửa"
-                                  // onClick={() => console.log("Edit", u.id)}
-                                  onClick={openDrawer}
+                                  onClick={() => {
+                                    openEditUserModal(u);
+                                    setOpenMenu(null);
+                                  }}
                                 >
                                   <PencilLine className="inline w-4 h-4 mr-2" />
                                 </button>
                                 <button
                                   className="w-full text-left px-4 py-2 hover:bg-slate-100"
                                   title="Reset mật khẩu"
-                                  onClick={() =>
-                                    toast.error("Bạn muốn reset", {
-                                      action: {
-                                        label: "Yes",
-                                        onClick: () => {
-                                          console.log("Lock user", u.id);
-                                          toast.success("Đã reset mật khẩu thành công, mặt khẩu là mặc định là 11111111 cho NHÂN SỰ; ngày sinh cho SINH VIÊN");
-                                        },
-                                      },
-                                      cancel: {
-                                        label: "No",
-                                      },
-                                    })
-                                  }
+                                  onClick={() => {
+                                    setOpenMenu(null);
+                                    openConfirmActionModal(
+                                      "reset",
+                                      "Xác nhận reset mật khẩu",
+                                      `Bạn có chắc chắn muốn reset mật khẩu cho ${u.full_name}? Mật khẩu mặc định là 11111111 cho NHÂN SỰ; ngày sinh cho SINH VIÊN.`,
+                                      "Reset mật khẩu",
+                                      () => {
+                                        console.log("Reset password for user", u.id);
+                                        toast.success("Đã reset mật khẩu thành công");
+                                      }
+                                    );
+                                  }}
                                 >
                                   <GitPullRequest className="inline w-4 h-4 mr-2" />
-
                                 </button>
                               </div>
                             )}
@@ -455,10 +578,33 @@ const AdminAccountPage = () => {
               onPageChange={(page) => setCurrentPage(page)}
             />
 
-            {/* MODAL UPLOAD */}
+            {/* MODALS */}
             <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
+            
+            <ModalEditUser
+              isOpen={modalEditUser.isOpen}
+              onClose={closeEditUserModal}
+              userData={modalEditUser.userData}
+            />
 
-            {isDrawerOpen && (
+            <ModalViewUser
+              isOpen={modalViewUser.isOpen}
+              onClose={closeViewUserModal}
+              userData={modalViewUser.userData}
+            />
+
+            <ModalConfirmAction
+              isOpen={modalConfirmAction.isOpen}
+              onClose={closeConfirmActionModal}
+              actionType={modalConfirmAction.actionType}
+              title={modalConfirmAction.title}
+              message={modalConfirmAction.message}
+              confirmText={modalConfirmAction.confirmText}
+              onConfirm={modalConfirmAction.onConfirm}
+            />
+
+            {/* OLD DRAWER REMOVED - Now using ModalEditUser */}
+            {false && (
               <>
                 {/* Overlay */}
                 <div
@@ -626,7 +772,6 @@ const AdminAccountPage = () => {
         </div>
       </div>
     </div>
-
   );
 };
 

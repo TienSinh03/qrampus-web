@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
+import ModalAddRoom from "../../../components/modal/ModalAddRoom";
+import ModalEditRoom from "../../../components/modal/ModalEditRoom";
+import ModalViewRoom from "../../../components/modal/ModalViewRoom";
+import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
 import {
   CirclePlus,
   Trash2,
@@ -27,23 +32,69 @@ const AdminRoomPage = () => {
   const [openUpload, setOpenUpload] = useState(false);
   // const [checked, setChecked] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // Modal states
+  const [modalAddRoom, setModalAddRoom] = useState({ isOpen: false });
+  const [modalEditRoom, setModalEditRoom] = useState({ isOpen: false, roomData: null });
+  const [modalViewRoom, setModalViewRoom] = useState({ isOpen: false, roomData: null });
+  const [modalConfirmAction, setModalConfirmAction] = useState({
+    isOpen: false,
+    actionType: null,
+    title: "",
+    message: "",
+    confirmText: "",
+    onConfirm: null,
+    userData: null,
+  });
 
-  const openDrawer = () => setIsDrawerOpen(true);
-  const closeDrawer = () => setIsDrawerOpen(false);
+  // Modal handlers
+  const openAddRoomModal = () => setModalAddRoom({ isOpen: true });
+  const closeAddRoomModal = () => setModalAddRoom({ isOpen: false });
 
-  //gọi userfetch open
-  // useEffect(() => {
-  //   const handleClick = (e) => {
-  //     if (!e.target.closest(".dropdown-menu")) {
-  //       setOpenMenu(null);
-  //     }
-  //   };
+  const openEditRoomModal = (room) => setModalEditRoom({ isOpen: true, roomData: room });
+  const closeEditRoomModal = () => setModalEditRoom({ isOpen: false, roomData: null });
 
-  //   document.addEventListener("click", handleClick);
-  //   return () => document.removeEventListener("click", handleClick);
-  // }, []);
+  const openViewRoomModal = (room) => setModalViewRoom({ isOpen: true, roomData: room });
+  const closeViewRoomModal = () => setModalViewRoom({ isOpen: false, roomData: null });
+
+  const openConfirmActionModal = (actionType, title, message, confirmText, onConfirm, userData = null) => {
+    setModalConfirmAction({
+      isOpen: true,
+      actionType,
+      title,
+      message,
+      confirmText,
+      onConfirm,
+      userData,
+    });
+  };
+  const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
+
+  const handleAddRoom = (formData) => {
+    console.log("Add room:", formData);
+    toast.success("Đã thêm phòng học thành công!");
+  };
+
+  const handleEditRoom = (formData) => {
+    console.log("Edit room:", formData);
+    toast.success("Đã cập nhật thông tin phòng thành công!");
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (!e.target.closest(".relative")) {
+        setOpenMenu(null);
+      }
+    };
+
+    if (openMenu !== null) {
+      document.addEventListener("click", handleClick);
+    }
+
+    return () => document.removeEventListener("click", handleClick);
+  }, [openMenu]);
 
   const totalPages = 5;
 
@@ -108,6 +159,26 @@ const AdminRoomPage = () => {
     Pending: "bg-yellow-100 text-yellow-600",
     Inactive: "bg-gray-200 text-gray-600",
   };
+
+  // Checkbox handlers
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(PHONG.map(item => item.ma_phong));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (ma_phong) => {
+    if (selectedIds.includes(ma_phong)) {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== ma_phong));
+    } else {
+      setSelectedIds([...selectedIds, ma_phong]);
+    }
+  };
+
+  const isAllSelected = PHONG.length > 0 && selectedIds.length === PHONG.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < PHONG.length;
 
 
 
@@ -230,9 +301,9 @@ const AdminRoomPage = () => {
               <div className="mt-6 flex flex-wrap items-center justify-between justify-start md:justify-end">
                 <div className="flex flex-wrap items-center gap-3">
                   <button
-                    onClick={openDrawer}
+                    onClick={openAddRoomModal}
                     className="flex items-center gap-2  border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Thêm sinh viên vào học phần"
+                    title="Thêm phòng học mới"
                   >
                     <CirclePlus className="w-5 h-5" />
                   </button>
@@ -279,6 +350,56 @@ const AdminRoomPage = () => {
             </div>
 
 
+            {/* Bulk Actions Bar */}
+            {selectedIds.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-blue-900">
+                    Đã chọn {selectedIds.length} mục
+                  </span>
+                  <button
+                    onClick={() => setSelectedIds([])}
+                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Bỏ chọn tất cả
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      console.log("Export selected:", selectedIds);
+                      toast.success("Xuất dữ liệu thành công");
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Xuất dữ liệu
+                  </button>
+                  <button
+                    onClick={() => {
+                      openConfirmActionModal(
+                        "delete",
+                        "Xác nhận xóa nhiều sinh viên",
+                        `Bạn có chắc chắn muốn xóa ${selectedIds.length} sinh viên đã chọn? Hành động này không thể hoàn tác.`,
+                        "Xóa tất cả",
+                        () => {
+                          console.log("Delete selected:", selectedIds);
+                          toast.success(`Đã xóa ${selectedIds.length} sinh viên thành công`);
+                          setSelectedIds([]);
+                        }
+                      );
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Xóa đã chọn
+                  </button>
+                </div>
+              </div>
+            )}
+
+
+
             {/* TABLE */}
             <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow mb-6">
               <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
@@ -289,7 +410,17 @@ const AdminRoomPage = () => {
 
                     {/* Checkbox */}
                     <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      <input type="checkbox" />
+                      <input 
+                        type="checkbox" 
+                        checked={isAllSelected}
+                        ref={(input) => {
+                          if (input) {
+                            input.indeterminate = isSomeSelected;
+                          }
+                        }}
+                        onChange={handleSelectAll}
+                        className="cursor-pointer"
+                      />
                     </th>
 
                     <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
@@ -327,12 +458,19 @@ const AdminRoomPage = () => {
                 <tbody>
                   {PHONG.map((u) => (
                     <tr
-                      key={u.id}
-                      className="border-b hover:bg-slate-50 transition-colors h-12"
+                      key={u.ma_phong}
+                      className={`border-b hover:bg-slate-50 transition-colors h-12 ${
+                        selectedIds.includes(u.ma_phong) ? 'bg-blue-50' : ''
+                      }`}
                     >
                       {/* Checkbox */}
                       <td className="px-4 py-2">
-                        <input type="checkbox" />
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(u.ma_phong)}
+                          onChange={() => handleSelectOne(u.ma_phong)}
+                          className="cursor-pointer"
+                        />
                       </td>
                       <td className="px-4 py-2">{u.ma_phong}</td>
                       <td className="px-4 py-2">{u.ten_phong}</td>
@@ -367,8 +505,23 @@ const AdminRoomPage = () => {
                       {/* Actions */}
                       <td className="px-4 py-2">
                         <div className="flex justify-center gap-3">
-                          <Trash2 className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-700" />
-                          <Eye className="w-5 h-5 text-blue-500 cursor-pointer hover:text-blue-700" />
+                          <Trash2 
+                            className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-700" 
+                            onClick={() => openConfirmActionModal(
+                              "delete",
+                              "Xác nhận xóa phòng",
+                              `Bạn có chắc chắn muốn xóa phòng ${u.ten_phong}? Hành động này không thể hoàn tác.`,
+                              "Xóa phòng",
+                              () => {
+                                console.log("Delete room", u.ma_phong);
+                                toast.success("Đã xóa phòng thành công");
+                              }
+                            )}
+                          />
+                          <Eye 
+                            className="w-5 h-5 text-blue-500 cursor-pointer hover:text-blue-700" 
+                            onClick={() => openViewRoomModal(u)}
+                          />
 
                           {/* More Menu */}
                           <div className="relative">
@@ -376,22 +529,37 @@ const AdminRoomPage = () => {
                               className="w-5 h-5 cursor-pointer hover:text-slate-700"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setOpenMenu(openMenu === u.id ? null : u.id);
+                                setOpenMenu(openMenu === u.ma_phong ? null : u.ma_phong);
                               }}
                             />
 
-                            {openMenu === u.id && (
+                            {openMenu === u.ma_phong && (
                               <div className="absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-lg z-20">
                                 <button
                                   className="flex items-center w-full px-4 py-2 text-sm hover:bg-slate-100"
-                                  onClick={() => console.log("Edit", u.id)}
+                                  onClick={() => {
+                                    openEditRoomModal(u);
+                                    setOpenMenu(null);
+                                  }}
                                 >
                                   <PencilLine className="w-4 h-4 mr-2" />
                                   Sửa
                                 </button>
                                 <button
                                   className="flex items-center w-full px-4 py-2 text-sm hover:bg-slate-100"
-                                  onClick={() => console.log("Lock", u.id)}
+                                  onClick={() => {
+                                    openConfirmActionModal(
+                                      "lock",
+                                      "Xác nhận khóa phòng",
+                                      `Bạn có chắc chắn muốn khóa phòng ${u.ten_phong}?`,
+                                      "Khóa phòng",
+                                      () => {
+                                        console.log("Lock room", u.ma_phong);
+                                        toast.success("Đã khóa phòng thành công");
+                                      }
+                                    );
+                                    setOpenMenu(null);
+                                  }}
                                 >
                                   <LockKeyhole className="w-4 h-4 mr-2" />
                                   Khoá
@@ -418,7 +586,40 @@ const AdminRoomPage = () => {
             {/* MODAL UPLOAD */}
             <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
 
-            {isDrawerOpen && (
+            {/* Modals */}
+            <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
+
+            <ModalAddRoom
+              isOpen={modalAddRoom.isOpen}
+              onClose={closeAddRoomModal}
+              onSubmit={handleAddRoom}
+            />
+
+            <ModalEditRoom
+              isOpen={modalEditRoom.isOpen}
+              onClose={closeEditRoomModal}
+              roomData={modalEditRoom.roomData}
+              onSubmit={handleEditRoom}
+            />
+
+            <ModalViewRoom
+              isOpen={modalViewRoom.isOpen}
+              onClose={closeViewRoomModal}
+              roomData={modalViewRoom.roomData}
+            />
+
+            <ModalConfirmAction
+              isOpen={modalConfirmAction.isOpen}
+              onClose={closeConfirmActionModal}
+              actionType={modalConfirmAction.actionType}
+              title={modalConfirmAction.title}
+              message={modalConfirmAction.message}
+              confirmText={modalConfirmAction.confirmText}
+              onConfirm={modalConfirmAction.onConfirm}
+            />
+
+            {/* Old Drawer - Removed */}
+            {false && isDrawerOpen && (
               <>
                 <div
                   className="fixed inset-0 bg-black bg-opacity-50 z-[1000]"
