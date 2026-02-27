@@ -1,0 +1,101 @@
+import axiosClient from '@api/axiosClient';
+import { STUDENT_ENDPOINTS } from '@constants/apiEndpoints';
+
+/**
+ * Student Service
+ * Xử lý tất cả các API calls liên quan đến students
+ */
+
+class StudentService {
+  /**
+   * Get all students
+   * @param {Object} params - Query parameters (page, limit, search, etc.)
+   * @returns {Promise} List of students
+   */
+  async getAllStudents(params = {}) {
+    try {
+      const response = await axiosClient.get(STUDENT_ENDPOINTS.BASE, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get student by ID
+   * @param {string} studentId - Student ID
+   * @returns {Promise} Student data
+   */
+  async getStudentById(studentId) {
+    try {
+      const response = await axiosClient.get(STUDENT_ENDPOINTS.BY_ID(studentId));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Create new student
+   * @param {Object} studentData - Student data
+   * @returns {Promise} Created student
+   */
+  async createStudent(studentData) {
+    try {
+      const response = await axiosClient.post(STUDENT_ENDPOINTS.BASE, studentData);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Update student
+   * @param {string} studentId - Student ID
+   * @param {Object} studentData - Updated student data
+   * @returns {Promise} Updated student
+   */
+  async updateStudent(studentId, studentData) {
+    try {
+      const response = await axiosClient.put(STUDENT_ENDPOINTS.BY_ID(studentId), studentData);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Delete student
+   * @param {string} studentId - Student ID
+   * @returns {Promise} Deletion result
+   */
+  async deleteStudent(studentId) {
+    try {
+      const response = await axiosClient.delete(STUDENT_ENDPOINTS.BY_ID(studentId));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Handle and format API errors
+   * @param {Error} error - Error object from axios
+   * @returns {Error} Formatted error
+   */
+  handleError(error) {
+    if (error.response) {
+      const message = error.response.data?.message || 'Đã xảy ra lỗi từ server';
+      const apiError = new Error(message);
+      apiError.status = error.response.status;
+      apiError.data = error.response.data;
+      return apiError;
+    } else if (error.request) {
+      return new Error('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+    } else {
+      return new Error(error.message || 'Đã xảy ra lỗi không xác định');
+    }
+  }
+}
+
+export default new StudentService();

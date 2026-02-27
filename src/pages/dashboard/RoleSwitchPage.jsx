@@ -74,7 +74,7 @@ const RoleSwitchPage = () => {
                             <div className="space-y-6">
                                 {/* Nút Quản trị viên */}
                                 <button
-                                    onClick={() => navigate("/admin")}
+                                    onClick={() => navigate("/dashboard/admin")}
                                     className="group w-full flex items-center justify-between gap-4 py-6 px-6 sm:px-8 rounded-2xl
                              bg-blue-50 border-2 border-blue-200 text-blue-800
                              text-lg sm:text-xl font-semibold
@@ -92,7 +92,7 @@ const RoleSwitchPage = () => {
 
                                 {/* Nút Chấm công */}
                                 <button
-                                    onClick={() => navigate("/attendance")}
+                                    onClick={() => navigate("/dashboard/attendance-dashboard")}
                                     className="group w-full flex items-center justify-between gap-4 py-6 px-6 sm:px-8 rounded-2xl
                              bg-emerald-50 border-2 border-emerald-200 text-emerald-800
                              text-lg sm:text-xl font-semibold
