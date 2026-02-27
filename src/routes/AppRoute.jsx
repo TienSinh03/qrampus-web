@@ -27,6 +27,7 @@ import Setting from "../pages/dashboard/teacher/SettingPage";
 import ReportPage from "../pages/dashboard/teacher/ReportPage";
 
 // ADMIN
+import AdminDashboardPage from "@pages/dashboard/admin/AdminDashboardPage";
 import AdminQRPage from "@pages/dashboard/admin/AdminQRPage";
 import AdminQRDetailPage from "@pages/dashboard/admin/AdminQRDetailPage";
 import AdminDetailSessionQRPage from "@pages/dashboard/admin/AdminDetailSessionQRPage";
@@ -40,16 +41,18 @@ import AdminEnrollPage from "@pages/dashboard/admin/AdminEnrollPage";
 import AdminRoomPage from "../pages/dashboard/admin/AdminRoomPage";
 import AdminDetailSurveyPage from "../pages/dashboard/admin/AdminDetailSurveyPage";
 
-
-
 // attendance 
 import AttendanceDashboardPage from "@pages/dashboard/departmentAttendance/AttendanceDashboardPage";
 
+// chung
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
+import { RoleRoute } from "./RoleRoute";
 import RoleSwitchPage from "@pages/dashboard/RoleSwitchPage";
+import DashboardRedirect from "../components/common/DashboardRedirect";
 
 import LayoutMain from "@components/layout/LayoutMain";
+import { ROLES } from "@constants/roles";
 
 // Router setup
 const router = createBrowserRouter([
@@ -92,39 +95,70 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: <DashboardRedirect />,
       },
+      // TEACHER ROUTES - Schedule
       {
         path: "schedule",
-        element: <SchedulePage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <SchedulePage />
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - Reports
       {
         path: "reports",
         element: (
-          <div className="p-8">
-            <h1 className="text-2xl font-bold">Báo cáo</h1>
-          </div>
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <div className="p-8">
+              <h1 className="text-2xl font-bold">Báo cáo</h1>
+            </div>
+          </RoleRoute>
+        ),
+      },
+      // TEACHER ROUTES - QR Code Management
+      {
+        path: "qrcode",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <QRPage />
+          </RoleRoute>
+        ),
+      },
+      // TEACHER ROUTES - Study Session
+      {
+        path: "study-session",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <StudySessionPage />
+          </RoleRoute>
+        ),
+      },
+      // TEACHER ROUTES - Results QR
+      {
+        path: "results-qr",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ResultQRPage />
+          </RoleRoute>
         ),
       },
       {
-        path: "qrcode",
-        element: <QRPage />,
-      },
-      {
-        path: "study-session",
-        element: <StudySessionPage />,
-      },
-      {
-        path: "results-qr",
-        element: <ResultQRPage />,
-      },
-      {
         path: "results-qr-extend",
-        element: <ResultQRextendPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ResultQRextendPage />
+          </RoleRoute>
+        ),
       },
       {
         path: "results-qr-detail-user",
-        element: <ResultQRDetailUserPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ResultQRDetailUserPage />
+          </RoleRoute>
+        ),
       },
       {
         path: "account-setting",
@@ -134,79 +168,179 @@ const router = createBrowserRouter([
         path: "change-password",
         element: <ChangePasswordPage />,
       },
+      // TEACHER ROUTES - QR Fullscreen
       {
         path: "qrcode-fullscreen",
-        element: <QRViewPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <QRViewPage />
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - Timekeeping
       {
         path: "timekeeping",
-        element: <Timekeeping />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <Timekeeping />
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - Survey
       {
         path: "survey-page",
-        element: <SurveyPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <SurveyPage />
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - Leave Management
       {
         path: "leave-management",
-        element: <LeavePage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <LeavePage />
+          </RoleRoute>
+        ),
       },
+      // ALL ROLES - Notifications
       {
         path: "notifications",
         element: <AnnouncementPage />,
       },
+      // TEACHER ROUTES - Settings
       {
         path: "setting",
-        element: <Setting />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <Setting />
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - Report Page
       {
         path: "report-page",
-        element: <ReportPage />,
-      },
-      {
-        path: "results-qr-extend-student",
-        element: <ResultQRextendStudentPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ReportPage />
+          </RoleRoute>
+        ),
       },
 
-      // ADMIN ROUTES
+      // ==================== ADMIN ROUTES ====================
+      // Admin Dashboard (Main)
+      {
+        path: "admin",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminDashboardPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/dashboard",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminDashboardPage />
+          </RoleRoute>
+        ),
+      },
       {
         path: "admin/qrcode",
-        element: <AdminQRPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminQRPage />
+          </RoleRoute>
+        ),
       },
       {
         path: "admin/qrcode/session/qrcode-detail",
-        element: <AdminQRDetailPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminQRDetailPage />
+          </RoleRoute>
+        ),
       },
       {
         path: "admin/qrcode/session/qrcode-detail/session-detail",
-        element: <AdminDetailSessionQRPage />,
-      }, {
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminDetailSessionQRPage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/students",
-        element: <AdminStudentPage />,
-      }, {
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminStudentPage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/teachers",
-        element: <AdminTeacherPage />,
-      }, {
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminTeacherPage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/accounts",
-        element: <AdminAccountPage />,
-
-      }, {
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminAccountPage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/surveys",
-        element: <AdminSurveyPage />,
-      }, {
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminSurveyPage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/schedules",
-        element: <AdminSchedulePage />,
-      }, {
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminSchedulePage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/courses",
-        element: <AdminCoursePage />,
-      }, {
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminCoursePage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/enrollments",
-        element: <AdminEnrollPage />,
-      },{
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminEnrollPage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/rooms",
-        element: <AdminRoomPage />,
-      },{
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminRoomPage />
+          </RoleRoute>
+        ),
+      },
+      {
         path: "admin/surveys/detail-survey",
-        element: <AdminDetailSurveyPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminDetailSurveyPage />
+          </RoleRoute>
+        ),
       },
 
 
@@ -223,10 +357,14 @@ const router = createBrowserRouter([
 
 
 
-      // attendance department dashboard
+      // ==================== ATTENDANCE STAFF ROUTES ====================
       {
         path: "attendance-dashboard",
-        element: <AttendanceDashboardPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceDashboardPage />
+          </RoleRoute>
+        ),
       }
     ],
   },

@@ -24,7 +24,8 @@ import {
   Grid2X2,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { ROLES } from '@constants/roles';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { t } = useTranslation();
@@ -41,35 +42,158 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     }
   }, []);
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: t('sidebar.dashboard'), path: '/dashboard' },
-    { icon: Calendar, label: t('sidebar.schedule'), path: '/dashboard/schedule' },
-    { icon: BarChart3, label: t('sidebar.reports'), path: '/dashboard/report-page' },
-    { icon: ScanQrCode, label: t('sidebar.qrcode'), path: '/dashboard/qrcode' },
-    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/survey-page' },
-    { icon: FileText, label: 'Quản lý Chấm Công', path: '/dashboard/timekeeping' },
-    { icon: ImagePlus, label: 'Quản lý Nghỉ phép', path: '/dashboard/leave-management' },
-    { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/notifications' },
+  // Định nghĩa tất cả menu items với roles được phép truy cập
+  const allMenuItems = [
+    // ==================== TEACHER DASHBOARD ====================
+    { 
+      icon: LayoutDashboard, 
+      label: 'Teacher Dashboard', 
+      path: '/dashboard',
+      roles: [ROLES.TEACHER]
+    },
+    
+    // ==================== TEACHER MENU ====================
+    { 
+      icon: Calendar, 
+      label: t('sidebar.schedule'), 
+      path: '/dashboard/schedule',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: BarChart3, 
+      label: t('sidebar.reports'), 
+      path: '/dashboard/report-page',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: ScanQrCode, 
+      label: t('sidebar.qrcode'), 
+      path: '/dashboard/qrcode',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: BookOpen, 
+      label: 'Quản lý Khảo sát', 
+      path: '/dashboard/survey-page',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: FileText, 
+      label: 'Quản lý Chấm Công', 
+      path: '/dashboard/timekeeping',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: ImagePlus, 
+      label: 'Quản lý Nghỉ phép', 
+      path: '/dashboard/leave-management',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: Bell, 
+      label: 'Thông báo', 
+      path: '/dashboard/notifications',
+      roles: [ROLES.TEACHER, ROLES.ADMIN, ROLES.ATTENDANCE_STAFF]
+    },
+    { 
+      icon: Settings, 
+      label: t('sidebar.settings'), 
+      path: '/dashboard/setting',
+      roles: [ROLES.TEACHER]
+    },
 
-    { icon: Settings, label: t('sidebar.settings'), path: '/dashboard/setting' },
+    // ==================== ADMIN DASHBOARD & MENU ====================
+    { 
+      icon: LayoutDashboard, 
+      label: 'Admin Dashboard', 
+      path: '/dashboard/admin',
+      roles: [ROLES.ADMIN],
+      separator: true // Thêm separator trước admin section
+    },
+    { 
+      icon: UserCog, 
+      label: 'Quản lý Tài khoản', 
+      path: '/dashboard/admin/accounts',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: IdCardLanyard, 
+      label: 'Quản lý Nhân sự', 
+      path: '/dashboard/admin/teachers',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: Users, 
+      label: 'Quản lý Sinh viên', 
+      path: '/dashboard/admin/students',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: BookOpen, 
+      label: 'Quản lý Khảo sát [Admin]', 
+      path: '/dashboard/admin/surveys',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: ScanQrCode, 
+      label: 'Quản lý Điểm danh [Admin]', 
+      path: '/dashboard/admin/qrcode',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: BarChart, 
+      label: 'Quản lý Thống kê', 
+      path: '/dashboard/admin/statistics',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: FolderOpenDot, 
+      label: 'Quản lý Khóa học', 
+      path: '/dashboard/admin/courses',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: CalendarClock, 
+      label: 'Quản lý Lịch dạy', 
+      path: '/dashboard/admin/schedules',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: UserStar, 
+      label: 'Quản lý Học phần', 
+      path: '/dashboard/admin/enrollments',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: Grid2X2, 
+      label: 'Quản lý Phòng học', 
+      path: '/dashboard/admin/rooms',
+      roles: [ROLES.ADMIN]
+    },
 
-    // Admin section
-    { icon: UserCog, label: 'Quản lý Tài khoản', path: '/dashboard/admin/accounts' },
-    { icon: IdCardLanyard, label: 'Quản lý Nhân sự', path: '/dashboard/admin/teachers' },
-    { icon: Users, label: 'Quản lý Sinh viên', path: '/dashboard/admin/students' },
-    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/admin/surveys' },
-    { icon: ScanQrCode, label: 'Quản lý Điểm danh', path: '/dashboard/admin/qrcode' },
-    { icon: BarChart, label: 'Quản lý Thống kê', path: '/dashboard/admin/statistics' },
-    { icon: FolderOpenDot, label: 'Quản lý Khóa học', path: '/dashboard/admin/courses' },
-    { icon: CalendarClock, label: 'Quản lý Lịch dạy', path: '/dashboard/admin/schedules' },
-    { icon: UserStar, label: 'Quản lý Học phần', path: '/dashboard/admin/enrollments' },
-    { icon: Grid2X2, label: 'Quản lý Phòng học', path: '/dashboard/admin/rooms' },
-    { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/admin/notifications' },
-
-
-    // Attendance Department Dashboard
-    { icon: FolderCog, label: 'Dashboard Attendance', path: '/dashboard/attendance-dashboard' },
+    // ==================== ATTENDANCE STAFF DASHBOARD ====================
+    { 
+      icon: LayoutDashboard, 
+      label: 'Attendance Dashboard', 
+      path: '/dashboard/attendance-dashboard',
+      roles: [ROLES.ATTENDANCE_STAFF],
+      separator: true // Thêm separator trước attendance section
+    },
   ];
+
+  // Filter menu items dựa trên roles của user
+  const menuItems = useMemo(() => {
+    const userRoles = user?.roles || [];
+    
+    if (userRoles.length === 0) {
+      return [];
+    }
+
+    return allMenuItems.filter(item => {
+      // Kiểm tra xem user có bất kỳ role nào trong danh sách roles của item không
+      return item.roles.some(role => userRoles.includes(role));
+    });
+  }, [user?.roles]);
 
   const isActive = (path) => location.pathname === path;
 
@@ -158,16 +282,32 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <div className="px-5 py-4 border-b">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow">
-                  {user?.name?.charAt(0) || 'A'}
+                  {user?.user_name?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 truncate">
-                    {user?.name || 'Admin User'}
+                    {user?.user_name || 'User'}
                   </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    {user?.email}
-                  </p>
+                  {user?.roles && user.roles.length > 0 && (
+                    <div className="flex gap-1 mt-1">
+                      {user.roles.map((role) => (
+                        <span
+                          key={role}
+                          className={`
+                            text-[10px] px-2 py-0.5 rounded-full font-medium
+                            ${role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' :
+                              role === ROLES.TEACHER ? 'bg-blue-100 text-blue-700' :
+                              'bg-amber-100 text-amber-700'}
+                          `}
+                        >
+                          {role === ROLES.ADMIN ? 'Admin' :
+                           role === ROLES.TEACHER ? 'GV' :
+                           'NV'}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -175,46 +315,62 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
           {/* MENU */}
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
+            {menuItems.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-slate-500 text-center">
+                Không có menu nào khả dụng
+              </div>
+            ) : (
+              menuItems.map((item, index) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
+                const showSeparator = item.separator && index > 0;
 
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => window.innerWidth < 1024 && toggleSidebar()}
-                  className={`
-                    group relative flex items-center
-                    ${isCollapsed ? 'justify-center' : 'gap-3 px-4'}
-                    py-3 rounded-sm transition-all duration-200
-                    ${active
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
-                    : 'text-slate-700 hover:bg-slate-100'
-                    }
-                  `}
-                  title={isCollapsed ? item.label : undefined} // tooltip khi thu gọn
-                >
-                  {/* Active indicator */}
-                  {active && !isCollapsed && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
-                  )}
+                return (
+                  <div key={item.path}>
+                    {/* Separator line */}
+                    {showSeparator && !isCollapsed && (
+                      <div className="my-3 border-t border-slate-200" />
+                    )}
+                    {showSeparator && isCollapsed && (
+                      <div className="my-2" />
+                    )}
 
-                  <Icon
-                    className={`
-                      w-6 h-6 shrink-0
-                      ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}
-                    `}
-                  />
+                    <Link
+                      to={item.path}
+                      onClick={() => window.innerWidth < 1024 && toggleSidebar()}
+                      className={`
+                        group relative flex items-center
+                        ${isCollapsed ? 'justify-center' : 'gap-3 px-4'}
+                        py-3 rounded-sm transition-all duration-200
+                        ${active
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                        : 'text-slate-700 hover:bg-slate-100'
+                        }
+                      `}
+                      title={isCollapsed ? item.label : undefined} // tooltip khi thu gọn
+                    >
+                      {/* Active indicator */}
+                      {active && !isCollapsed && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+                      )}
 
-                  {!isCollapsed && (
-                    <span className="font-medium truncate">
-                      {item.label}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                      <Icon
+                        className={`
+                          w-6 h-6 shrink-0
+                          ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}
+                        `}
+                      />
+
+                      {!isCollapsed && (
+                        <span className="font-medium truncate">
+                          {item.label}
+                        </span>
+                      )}
+                    </Link>
+                  </div>
+                );
+              })
+            )}
           </nav>
 
           {/* LOGOUT - cũng thu gọn */}
