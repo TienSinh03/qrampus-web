@@ -269,49 +269,69 @@ const Header = ({ toggleSidebar }) => {
                   className="fixed inset-0 z-40"
                   onClick={() => setOpenUserMenu(false)}
                 />
-                <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
-                  {/* <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="font-semibold text-gray-900">{user?.name}</p>
-                    <p className="text-sm text-gray-500">{user?.email}</p>
-                  </div> */}
-                  <div className="px-4 py-1 border-b border-gray-100 text-sm">
-                    <p className="font-semibold text-gray-900">Chào mừng đã trở lại</p>
+                <div
+                  className="
+                    fixed bottom-0 left-0 right-0 
+                    sm:absolute sm:bottom-auto sm:right-0 sm:left-auto sm:mt-2
+                    w-full sm:w-60
+                    bg-white rounded-t-2xl sm:rounded-xl
+                    shadow-2xl border border-gray-200
+                    z-50 overflow-hidden
+                  "
+                >
+                  {/* Header */}
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="font-semibold text-gray-900 text-sm">
+                      Chào mừng đã trở lại
+                    </p>
                   </div>
+
+                  {/* Menu Item */}
                   <button
                     onClick={() => navigate("/dashboard/account-setting")}
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
+                    className="w-full flex items-center gap-3 
+                              px-4 py-3 text-sm 
+                              hover:bg-gray-100 transition"
                   >
-                    <UserCheck className="w-4 h-4 inline-block mr-2" />
-                    Hồ sơ cá nhân
-                  </button>
-                  <button
-                    onClick={() => navigate("/dashboard/change-password")}
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
-                  >
-                    <UserLock className="w-4 h-4 inline-block mr-2" />
-                    Đổi mật khẩu
+                    <UserCheck className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Hồ sơ cá nhân</span>
                   </button>
 
-                  {/* Chỉ hiển thị nút Đổi vai trò cho Admin */}
-                  {user?.roles?.includes('admin') && (
+                  <button
+                    onClick={() => navigate("/dashboard/change-password")}
+                    className="w-full flex items-center gap-3 
+                              px-4 py-3 text-sm 
+                              hover:bg-gray-100 transition"
+                  >
+                    <UserLock className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Đổi mật khẩu</span>
+                  </button>
+
+                  {user?.roles?.includes("admin") && (
                     <button
                       onClick={() => navigate("/role")}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-100"
+                      className="w-full flex items-center gap-3 
+                                px-4 py-3 text-sm 
+                                hover:bg-gray-100 transition"
                     >
-                      <ArrowLeftRight className="w-4 h-4 inline-block mr-2" />
-                      Đổi vai trò
+                      <ArrowLeftRight className="w-4 h-4 shrink-0" />
+                      <span className="truncate">Đổi vai trò</span>
                     </button>
                   )}
-                  <hr className="my-1" />
-                  <button 
+
+                  <div className="border-t border-gray-100" />
+
+                  <button
                     onClick={() => {
                       logout();
-                      navigate('/login');
+                      navigate("/login");
                     }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                    className="w-full flex items-center gap-3 
+                              px-4 py-3 text-sm 
+                              text-red-600 hover:bg-red-50 transition"
                   >
-                    <LogOut className="w-4 h-4 inline-block mr-2" />
-                    Đăng xuất
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Đăng xuất</span>
                   </button>
                 </div>
               </>
