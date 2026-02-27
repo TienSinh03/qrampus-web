@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { API_BASE_URL, AUTH_ENDPOINTS } from '@constants/apiEndpoints';
+import { API_BASE_URL } from '@constants/config';
+import { AUTH_ENDPOINTS } from '@constants/endpoints';
 
 /**
  * Axios client instance với interceptors

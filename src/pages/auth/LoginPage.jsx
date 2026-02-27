@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Eye, EyeOff, IdCardLanyard } from 'lucide-react';
+import { Lock, Eye, EyeOff, IdCardLanyard, AlertCircle } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 
@@ -17,6 +17,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -27,11 +28,16 @@ const LoginPage = () => {
       ...errors,
       [e.target.name]: '',
     });
+    // Clear error message when user starts typing
+    if (errorMessage) {
+      setErrorMessage('');
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
+    setErrorMessage(''); // Clear previous error
 
     if (!formData.staffCode) {
       newErrors.staffCode = 'Vui lòng nhập mã giảng viên';
@@ -45,6 +51,7 @@ const LoginPage = () => {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      setErrorMessage('Vui lòng điền đầy đủ thông tin!');
       return;
     }
 
@@ -55,7 +62,13 @@ const LoginPage = () => {
     if (result.success) {
       navigate('/dashboard');
     } else {
-      setErrors({ password: t('errors.loginFailed') });
+      // Hiển thị error message dưới dạng text, không dùng toast
+      const message = result.error || 'Mã giảng viên hoặc mật khẩu không chính xác!';
+      setErrorMessage(message);
+      setErrors({ 
+        staffCode: ' ',
+        password: ' '
+      });
     }
   };
 
@@ -82,6 +95,17 @@ const LoginPage = () => {
             </p>
           </div>
 
+          {/* Error Message Banner */}
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 animate-shake">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-800 mb-1">Đăng nhập thất bại</p>
+                <p className="text-sm text-red-700">{errorMessage}</p>
+              </div>
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Staff Code */}
@@ -96,7 +120,7 @@ const LoginPage = () => {
                   name="staffCode"
                   value={formData.staffCode}
                   onChange={handleChange}
-                  placeholder="VD: GV210001"
+                  placeholder="VD: 0123456"
                   className={`w-full pl-10 pr-4 py-3 border ${errors.staffCode
                       ? 'border-red-500'
                       : 'border-gray-300'

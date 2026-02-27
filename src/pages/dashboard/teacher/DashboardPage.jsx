@@ -232,7 +232,7 @@ export default function Dashboard() {
               <span className="text-0.5xl font-semibold">Số giờ dạy trong tuần</span>
             </div>
             <div className="text-slate-400 text-xs">
-              <Ellipsis w-5 h-5 />
+              <Ellipsis className="w-5 h-5" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
@@ -250,7 +250,7 @@ export default function Dashboard() {
               <span className="text-0.5xl font-semibold">Số giờ dạy trong tháng</span>
             </div>
             <div className="text-slate-400 text-xs">
-              <Ellipsis w-5 h-5 />
+              <Ellipsis className="w-5 h-5" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
@@ -265,7 +265,7 @@ export default function Dashboard() {
           <div className="flex items-start justify-between mb-4">
             <span className="text-0.5xl font-semibold">Quá trình chấm công của bạn</span>
             <div className="text-slate-400 text-xs">
-              <Ellipsis w-5 h-5 />
+              <Ellipsis className="w-5 h-5" />
             </div>
           </div>
 

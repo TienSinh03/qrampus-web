@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
-      toast.error(error.message || 'Đăng nhập thất bại');
+      // Không hiển thị toast error, để LoginPage xử lý hiển thị text
       return { success: false, error: error.message };
     }
   };
