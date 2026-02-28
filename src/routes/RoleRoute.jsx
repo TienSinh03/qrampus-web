@@ -4,13 +4,13 @@ import { canAccessRoute, getDefaultRoute } from '@config/roleRoutes';
 
 /**
  * RoleRoute Component
- * Bảo vệ routes dựa trên roles của user
+ * Bảo vệ routes dựa trên activeRole của user (role đang hoạt động)
  * 
  * @param {React.ReactNode} children - Component con
  * @param {Array<string>} requiredRoles - Roles được phép truy cập (optional)
  */
 export const RoleRoute = ({ children, requiredRoles = null }) => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, activeRole } = useAuth();
 
   if (loading) {
     return (
@@ -29,13 +29,13 @@ export const RoleRoute = ({ children, requiredRoles = null }) => {
     return children;
   }
 
-  // Kiểm tra user có role được yêu cầu không
-  const userRoles = user?.roles || [];
-  const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
+  // Sử dụng activeRole nếu có, nếu không thì dùng tất cả roles của user
+  const effectiveRoles = activeRole ? [activeRole] : (user?.roles || []);
+  const hasRequiredRole = requiredRoles.some(role => effectiveRoles.includes(role));
 
   if (!hasRequiredRole) {
-    // Redirect về trang phù hợp với role của user
-    const defaultRoute = getDefaultRoute(userRoles);
+    // Redirect về trang phù hợp với activeRole hoặc role mặc định
+    const defaultRoute = getDefaultRoute(effectiveRoles);
     return <Navigate to={defaultRoute} replace />;
   }
 
@@ -50,7 +50,7 @@ export const RoleRoute = ({ children, requiredRoles = null }) => {
  * @param {string} routePath - Path của route
  */
 export const ProtectedRoute = ({ children, routePath }) => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, activeRole } = useAuth();
 
   if (loading) {
     return (
@@ -64,10 +64,11 @@ export const ProtectedRoute = ({ children, routePath }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const userRoles = user?.roles || [];
+  // Sử dụng activeRole nếu có
+  const effectiveRoles = activeRole ? [activeRole] : (user?.roles || []);
   
   // Kiểm tra quyền truy cập
-  if (!canAccessRoute(userRoles, routePath)) {
+  if (!canAccessRoute(effectiveRoles, routePath)) {
     return <Navigate to="/dashboard" replace />;
   }
 

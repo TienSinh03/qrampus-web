@@ -30,7 +30,7 @@ import { ROLES } from '@constants/roles';
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const { logout, user } = useAuth();
+  const { logout, user, activeRole } = useAuth();
 
   // Thêm state để kiểm soát chế độ thu gọn
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -181,19 +181,20 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     },
   ];
 
-  // Filter menu items dựa trên roles của user
+  // Filter menu items dựa trên activeRole của user
   const menuItems = useMemo(() => {
-    const userRoles = user?.roles || [];
+    // Sử dụng activeRole nếu có, nếu không thì dùng tất cả roles của user
+    const effectiveRoles = activeRole ? [activeRole] : (user?.roles || []);
     
-    if (userRoles.length === 0) {
+    if (effectiveRoles.length === 0) {
       return [];
     }
 
     return allMenuItems.filter(item => {
-      // Kiểm tra xem user có bất kỳ role nào trong danh sách roles của item không
-      return item.roles.some(role => userRoles.includes(role));
+      // Kiểm tra xem activeRole có trong danh sách roles của item không
+      return item.roles.some(role => effectiveRoles.includes(role));
     });
-  }, [user?.roles]);
+  }, [user?.roles, activeRole, allMenuItems]);
 
   const isActive = (path) => location.pathname === path;
 

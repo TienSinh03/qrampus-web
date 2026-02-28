@@ -17,29 +17,29 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@contexts/AuthContext";
+import { ROLE_LABELS } from "@constants/roles";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 const Header = ({ toggleSidebar }) => {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, activeRole, getActiveRoleLabel, needsRoleSelection } = useAuth();
   const navigate = useNavigate();
 
   const [openUserMenu, setOpenUserMenu] = useState(false);
   const [openNotif, setOpenNotif] = useState(false);
 
-  // Helper function to format role display
-  const getRoleDisplay = (roles) => {
-    if (!roles || roles.length === 0) return 'User';
-    const roleMap = {
-      'admin': 'Quản trị viên',
-      'teacher': 'Giảng viên',
-      'attendance_staff': 'Nhân viên chấm công'
-    };
-    return roleMap[roles[0]] || roles[0];
+  // Helper function to format role display 
+  const getRoleDisplay = () => {
+    if (activeRole) {
+      return ROLE_LABELS[activeRole] || activeRole;
+    }
+
+    if (!user?.roles || user.roles.length === 0) return 'User';
+    return ROLE_LABELS[user.roles[0]] || user.roles[0];
   };
 
   // Số thông báo chưa đọc (bạn có thể lấy từ API sau)
-  const unreadCount = 2;
+  const unreadCount = 2;  
 
   const notifications = [
     {
@@ -256,7 +256,7 @@ const Header = ({ toggleSidebar }) => {
                   {user?.user_name || user?.name || "User"}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {getRoleDisplay(user?.roles)}
+                  {getRoleDisplay()}
                 </p>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-500 hidden md:block" />
@@ -307,7 +307,7 @@ const Header = ({ toggleSidebar }) => {
                     <span className="truncate">Đổi mật khẩu</span>
                   </button>
 
-                  {user?.roles?.includes("admin") && (
+                  {needsRoleSelection() && (
                     <button
                       onClick={() => navigate("/role")}
                       className="w-full flex items-center gap-3 

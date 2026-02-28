@@ -7,6 +7,7 @@ export const ROLES = {
   ADMIN: 'admin',
   TEACHER: 'teacher',
   ATTENDANCE_STAFF: 'attendance_staff',
+  STUDENT: 'student',
 };
 
 /**

@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff, IdCardLanyard, AlertCircle } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { ROLES } from '@constants/roles';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, setActiveRole } = useAuth();
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
@@ -60,7 +61,9 @@ const LoginPage = () => {
     setIsLoading(false);
 
     if (result.success) {
-      navigate('/dashboard');
+      const userData = result.data;
+      const userRoles = userData?.roles || [];
+      
     } else {
       // Hiển thị error message dưới dạng text, không dùng toast
       const message = result.error || 'Mã giảng viên hoặc mật khẩu không chính xác!';

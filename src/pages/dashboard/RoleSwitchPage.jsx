@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Shield, Clock, ChevronRight } from "lucide-react";
+import { useNavigate, Navigate } from "react-router-dom";
+import { Shield, Clock, ChevronRight, LogOut } from "lucide-react";
+import { useAuth } from "@contexts/AuthContext";
+import { ROLES, ROLE_LABELS } from "@constants/roles";
 
 const RoleSwitchPage = () => {
     const navigate = useNavigate();
+    const { user, isAuthenticated, loading, setActiveRole, logout, needsRoleSelection } = useAuth();
 
     const images = [
         "/assets/images/illus-1.png",
@@ -18,6 +21,53 @@ const RoleSwitchPage = () => {
         }, 4000);
         return () => clearInterval(timer);
     }, []);
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
+    // Chưa đăng nhập -> redirect về login
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // User không có nhiều roles hoặc không phải admin -> redirect về dashboard mặc định
+    if (!needsRoleSelection()) {
+        // Set activeRole là role duy nhất của user
+        if (user?.roles?.length === 1) {
+            setActiveRole(user.roles[0]);
+        }
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    // Xử lý chọn role
+    const handleSelectRole = (role) => {
+        setActiveRole(role);
+        
+        // Navigate đến dashboard phù hợp với role
+        if (role === ROLES.ADMIN) {
+            navigate("/dashboard/admin");
+        } else if (role === ROLES.ATTENDANCE_STAFF) {
+            navigate("/dashboard/attendance-dashboard");
+        } else if (role === ROLES.TEACHER) {
+            navigate("/dashboard");
+        } else {
+            navigate("/dashboard");
+        }
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        navigate("/login");
+    };
+
+    // Lấy các roles có thể chọn của user
+    const availableRoles = user?.roles || [];
 
     return (
         <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-emerald-50 flex items-center justify-center overflow-hidden">
@@ -71,45 +121,69 @@ const RoleSwitchPage = () => {
                         <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
 
                         <div className="bg-white/90 backdrop-blur-2xl rounded-b-xl p-8 sm:p-10 lg:p-12 border border-white/50">
-                            <div className="space-y-6">
+                            {/* User info */}
+                            <div className="mb-6 pb-4 border-b border-gray-200">
+                                <p className="text-sm text-gray-500">Xin chào,</p>
+                                <p className="text-lg font-semibold text-gray-800">
+                                    {user?.profile?.full_name || user?.user_name || user?.userName}
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
                                 {/* Nút Quản trị viên */}
-                                <button
-                                    onClick={() => navigate("/dashboard/admin")}
-                                    className="group w-full flex items-center justify-between gap-4 py-6 px-6 sm:px-8 rounded-2xl
-                             bg-blue-50 border-2 border-blue-200 text-blue-800
-                             text-lg sm:text-xl font-semibold
-                             hover:bg-blue-100 hover:border-blue-300 hover:shadow-xl
-                             hover:scale-[1.02] transition-all duration-300"
-                                >
-                                    <div className="flex items-center gap-4 sm:gap-5">
-                                        <div className="p-3 sm:p-4 bg-blue-100 rounded-xl">
-                                            <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-blue-700" />
+                                {availableRoles.includes(ROLES.ADMIN) && (
+                                    <button
+                                        onClick={() => handleSelectRole(ROLES.ADMIN)}
+                                        className="group w-full flex items-center justify-between gap-4 py-5 px-6 sm:px-8 rounded-2xl
+                                 bg-blue-50 border-2 border-blue-200 text-blue-800
+                                 text-lg sm:text-xl font-semibold
+                                 hover:bg-blue-100 hover:border-blue-300 hover:shadow-xl
+                                 hover:scale-[1.02] transition-all duration-300"
+                                    >
+                                        <div className="flex items-center gap-4 sm:gap-5">
+                                            <div className="p-3 sm:p-4 bg-blue-100 rounded-xl">
+                                                <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-blue-700" />
+                                            </div>
+                                            <span>{ROLE_LABELS[ROLES.ADMIN]}</span>
                                         </div>
-                                        <span>Quản trị viên</span>
-                                    </div>
-                                    <ChevronRight className="w-6 h-6 text-blue-600 group-hover:translate-x-2 transition-transform" />
-                                </button>
+                                        <ChevronRight className="w-6 h-6 text-blue-600 group-hover:translate-x-2 transition-transform" />
+                                    </button>
+                                )}
 
                                 {/* Nút Chấm công */}
-                                <button
-                                    onClick={() => navigate("/dashboard/attendance-dashboard")}
-                                    className="group w-full flex items-center justify-between gap-4 py-6 px-6 sm:px-8 rounded-2xl
-                             bg-emerald-50 border-2 border-emerald-200 text-emerald-800
-                             text-lg sm:text-xl font-semibold
-                             hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-xl
-                             hover:scale-[1.02] transition-all duration-300"
-                                >
-                                    <div className="flex items-center gap-4 sm:gap-5">
-                                        <div className="p-3 sm:p-4 bg-emerald-100 rounded-xl">
-                                            <Clock className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-700" />
+                                {availableRoles.includes(ROLES.ATTENDANCE_STAFF) && (
+                                    <button
+                                        onClick={() => handleSelectRole(ROLES.ATTENDANCE_STAFF)}
+                                        className="group w-full flex items-center justify-between gap-4 py-5 px-6 sm:px-8 rounded-2xl
+                                 bg-emerald-50 border-2 border-emerald-200 text-emerald-800
+                                 text-lg sm:text-xl font-semibold
+                                 hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-xl
+                                 hover:scale-[1.02] transition-all duration-300"
+                                    >
+                                        <div className="flex items-center gap-4 sm:gap-5">
+                                            <div className="p-3 sm:p-4 bg-emerald-100 rounded-xl">
+                                                <Clock className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-700" />
+                                            </div>
+                                            <span>{ROLE_LABELS[ROLES.ATTENDANCE_STAFF]}</span>
                                         </div>
-                                        <span>Bộ phận chấm công</span>
-                                    </div>
-                                    <ChevronRight className="w-6 h-6 text-emerald-600 group-hover:translate-x-2 transition-transform" />
+                                        <ChevronRight className="w-6 h-6 text-emerald-600 group-hover:translate-x-2 transition-transform" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Logout button */}
+                            <div className="mt-8 pt-4 border-t border-gray-200">
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full flex items-center justify-center gap-2 py-3 px-4 
+                                             text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                    <LogOut className="w-5 h-5" />
+                                    <span>Đăng xuất</span>
                                 </button>
                             </div>
 
-                            <p className="text-center text-xs sm:text-sm text-gray-500 mt-10">
+                            <p className="text-center text-xs sm:text-sm text-gray-500 mt-6">
                                 © 2026 Khóa luận tốt nghiệp • Phiên bản 1.0
                             </p>
                         </div>
