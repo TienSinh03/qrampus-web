@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Camera } from "lucide-react";
+import { DEPARTMENTS } from "../../constants/departments";
+import { usePersonnelValidation } from "../../hooks/usePersonnelValidation";
 
 const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -12,6 +14,8 @@ const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
     role: "",
     avatarUrl: "",
   });
+
+  const { errors, validateAllFields, validateSingleField, clearErrors, shouldAllowInput } = usePersonnelValidation();
 
   // Initialize form data when teacherData changes
   useEffect(() => {
@@ -27,16 +31,31 @@ const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
         role: teacherData.role || "",
         avatarUrl: teacherData.avatar_url || "",
       });
+      clearErrors();
     }
-  }, [isOpen, teacherData]);
+  }, [isOpen, teacherData, clearErrors]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Check if input is allowed (numeric validation for teacherId and phoneNumber)
+    if (!shouldAllowInput(name, value)) {
+      return;
+    }
+    
+    // Update form data
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Validate field in real-time
+    validateSingleField(name, value);
   };
 
   const handleSubmit = () => {
-    // Validate and submit logic
+    // Validate all fields before submit
+    if (!validateAllFields(formData)) {
+      return;
+    }
+
     if (onSubmit) {
       onSubmit(formData);
     }
@@ -72,28 +91,43 @@ const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
         <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mã giảng viên
+              Mã giảng viên <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="teacherId"
               value={formData.teacherId}
               onChange={handleChange}
-              className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className={`w-full rounded-lg border px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 ${
+                errors.teacherId
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-blue-300 focus:border-blue-500 focus:ring-blue-200"
+              }`}
+              maxLength="8"
             />
+            {errors.teacherId && (
+              <p className="mt-1 text-sm text-red-500">{errors.teacherId}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Họ tên Giảng viên
+              Họ tên Giảng viên <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
-              className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className={`w-full rounded-lg border px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 ${
+                errors.fullName
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-blue-300 focus:border-blue-500 focus:ring-blue-200"
+              }`}
             />
+            {errors.fullName && (
+              <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>
+            )}
           </div>
 
           <div>
@@ -111,45 +145,69 @@ const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className={`w-full rounded-lg border px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 ${
+                errors.email
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-blue-300 focus:border-blue-500 focus:ring-blue-200"
+              }`}
             />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Khoa / Viện
+              Khoa / Viện <span className="text-red-500">*</span>
             </label>
             <select
               name="department"
               value={formData.department}
               onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500"
+              className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${
+                errors.department
+                  ? "border-red-500 focus:ring-red-500"
+                  : "focus:ring-purple-500"
+              }`}
             >
-              <option>Khoa Công nghệ thông tin</option>
-              <option>Khoa Điện tử - Viễn thông</option>
-              <option>Khoa Cơ khí</option>
-              <option>Khoa Kinh tế</option>
+              <option value="">-- Chọn Khoa/Viện --</option>
+              {DEPARTMENTS.map((dept, index) => (
+                <option key={index} value={dept}>
+                  {dept}
+                </option>
+              ))}
             </select>
+            {errors.department && (
+              <p className="mt-1 text-sm text-red-500">{errors.department}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Số điện thoại
+              Số điện thoại <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className={`w-full rounded-lg border px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 ${
+                errors.phoneNumber
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-blue-300 focus:border-blue-500 focus:ring-blue-200"
+              }`}
+              maxLength="11"
             />
+            {errors.phoneNumber && (
+              <p className="mt-1 text-sm text-red-500">{errors.phoneNumber}</p>
+            )}
           </div>
 
           <div>

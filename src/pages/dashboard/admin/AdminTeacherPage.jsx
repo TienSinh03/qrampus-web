@@ -7,7 +7,10 @@ import ModalAddTeacher from "../../../components/modal/ModalAddTeacher";
 import ModalEditTeacher from "../../../components/modal/ModalEditTeacher";
 import ModalViewTeacher from "../../../components/modal/ModalViewTeacher";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import personnelService from "../../../services/personnel.service";
+import LoadingSpinner from "@components/layout/LoadingSpinner";
 import { toast } from "sonner";
+import { DEPARTMENTS } from "../../../constants/departments";
 import {
   CirclePlus,
   Trash2,
@@ -27,11 +30,35 @@ import StatsCard from "../../../components/common/StatsCard";
 const AdminTeacherPage = () => {
   const { t } = useTranslation();
 
+  // API Data states
+  const [personnels, setPersonnels] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: "",
+    teacherCode: "",
+    fullName: "",
+    department: "",
+    status: "",
+    email: "",
+    phone: "",
+    dob: "",
+    role: "" // teacher/attendance_staff/admin
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
-  // const [checked, setChecked] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [expanded, setExpanded] = useState(false);
 
   // Modal states
   const [modalAddTeacher, setModalAddTeacher] = useState(false);
@@ -65,9 +92,48 @@ const AdminTeacherPage = () => {
   };
   const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
 
-  const handleAddTeacher = (formData) => {
-    console.log("Add teacher:", formData);
-    toast.success("Đã thêm giảng viên thành công!");
+  const handleAddTeacher = async (formData) => {
+    try {
+      console.log("Add teacher form data:", formData);
+      
+      // Role mapping
+      const roleMap = {
+        "Giảng viên": "teacher",
+        "Quản trị viên": "admin",
+        "Bộ phận chấm công": "attendance_staff"
+      };
+      
+      // Transform data từ form format sang API format
+      const apiData = {
+        code: formData.teacherId,
+        full_name: formData.fullName,
+        email: formData.email,
+        dob: formData.dateOfBirth,
+        department: formData.department,
+        phone: formData.phoneNumber,
+        avatar_url: "", // TODO: Handle file upload
+        role: roleMap[formData.role] || "teacher"
+      };
+      
+      // Validate required fields
+      if (!apiData.code || !apiData.full_name || !apiData.email) {
+        toast.error("Vui lòng điền đầy đủ thông tin bắt buộc!");
+        return;
+      }
+      
+      // Call API to create personnel
+      const response = await personnelService.createPersonnel(apiData);
+      
+      if (response.success) {
+        toast.success(response.message || "Đã thêm nhân sự thành công!");
+        closeAddTeacherModal();
+        // Refresh danh sách
+        fetchPersonnels();
+      }
+    } catch (error) {
+      console.error("Error creating personnel:", error);
+      toast.error(error.message || "Không thể thêm nhân sự. Vui lòng thử lại!");
+    }
   };
 
   const handleEditTeacher = (formData) => {
@@ -75,105 +141,104 @@ const AdminTeacherPage = () => {
     toast.success("Đã cập nhật thông tin giảng viên thành công!");
   };
 
-  //gọi userfetch open
-  // useEffect(() => {
-  //   const handleClick = (e) => {
-  //     if (!e.target.closest(".dropdown-menu")) {
-  //       setOpenMenu(null);
-  //     }
-  //   };
+  // Fetch personnels from API
+  const fetchPersonnels = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  //   document.addEventListener("click", handleClick);
-  //   return () => document.removeEventListener("click", handleClick);
-  // }, []);
+      // Build query params
+      const params = {
+        page: currentPage,
+        limit: pagination.limit || 10,
+      };
 
-  const totalPages = 5;
+      // Add filters if they have values
+      if (filters.search) params.search = filters.search;
+      if (filters.teacherCode) params.search = filters.teacherCode; // Use search for teacher code
+      if (filters.fullName) params.search = filters.fullName; // Use search for full name
+      if (filters.department) params.department = filters.department;
+      if (filters.status) params.status = filters.status;
+      if (filters.email) params.email = filters.email;
+      if (filters.phone) params.phone = filters.phone;
+      if (filters.dob) params.dob = filters.dob;
+      if (filters.role) params.role = filters.role;
 
-  const users = [
-    {
-      id: 1,
-      full_name: "Nguyễn Thị Yến Nhi",
-      email: "nguyenthiyennhi@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=1",
-      role: "Quản trị viên",
-      user_id: "10001234",
-      status: "Inactive",
-    },
-    {
-      id: 2,
-      full_name: "Nguyễn Thị Quỳnh Như",
-      email: "nguyenthiquynhnhu@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=2",
-      role: "Ban chấm công",
-      user_id: "10001235",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      full_name: "Lê Thị Kim Oanh",
-      email: "lethikimoanh@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=3",
-      role: "Ban chấm công",
-      user_id: "10001236",
-      status: "Active",
-    },
-    {
-      id: 4,
-      full_name: "Võ Thanh Sang",
-      email: "vothanhsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=4",
-      role: "Giảng viên",
-      user_id: "10001237",
-      status: "Inactive",
-    },
-    {
-      id: 5,
-      full_name: "Phạm Đoàn Thanh Sang",
-      email: "phamdoanthanhsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=5",
-      role: "Giảng viên",
-      user_id: "10001238",
-      status: "Pending",
-    },
-    {
-      id: 6,
-      full_name: "Nguyễn Phúc Sang",
-      email: "nguyenphucsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=6",
-      role: "Giảng viên",
-      user_id: "10001239",
-      status: "Pending",
-    },
-    {
-      id: 7,
-      full_name: "Dương Thị Thanh Thảo",
-      email: "duongthithanhthao@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=7",
-      role: "Giảng viên",
-      user_id: "10001240",
-      status: "Pending",
-    },
-    {
-      id: 8,
-      full_name: "Trần Thị Thanh Thảo",
-      email: "tranthithanhthao@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=8",
-      role: "Giảng viên",
-      user_id: "10001241",
-      status: "Pending",
-    },
-  ];
+      const response = await personnelService.getAllPersonnels(params);
+      
+      if (response.success && response.data) {
+        setPersonnels(response.data.personnels || []);
+        setPagination(response.data.pagination || {
+          total: 0,
+          page: 1,
+          limit: 10,
+          totalPages: 0
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching personnels:", err);
+      setError(err.message || "Không thể tải danh sách nhân sự");
+      toast.error(err.message || "Không thể tải danh sách nhân sự");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data on mount and when filters/currentPage change
+  useEffect(() => {
+    fetchPersonnels();
+  }, [currentPage]);
+
+
+  // Handle filter change
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // Handle search/filter submit
+  const handleSearch = () => {
+    setCurrentPage(1); // Reset to page 1
+    fetchPersonnels();
+  };
+
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setFilters({
+      search: "",
+      teacherCode: "",
+      fullName: "",
+      department: "",
+      status: "",
+      email: "",
+      phone: "",
+      dob: "",
+      role: ""
+    });
+    setCurrentPage(1);
+    // Fetch will be triggered by useEffect
+    setTimeout(() => fetchPersonnels(), 100);
+  };
 
   const pillStyle = {
-    Active: "bg-green-100 text-green-600",
-    Pending: "bg-yellow-100 text-yellow-600",
-    Inactive: "bg-gray-200 text-gray-600",
+    active: "bg-green-100 text-green-600",
+    inactive: "bg-gray-200 text-gray-600",
+    pending: "bg-yellow-100 text-yellow-600",
+  };
+
+  // Role mapping
+  const roleMapping = {
+    teacher: "Giảng viên",
+    admin: "Quản trị viên",
+    attendance_staff: "Ban chấm công"
   };
 
   // Checkbox handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(users.map(item => item.id));
+      setSelectedIds(personnels.map(item => item.id));
     } else {
       setSelectedIds([]);
     }
@@ -187,10 +252,34 @@ const AdminTeacherPage = () => {
     }
   };
 
-  const isAllSelected = users.length > 0 && selectedIds.length === users.length;
-  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < users.length;
+  const isAllSelected = personnels.length > 0 && selectedIds.length === personnels.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < personnels.length;
 
-  const [expanded, setExpanded] = useState(false);
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return "?";
+    const words = name.trim().split(" ");
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  };
+
+  // Get color for avatar based on name
+  const getAvatarColor = (name) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-green-500", 
+      "bg-yellow-500",
+      "bg-red-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-teal-500"
+    ];
+    const index = name ? name.charCodeAt(0) % colors.length : 0;
+    return colors[index];
+  };
 
   // CỘT, BẢNG
 
@@ -275,9 +364,6 @@ const AdminTeacherPage = () => {
               {/* Form */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-
-
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Mã số nhân sự
@@ -285,6 +371,8 @@ const AdminTeacherPage = () => {
                   <input
                     type="text"
                     placeholder="Ví dụ: 4203001549"
+                    value={filters.teacherCode}
+                    onChange={(e) => handleFilterChange('teacherCode', e.target.value)}
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -294,18 +382,27 @@ const AdminTeacherPage = () => {
                   </label>
                   <input
                     type="text"
-                    className="w-full rounded-lg border px-3 py-2"
+                    placeholder="Nhập họ tên"
+                    value={filters.fullName}
+                    onChange={(e) => handleFilterChange('fullName', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Khoa/Viện
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Khoa Công nghệ thông tin</option>
-                    <option>Khoa Điện tử - Viễn thông</option>
-                    <option>Khoa Cơ khí</option>
-                    <option>Khoa Kinh tế</option>
+                  <select
+                    value={filters.department}
+                    onChange={(e) => handleFilterChange('department', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    {DEPARTMENTS.map((dept, index) => (
+                      <option key={index} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -313,23 +410,28 @@ const AdminTeacherPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Trạng thái
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Đang hoạt động</option>
-                    <option>Tạm ngưng</option>
-                    <option>Đã xóa</option>
+                  <select 
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="inactive">Tạm ngưng</option>
                   </select>
                 </div>
                 {expanded && (
                   <>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Mail
                       </label>
                       <input
                         type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
+                        placeholder="Ví dụ: example@iuh.edu.vn"
+                        value={filters.email}
+                        onChange={(e) => handleFilterChange('email', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -338,8 +440,10 @@ const AdminTeacherPage = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
+                        placeholder="Ví dụ: 0912345678"
+                        value={filters.phone}
+                        onChange={(e) => handleFilterChange('phone', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -348,9 +452,25 @@ const AdminTeacherPage = () => {
                       </label>
                       <input
                         type="date"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
+                        value={filters.dob}
+                        onChange={(e) => handleFilterChange('dob', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Vai trò
+                      </label>
+                      <select 
+                        value={filters.role}
+                        onChange={(e) => handleFilterChange('role', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Tất cả</option>
+                        <option value="teacher">Giảng viên</option>
+                        <option value="admin">Quản trị viên</option>
+                        <option value="attendance_staff">Ban chấm công</option>
+                      </select>
                     </div>
                   </>
                 )}
@@ -385,9 +505,12 @@ const AdminTeacherPage = () => {
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
+                    onClick={handleSearch}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" 
+                    title="Tìm kiếm"
                   >
-                    <FileSearchIcon className="w-5 h-5" />
+                    {loading ? <LoadingSpinner size="sm" color="blue" /> : <FileSearchIcon className="w-5 h-5" />}
                   </button>
 
                   <button
@@ -398,7 +521,9 @@ const AdminTeacherPage = () => {
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                    onClick={handleClearFilters}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Xóa bộ lọc, truy vấn bộ lọc khác"
                   >
                     <FilterX className="w-5 h-5" />
@@ -486,33 +611,74 @@ const AdminTeacherPage = () => {
                 </thead>
 
                 <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className={`border-t hover:bg-slate-50 ${
-                      selectedIds.includes(u.id) ? 'bg-blue-50' : ''
+                  {loading ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-12">
+                        <LoadingSpinner size="lg" color="blue" text="Đang tải dữ liệu..." />
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-12">
+                        <p className="text-red-500">{error}</p>
+                        <button
+                          onClick={fetchPersonnels}
+                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Thử lại
+                        </button>
+                      </td>
+                    </tr>
+                  ) : personnels.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-12">
+                        <p className="text-gray-500">Không có dữ liệu</p>
+                      </td>
+                    </tr>
+                  ) : personnels.map((personnel) => (
+                    <tr key={personnel.id} className={`border-t hover:bg-slate-50 ${
+                      selectedIds.includes(personnel.id) ? 'bg-blue-50' : ''
                     }`}>
                       <td>
                         <input
                           type="checkbox"
                           className="ml-4 cursor-pointer"
-                          checked={selectedIds.includes(u.id)}
-                          onChange={() => handleSelectOne(u.id)}
+                          checked={selectedIds.includes(personnel.id)}
+                          onChange={() => handleSelectOne(personnel.id)}
                         />
                       </td>
                       <td className="px-2 h-10 flex items-center gap-2 p-6">
-                        <img src={u.avatar_url} className="w-8 h-8 rounded-full" />
+                        {personnel.avatar_url ? (
+                          <img 
+                            src={personnel.avatar_url} 
+                            alt={personnel.full_name}
+                            className="w-8 h-8 rounded-full object-cover" 
+                          />
+                        ) : (
+                          <div className={`w-8 h-8 rounded-full ${getAvatarColor(personnel.full_name)} flex items-center justify-center text-white text-xs font-semibold`}>
+                            {getInitials(personnel.full_name)}
+                          </div>
+                        )}
                       </td>
-                      <td className="px-4">{u.user_id}</td>
-                      <td className="px-4 min-w-max">{u.full_name}</td>
+                      <td className="px-4">{personnel.teacher_code}</td>
+                      <td className="px-4 min-w-max">{personnel.full_name}</td>
 
-                      <td className="px-4">{u.email}</td>
-                      <td className="px-4">{u.role}</td>
+                      <td className="px-4">{personnel.email}</td>
+                      <td className="px-4">
+                        {personnel.user?.roles?.[0]?.name 
+                          ? roleMapping[personnel.user.roles[0].name] || personnel.user.roles[0].name
+                          : "-"}
+                      </td>
 
                       <td className="px-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs ${pillStyle[u.status]
-                            }`}
+                          className={`px-3 py-1 rounded-full text-xs ${
+                            pillStyle[personnel.user?.status?.toLowerCase()] || 'bg-gray-200 text-gray-600'
+                          }`}
                         >
-                          {u.status}
+                          {personnel.user?.status === 'active' ? 'Hoạt động' : 
+                           personnel.user?.status === 'inactive' ? 'Tạm ngưng' : 
+                           personnel.user?.status || '-'}
                         </span>
                       </td>
 
@@ -522,12 +688,12 @@ const AdminTeacherPage = () => {
                             title="Xóa"
                             onClick={() => openConfirmActionModal(
                               "delete",
-                              "Xác nhận xóa giảng viên",
-                              `Bạn có chắc chắn muốn xóa giảng viên ${u.full_name}? Trạng thái sẽ chuyển thành tạm ngưng.`,
-                              "Xóa giảng viên",
+                              "Xác nhận xóa nhân sự",
+                              `Bạn có chắc chắn muốn xóa nhân sự ${personnel.full_name}? Trạng thái sẽ chuyển thành tạm ngưng.`,
+                              "Xóa nhân sự",
                               () => {
-                                console.log("Delete teacher", u.id);
-                                toast.success("Đã xóa giảng viên thành công");
+                                console.log("Delete personnel", personnel.id);
+                                toast.success("Đã xóa nhân sự thành công");
                               }
                             )}
                           >
@@ -535,7 +701,7 @@ const AdminTeacherPage = () => {
                           </button>
                           <button
                             title="Xem chi tiết"
-                            onClick={() => openViewTeacherModal(u)}
+                            onClick={() => openViewTeacherModal(personnel)}
                           >
                             <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
                           </button>
@@ -544,17 +710,17 @@ const AdminTeacherPage = () => {
                             <MoreVertical
                               className="cursor-pointer w-5 h-5"
                               onClick={() =>
-                                setOpenMenu(openMenu === u.id ? null : u.id)
+                                setOpenMenu(openMenu === personnel.id ? null : personnel.id)
                               }
                             />
 
                             {/* Dropdown */}
-                            {openMenu === u.id && (
+                            {openMenu === personnel.id && (
                               <div className="absolute mt-2 w-25 bg-white shadow-lg rounded-md border z-20">
                                 <button
                                   className="w-full text-left px-4 py-2 hover:bg-slate-100"
                                   title="Chỉnh sửa"
-                                  onClick={() => openEditTeacherModal(u)}
+                                  onClick={() => openEditTeacherModal(personnel)}
                                 >
                                   <PencilLine className="inline w-4 h-4 mr-2" />
                                 </button>
@@ -564,10 +730,10 @@ const AdminTeacherPage = () => {
                                   onClick={() => openConfirmActionModal(
                                     "lock",
                                     "Xác nhận khóa tài khoản",
-                                    `Bạn có chắc chắn muốn khóa tài khoản của ${u.full_name}?`,
+                                    `Bạn có chắc chắn muốn khóa tài khoản của ${personnel.full_name}?`,
                                     "Khóa tài khoản",
                                     () => {
-                                      console.log("Lock teacher", u.id);
+                                      console.log("Lock personnel", personnel.id);
                                       toast.success("Đã khóa tài khoản thành công");
                                     }
                                   )}
@@ -587,8 +753,8 @@ const AdminTeacherPage = () => {
 
             {/* PAGINATION */}
             <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
               onPageChange={(page) => setCurrentPage(page)}
             />
 
