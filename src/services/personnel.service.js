@@ -72,6 +72,20 @@ class PersonnelService {
   }
 
   /**
+   * Get teacher by teacher code
+   * @param {string} teacherCode - Mã giảng viên
+   * @returns {Promise} Teacher detail data
+   */
+  async getTeacherByCode(teacherCode) {
+    try {
+      const response = await axiosClient.get(PERSONNEL_ENDPOINTS.GET_TEACHER_BY_CODE(teacherCode));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Create new personnel
    * @param {Object} data - Personnel data
    * @param {string} data.code - Mã nhân sự
@@ -87,6 +101,29 @@ class PersonnelService {
   async createPersonnel(data) {
     try {
       const response = await axiosClient.post(PERSONNEL_ENDPOINTS.BASE, data);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Update personnel by Admin
+   * @param {string} teacherCode - Mã nhân sự
+   * @param {Object} data - Update data
+   * @param {string} data.full_name - Họ tên
+   * @param {string} data.email - Email
+   * @param {string} data.phone - Số điện thoại
+   * @param {string} data.dob - Ngày sinh
+   * @param {string} data.department - Khoa/Viện
+   * @param {string} data.office_hours - Giờ làm việc
+   * @param {string} data.avatar_url - Avatar URL
+   * @param {Array<string>} data.roles - Mảng roles
+   * @returns {Promise} Updated personnel data
+   */
+  async updatePersonnelByAdmin(teacherCode, data) {
+    try {
+      const response = await axiosClient.put(PERSONNEL_ENDPOINTS.UPDATE_BY_ADMIN(teacherCode), data);
       return response;
     } catch (error) {
       throw this.handleError(error);

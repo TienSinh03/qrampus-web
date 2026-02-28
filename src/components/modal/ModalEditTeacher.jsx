@@ -11,29 +11,63 @@ const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
     email: "",
     department: "",
     phoneNumber: "",
-    role: "",
+    roles: [],
     avatarUrl: "",
+    officeHours: "",
   });
 
+  const [roleError, setRoleError] = useState("");
   const { errors, validateAllFields, validateSingleField, clearErrors, shouldAllowInput } = usePersonnelValidation();
+
+  // Role options
+  const roleOptions = [
+    { value: "teacher", label: "Giảng viên" },
+    { value: "admin", label: "Quản trị viên" },
+    { value: "attendance_staff", label: "Bộ phận chấm công" },
+  ];
 
   // Initialize form data when teacherData changes
   useEffect(() => {
     if (isOpen && teacherData) {
-      // eslint-disable-next-line
+      // Get roles from teacherData
+      const userRoles = teacherData.user?.roles?.map(r => r.name) || [];
+      
       setFormData({
-        teacherId: teacherData.user_id || "",
+        teacherId: teacherData.teacher_code || "",
         fullName: teacherData.full_name || "",
-        dateOfBirth: teacherData.date_of_birth || "",
+        dateOfBirth: teacherData.dob || "",
         email: teacherData.email || "",
         department: teacherData.department || "",
-        phoneNumber: teacherData.phone_number || "",
-        role: teacherData.role || "",
+        phoneNumber: teacherData.phone || "",
+        roles: userRoles,
         avatarUrl: teacherData.avatar_url || "",
+        officeHours: teacherData.office_hours || "",
       });
       clearErrors();
+      setRoleError("");
     }
   }, [isOpen, teacherData, clearErrors]);
+
+  const handleRoleChange = (roleValue) => {
+    setFormData((prev) => {
+      const currentRoles = prev.roles || [];
+      const isSelected = currentRoles.includes(roleValue);
+      
+      if (isSelected) {
+        // Remove role
+        const newRoles = currentRoles.filter(r => r !== roleValue);
+        // Clear role error if there's still at least one role
+        if (newRoles.length > 0) {
+          setRoleError("");
+        }
+        return { ...prev, roles: newRoles };
+      } else {
+        // Add role and clear error
+        setRoleError("");
+        return { ...prev, roles: [...currentRoles, roleValue] };
+      }
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,10 +85,28 @@ const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
   };
 
   const handleSubmit = () => {
-    // Validate all fields before submit
-    if (!validateAllFields(formData)) {
+    // Check roles first
+    if (!formData.roles || formData.roles.length === 0) {
+      setRoleError("Vui lòng chọn ít nhất 1 quyền");
+      console.error("Validation failed: No roles selected");
       return;
     }
+    setRoleError("");
+
+    // Validate only required fields before submit
+    const requiredFieldsValid = validateAllFields(formData);
+    
+    // Filter out errors for optional fields (officeHours, dateOfBirth, avatarUrl)
+    const requiredFieldErrors = Object.entries(errors).filter(([key, value]) => 
+      value !== "" && !["officeHours", "dateOfBirth", "avatarUrl"].includes(key)
+    );
+
+    if (!requiredFieldsValid && requiredFieldErrors.length > 0) {
+      console.error("Validation failed:", errors);
+      return;
+    }
+
+    console.log("Form data to submit:", formData);
 
     if (onSubmit) {
       onSubmit(formData);
@@ -91,23 +143,16 @@ const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
         <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mã giảng viên <span className="text-red-500">*</span>
+              Mã nhân sự <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="teacherId"
               value={formData.teacherId}
-              onChange={handleChange}
-              className={`w-full rounded-lg border px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 ${
-                errors.teacherId
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-blue-300 focus:border-blue-500 focus:ring-blue-200"
-              }`}
-              maxLength="8"
+              disabled
+              className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-gray-500 cursor-not-allowed"
             />
-            {errors.teacherId && (
-              <p className="mt-1 text-sm text-red-500">{errors.teacherId}</p>
-            )}
+            <p className="mt-1 text-xs text-gray-500">Mã nhân sự không thể thay đổi</p>
           </div>
 
           <div>
@@ -210,20 +255,48 @@ const ModalEditTeacher = ({ isOpen, onClose, teacherData, onSubmit }) => {
             )}
           </div>
 
+          {/* Multi-select Roles */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Phân quyền tài khoản <span className="text-red-500">*</span>
+            </label>
+            <div className="space-y-2">
+              {roleOptions.map((option) => (
+                <div key={option.value} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id={`role-${option.value}`}
+                    checked={formData.roles.includes(option.value)}
+                    onChange={() => handleRoleChange(option.value)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label
+                    htmlFor={`role-${option.value}`}
+                    className="ml-2 text-sm text-gray-700 cursor-pointer"
+                  >
+                    {option.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+            {roleError && (
+              <p className="mt-1 text-sm text-red-500">{roleError}</p>
+            )}
+          </div>
+
+          {/* Office Hours */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phân quyền tài khoản
+              Giờ làm việc
             </label>
-            <select
-              name="role"
-              value={formData.role}
+            <input
+              type="text"
+              name="officeHours"
+              value={formData.officeHours}
               onChange={handleChange}
+              placeholder="Ví dụ: T2,T3,T4 8:00-17:00"
               className="w-full rounded-lg border border-blue-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            >
-              <option>Giảng viên</option>
-              <option>Quản trị viên</option>
-              <option>Bộ phận chấm công</option>
-            </select>
+            />
           </div>
 
           {/* Avatar Upload */}

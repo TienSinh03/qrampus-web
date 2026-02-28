@@ -77,13 +77,38 @@ const AdminTeacherPage = () => {
   const openAddTeacherModal = () => setModalAddTeacher(true);
   const closeAddTeacherModal = () => setModalAddTeacher(false);
 
-  const openEditTeacherModal = (teacher) => {
-    setModalEditTeacher({ isOpen: true, teacherData: teacher });
+  const openEditTeacherModal = async (teacher) => {
     setOpenMenu(null);
+    try {
+      // Fetch chi tiết teacher từ API
+      const response = await personnelService.getTeacherByCode(teacher.teacher_code);
+      if (response.success) {
+        setModalEditTeacher({ isOpen: true, teacherData: response.data });
+      } else {
+        toast.error('Không thể tải thông tin giảng viên');
+      }
+    } catch (error) {
+      console.error('Error fetching teacher detail:', error);
+      toast.error(error.message || 'Lỗi khi tải thông tin giảng viên');
+    }
   };
   const closeEditTeacherModal = () => setModalEditTeacher({ isOpen: false, teacherData: null });
 
-  const openViewTeacherModal = (teacher) => setModalViewTeacher({ isOpen: true, teacherData: teacher });
+  const openViewTeacherModal = async (teacher) => {
+    setOpenMenu(null);
+    try {
+      // Fetch chi tiết teacher từ API
+      const response = await personnelService.getTeacherByCode(teacher.teacher_code);
+      if (response.success) {
+        setModalViewTeacher({ isOpen: true, teacherData: response.data });
+      } else {
+        toast.error('Không thể tải thông tin giảng viên');
+      }
+    } catch (error) {
+      console.error('Error fetching teacher detail:', error);
+      toast.error(error.message || 'Lỗi khi tải thông tin giảng viên');
+    }
+  };
   const closeViewTeacherModal = () => setModalViewTeacher({ isOpen: false, teacherData: null });
 
   const openConfirmActionModal = (actionType, title, message, confirmText, onConfirm) => {
@@ -136,9 +161,55 @@ const AdminTeacherPage = () => {
     }
   };
 
-  const handleEditTeacher = (formData) => {
-    console.log("Edit teacher:", formData);
-    toast.success("Đã cập nhật thông tin giảng viên thành công!");
+  const handleEditTeacher = async (formData) => {
+    try {
+      console.log("Edit teacher form data:", formData);
+      
+      // Validate roles
+      if (!formData.roles || formData.roles.length === 0) {
+        toast.error("Vui lòng chọn ít nhất 1 quyền!");
+        return;
+      }
+      
+      // Map form data to API format
+      const updateData = {
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phoneNumber,
+        dob: formData.dateOfBirth || null,
+        department: formData.department,
+        office_hours: formData.officeHours || null,
+        avatar_url: formData.avatarUrl || null,
+        roles: formData.roles // Send roles array
+      };
+
+      // Remove empty/null values except roles
+      Object.keys(updateData).forEach(key => {
+        if (key !== 'roles' && (updateData[key] === null || updateData[key] === '')) {
+          delete updateData[key];
+        }
+      });
+
+      console.log("Sending update data:", updateData);
+
+      // Call API with teacher_code
+      const response = await personnelService.updatePersonnelByAdmin(
+        formData.teacherId,
+        updateData
+      );
+      
+      if (response.success) {
+        toast.success("Đã cập nhật thông tin nhân sự thành công!");
+        closeEditTeacherModal();
+        // Refresh data
+        fetchPersonnels();
+      } else {
+        toast.error(response.message || "Không thể cập nhật thông tin");
+      }
+    } catch (error) {
+      console.error("Error updating personnel:", error);
+      toast.error(error.message || "Không thể cập nhật thông tin. Vui lòng thử lại!");
+    }
   };
 
   // Fetch personnels from API
@@ -233,6 +304,13 @@ const AdminTeacherPage = () => {
     teacher: "Giảng viên",
     admin: "Quản trị viên",
     attendance_staff: "Ban chấm công"
+  };
+
+  // Role color mapping
+  const roleColorMapping = {
+    teacher: "bg-blue-100 text-blue-700 border border-blue-200",
+    admin: "bg-red-100 text-red-700 border border-red-200",
+    attendance_staff: "bg-green-100 text-green-700 border border-green-200"
   };
 
   // Checkbox handlers
@@ -665,8 +743,21 @@ const AdminTeacherPage = () => {
 
                       <td className="px-4">{personnel.email}</td>
                       <td className="px-4">
-                        {personnel.user?.roles?.[0]?.name 
-                          ? roleMapping[personnel.user.roles[0].name] || personnel.user.roles[0].name
+                        {personnel.user?.roles && personnel.user.roles.length > 0 
+                          ? (
+                            <div className="flex flex-wrap gap-1">
+                              {personnel.user.roles.map((role, index) => (
+                                <span 
+                                  key={`${personnel.id}-${role.id || role.name || index}`}
+                                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    roleColorMapping[role.name] || "bg-gray-100 text-gray-700 border border-gray-200"
+                                  }`}
+                                >
+                                  {roleMapping[role.name] || role.name}
+                                </span>
+                              ))}
+                            </div>
+                          )
                           : "-"}
                       </td>
 
