@@ -336,13 +336,21 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 bg-black/50 z-[999]"
+        onClick={handleClose}
+      />
+
+      {/* Drawer */}
+      <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col">
+        {/* Header Drawer */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-lime-100">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Upload danh sách nhân sự</h2>
+            <h3 className="text-xl font-semibold text-gray-800">
+              Upload danh sách nhân sự
+            </h3>
             <p className="text-sm text-gray-600 mt-1">
               Tải lên file Excel để thêm nhiều giảng viên cùng lúc
             </p>
@@ -350,26 +358,40 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
           <button
             onClick={handleClose}
             disabled={loading}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none rounded-full hover:bg-gray-100 transition-all duration-300 ease-in-out p-2 hover:rotate-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-gray-500 hover:text-gray-700 focus:outline-none rounded-full hover:bg-lime-400 transition-all duration-300 ease-in-out p-2 hover:rotate-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <X size={24} />
+            <X size={16} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Body Form */}
+        <div className="flex-1 p-6 overflow-y-auto pb-32">
+          <div className="space-y-4">
           
           {/* Download template section */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
             <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <p className="text-sm text-blue-800 font-medium mb-2">
                 Lần đầu sử dụng? Tải xuống file mẫu để xem cấu trúc dữ liệu:
               </p>
-              <ul className="text-xs text-blue-700 mb-3 list-disc list-inside space-y-1">
-                <li><strong>Ngày sinh:</strong> Hỗ trợ nhiều định dạng: dd-MM-yyyy, dd/MM/yyyy, hoặc yyyy-MM-dd (ví dụ: 04-11-1993, 04/11/1993, 1993-11-04)</li>
-                <li><strong>Phân quyền:</strong> Có thể có nhiều quyền cách nhau bởi dấu phẩy (ví dụ: attendance_staff, admin)</li>
-                <li><strong>Các quyền hợp lệ:</strong> teacher, admin, attendance_staff</li>
+              <ul className="text-sm text-blue-800 mb-4 list-disc list-inside space-y-2 leading-relaxed">
+                <li>
+                  <strong>Ngày sinh:</strong><br />
+                  dd-MM-yyyy, dd/MM/yyyy, yyyy-MM-dd<br />
+                  Ví dụ: 04-11-1993
+                </li>
+
+                <li>
+                  <strong>Phân quyền:</strong><br />
+                  Nhiều quyền cách nhau bằng dấu phẩy<br />
+                  Ví dụ: attendance_staff (Bộ phận chấm công), admin(admin), teacher (Giảng viên)
+                </li>
+
+                <li>
+                  <strong>Quyền hợp lệ:</strong><br />
+                  teacher, admin, attendance_staff
+                </li>
               </ul>
               <button
                 onClick={handleDownloadTemplate}
@@ -411,7 +433,7 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
 
           {/* File info */}
           {file && (
-            <div className="mt-6 border border-gray-200 rounded-lg p-4">
+            <div className="border border-gray-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="bg-green-100 p-2 rounded">
@@ -438,7 +460,7 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
 
           {/* Preview */}
           {preview.length > 0 && (
-            <div className="mt-6">
+            <div>
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-600" />
                 Xem trước dữ liệu ({preview.length} / {parsedData.length} bản ghi)
@@ -493,7 +515,7 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
 
           {/* Upload Result Section */}
           {uploadResult && (
-            <div className="mt-6">
+            <div>
               <div className={`rounded-lg p-4 ${
                 uploadResult.failCount === 0 ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'
               }`}>
@@ -566,71 +588,74 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
               )}
             </div>
           )}
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-between items-center gap-3 px-6 py-4 border-t bg-gray-50">
-          {/* Left side - Result summary if exists */}
-          {uploadResult && (
-            <div className="flex items-center gap-2 text-sm">
-              {uploadResult.failCount === 0 ? (
-                <span className="text-green-700 font-medium">
-                  ✓ Hoàn tất: {uploadResult.successCount} thành công
-                </span>
-              ) : (
-                <span className="text-yellow-700 font-medium">
-                  {uploadResult.successCount} thành công, {uploadResult.failCount} lỗi
-                </span>
+        {/* Footer Buttons - Fixed bottom */}
+        <div className="absolute bottom-0 left-0 right-0 px-6 py-4 border-t border-gray-200 bg-white">
+          <div className="flex justify-between items-center gap-3">
+            {/* Left side - Result summary if exists */}
+            {uploadResult && (
+              <div className="flex items-center gap-2 text-sm">
+                {uploadResult.failCount === 0 ? (
+                  <span className="text-green-700 font-medium">
+                    ✓ Hoàn tất: {uploadResult.successCount} thành công
+                  </span>
+                ) : (
+                  <span className="text-yellow-700 font-medium">
+                    {uploadResult.successCount} thành công, {uploadResult.failCount} lỗi
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {/* Right side - Buttons */}
+            <div className="flex gap-3 ml-auto">
+              <button
+                onClick={handleClose}
+                disabled={loading}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploadResult && uploadResult.failCount === 0 ? 'Đóng' : 'Hủy'}
+              </button>
+              
+              {!uploadResult && (
+                <button
+                  onClick={handleUpload}
+                  disabled={loading || parsedData.length === 0}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Tải lên ({parsedData.length} bản ghi)
+                    </>
+                  )}
+                </button>
+              )}
+              
+              {uploadResult && uploadResult.failCount > 0 && (
+                <button
+                  onClick={() => {
+                    setUploadResult(null);
+                    handleDeleteFile();
+                  }}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload lại
+                </button>
               )}
             </div>
-          )}
-          
-          {/* Right side - Buttons */}
-          <div className="flex gap-3 ml-auto">
-            <button
-              onClick={handleClose}
-              disabled={loading}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {uploadResult && uploadResult.failCount === 0 ? 'Đóng' : 'Hủy'}
-            </button>
-            
-            {!uploadResult && (
-              <button
-                onClick={handleUpload}
-                disabled={loading || parsedData.length === 0}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Đang xử lý...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    Tải lên ({parsedData.length} bản ghi)
-                  </>
-                )}
-              </button>
-            )}
-            
-            {uploadResult && uploadResult.failCount > 0 && (
-              <button
-                onClick={() => {
-                  setUploadResult(null);
-                  handleDeleteFile();
-                }}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                Upload lại
-              </button>
-            )}
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

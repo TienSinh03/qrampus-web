@@ -120,6 +120,22 @@ class UserService {
   }
 
   /**
+   * Bulk toggle user status (activate/deactivate)
+   * @param {Array<string>} usernames - Array of usernames
+   * @returns {Promise} Results with success/failure info
+   */
+  async bulkToggleUserStatus(usernames) {
+    try {
+      const response = await axiosClient.put(USER_ENDPOINTS.BULK_ACTIVATE, {
+        user_names: usernames
+      });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Handle and format API errors
    * @param {Error} error - Error object from axios
    * @returns {Error} Formatted error

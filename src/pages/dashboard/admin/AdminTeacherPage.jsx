@@ -7,11 +7,13 @@ import ModalAddTeacher from "../../../components/modal/ModalAddTeacher";
 import ModalEditTeacher from "../../../components/modal/ModalEditTeacher";
 import ModalViewTeacher from "../../../components/modal/ModalViewTeacher";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import ModalExportExcel from "../../../components/modal/ModalExportExcel";
 import personnelService from "../../../services/personnel.service";
 import userService from "../../../services/user.service";
 import LoadingSpinner from "@components/layout/LoadingSpinner";
 import { toast } from "sonner";
 import { DEPARTMENTS } from "../../../constants/departments";
+import { exportPersonnelToExcel } from "../../../utils/excelExport";
 import {
   CirclePlus,
   Trash2,
@@ -73,6 +75,7 @@ const AdminTeacherPage = () => {
     confirmText: "",
     onConfirm: null,
   });
+  const [modalExportExcel, setModalExportExcel] = useState({ isOpen: false, data: [] });
 
   // Modal handlers
   const openAddTeacherModal = () => setModalAddTeacher(true);
@@ -114,6 +117,30 @@ const AdminTeacherPage = () => {
     setModalConfirmAction({ isOpen: true, actionType, title, message, confirmText, onConfirm });
   };
   const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
+
+  const openExportExcelModal = () => {
+    if (selectedIds.length === 0) {
+      toast.warning("Vui lòng chọn ít nhất 1 nhân sự để xuất dữ liệu");
+      return;
+    }
+    
+    // Lấy dữ liệu personnel đã chọn
+    const selectedPersonnels = personnels.filter(p => selectedIds.includes(p.id));
+    setModalExportExcel({ isOpen: true, data: selectedPersonnels });
+  };
+
+  const closeExportExcelModal = () => setModalExportExcel({ isOpen: false, data: [] });
+
+  const handleExportExcel = ({ selectedColumns, filename }) => {
+    try {
+      exportPersonnelToExcel(modalExportExcel.data, filename, selectedColumns);
+      toast.success(`Đã xuất ${modalExportExcel.data.length} nhân sự ra file Excel thành công`);
+      closeExportExcelModal();
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Không thể xuất file Excel. Vui lòng thử lại!");
+    }
+  };
 
   const handleAddTeacher = async (formData) => {
     try {
@@ -630,10 +657,60 @@ const AdminTeacherPage = () => {
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Xóa giảng viên viên, chuyển thành trạng thái tạm ngưng"
+                    onClick={async () => {
+                      if (selectedIds.length === 0) {
+                        toast.warning("Vui lòng chọn ít nhất 1 nhân sự để khóa/mở khóa");
+                        return;
+                      }
+                      
+                      // Lấy danh sách personnel đã chọn
+                      const selectedPersonnels = personnels.filter(p => selectedIds.includes(p.id));
+                      const usernames = selectedPersonnels.map(p => p.user?.user_name).filter(Boolean);
+                      
+                      if (usernames.length === 0) {
+                        toast.error("Không tìm thấy user_name cho các tài khoản đã chọn");
+                        return;
+                      }
+                      
+                      openConfirmActionModal(
+                        "lock",
+                        "Xác nhận khóa/mở khóa tài khoản",
+                        `Bạn có chắc chắn muốn thay đổi trạng thái ${usernames.length} tài khoản đã chọn?`,
+                        "Xác nhận",
+                        async () => {
+                          try {
+                            const response = await userService.bulkToggleUserStatus(usernames);
+                            
+                            if (response.success) {
+                              const { successCount, failCount } = response.data;
+                              
+                              if (failCount > 0) {
+                                toast.warning(
+                                  `Đã cập nhật ${successCount} tài khoản thành công. ${failCount} tài khoản thất bại.`
+                                );
+                              } else {
+                                toast.success(`Đã cập nhật ${successCount} tài khoản thành công!`);
+                              }
+                              
+                              setSelectedIds([]);
+                              fetchPersonnels();
+                            }
+                          } catch (error) {
+                            console.error("Error bulk toggling status:", error);
+                            toast.error(error.message || "Có lỗi xảy ra khi cập nhật trạng thái");
+                          }
+                        }
+                      );
+                    }}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedIds.length > 0
+                        ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700 hover:shadow-md focus:ring-amber-500"
+                        : "border-amber-400 text-amber-400 hover:bg-amber-100 hover:shadow-md focus:ring-amber-500"
+                    }`}
+                    title={selectedIds.length > 0 ? `Khóa/Mở khóa ${selectedIds.length} mục đã chọn` : "Chọn nhân sự để khóa/mở khóa"}
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <LockKeyhole className="w-5 h-5" />
+                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
                   </button>
 
                   <button
@@ -654,10 +731,16 @@ const AdminTeacherPage = () => {
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Xuất danh sách excel"
+                    onClick={openExportExcelModal}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedIds.length > 0
+                        ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md focus:ring-emerald-500"
+                        : "border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500"
+                    }`}
+                    title={selectedIds.length > 0 ? `Xuất ${selectedIds.length} mục đã chọn` : "Chọn nhân sự để xuất excel"}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
+                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
                   </button>
 
                   <button
@@ -673,57 +756,8 @@ const AdminTeacherPage = () => {
               </div>
             </div>
 
-
-            {/* Bulk Actions Bar */}
-            {selectedIds.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-blue-900">
-                    Đã chọn {selectedIds.length} mục
-                  </span>
-                  <button
-                    onClick={() => setSelectedIds([])}
-                    className="text-sm text-blue-600 hover:text-blue-800 underline"
-                  >
-                    Bỏ chọn tất cả
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      console.log("Export selected:", selectedIds);
-                      toast.success("Xuất dữ liệu thành công");
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
-                  >
-                    <FileSpreadsheet className="w-4 h-4" />
-                    Xuất dữ liệu
-                  </button>
-                  <button
-                    onClick={() => {
-                      openConfirmActionModal(
-                        "delete",
-                        "Xác nhận xóa nhiều giảng viên",
-                        `Bạn có chắc chắn muốn xóa ${selectedIds.length} giảng viên đã chọn? Hành động này không thể hoàn tác.`,
-                        "Xóa tất cả",
-                        () => {
-                          console.log("Delete selected:", selectedIds);
-                          toast.success(`Đã xóa ${selectedIds.length} giảng viên thành công`);
-                          setSelectedIds([]);
-                        }
-                      );
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Xóa đã chọn
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* TABLE */}
-            <div className="w-full overflow-x-auto bg-white rounded-xl shadow mb-6">
+            <div className="w-full overflow-x-auto bg-white shadow mb-6">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-100">
@@ -916,6 +950,13 @@ const AdminTeacherPage = () => {
               message={modalConfirmAction.message}
               confirmText={modalConfirmAction.confirmText}
               onConfirm={modalConfirmAction.onConfirm}
+            />
+
+            <ModalExportExcel
+              isOpen={modalExportExcel.isOpen}
+              onClose={closeExportExcelModal}
+              personnels={modalExportExcel.data}
+              onExport={handleExportExcel}
             />
 
             {/* OLD DRAWER REMOVED - Now using ModalAddTeacher */}
