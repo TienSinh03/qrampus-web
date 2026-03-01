@@ -8,6 +8,7 @@ import ModalEditTeacher from "../../../components/modal/ModalEditTeacher";
 import ModalViewTeacher from "../../../components/modal/ModalViewTeacher";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
 import personnelService from "../../../services/personnel.service";
+import userService from "../../../services/user.service";
 import LoadingSpinner from "@components/layout/LoadingSpinner";
 import { toast } from "sonner";
 import { DEPARTMENTS } from "../../../constants/departments";
@@ -15,6 +16,7 @@ import {
   CirclePlus,
   Trash2,
   LockKeyhole,
+  LockKeyholeOpen,
   CloudUpload,
   Eye,
   MoreVertical,
@@ -56,7 +58,6 @@ const AdminTeacherPage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
-  const [openMenu, setOpenMenu] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [expanded, setExpanded] = useState(false);
 
@@ -78,7 +79,6 @@ const AdminTeacherPage = () => {
   const closeAddTeacherModal = () => setModalAddTeacher(false);
 
   const openEditTeacherModal = async (teacher) => {
-    setOpenMenu(null);
     try {
       // Fetch chi tiết teacher từ API
       const response = await personnelService.getTeacherByCode(teacher.teacher_code);
@@ -95,7 +95,6 @@ const AdminTeacherPage = () => {
   const closeEditTeacherModal = () => setModalEditTeacher({ isOpen: false, teacherData: null });
 
   const openViewTeacherModal = async (teacher) => {
-    setOpenMenu(null);
     try {
       // Fetch chi tiết teacher từ API
       const response = await personnelService.getTeacherByCode(teacher.teacher_code);
@@ -113,7 +112,6 @@ const AdminTeacherPage = () => {
 
   const openConfirmActionModal = (actionType, title, message, confirmText, onConfirm) => {
     setModalConfirmAction({ isOpen: true, actionType, title, message, confirmText, onConfirm });
-    setOpenMenu(null);
   };
   const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
 
@@ -209,6 +207,29 @@ const AdminTeacherPage = () => {
     } catch (error) {
       console.error("Error updating personnel:", error);
       toast.error(error.message || "Không thể cập nhật thông tin. Vui lòng thử lại!");
+    }
+  };
+
+  // Toggle user status (active/deactivate)
+  const handleToggleUserStatus = async (personnel) => {
+    try {
+      console.log("Toggling user status for:", personnel.user?.user_name);
+      
+      const response = await userService.toggleUserStatus(personnel.user?.user_name);
+      
+      if (response.success) {
+        const newStatus = response.data.status;
+        const statusText = newStatus === 'active' ? 'kích hoạt' : 'tạm ngưng';
+        toast.success(`Đã ${statusText} tài khoản thành công!`);
+        
+        // Refresh data
+        fetchPersonnels();
+      } else {
+        toast.error(response.message || "Không thể cập nhật trạng thái tài khoản");
+      }
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      toast.error(error.message || "Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại!");
     }
   };
 
@@ -776,64 +797,35 @@ const AdminTeacherPage = () => {
                       <td className="px-4">
                         <div className="flex gap-3">
                           <button
-                            title="Xóa"
-                            onClick={() => openConfirmActionModal(
-                              "delete",
-                              "Xác nhận xóa nhân sự",
-                              `Bạn có chắc chắn muốn xóa nhân sự ${personnel.full_name}? Trạng thái sẽ chuyển thành tạm ngưng.`,
-                              "Xóa nhân sự",
-                              () => {
-                                console.log("Delete personnel", personnel.id);
-                                toast.success("Đã xóa nhân sự thành công");
-                              }
-                            )}
-                          >
-                            <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
-                          </button>
-                          <button
                             title="Xem chi tiết"
                             onClick={() => openViewTeacherModal(personnel)}
                           >
                             <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
                           </button>
-                          {/* More Menu */}
-                          <div className="relative">
-                            <MoreVertical
-                              className="cursor-pointer w-5 h-5"
-                              onClick={() =>
-                                setOpenMenu(openMenu === personnel.id ? null : personnel.id)
-                              }
-                            />
-
-                            {/* Dropdown */}
-                            {openMenu === personnel.id && (
-                              <div className="absolute mt-2 w-25 bg-white shadow-lg rounded-md border z-20">
-                                <button
-                                  className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  title="Chỉnh sửa"
-                                  onClick={() => openEditTeacherModal(personnel)}
-                                >
-                                  <PencilLine className="inline w-4 h-4 mr-2" />
-                                </button>
-                                <button
-                                  className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  title="Khóa tài khoản"
-                                  onClick={() => openConfirmActionModal(
-                                    "lock",
-                                    "Xác nhận khóa tài khoản",
-                                    `Bạn có chắc chắn muốn khóa tài khoản của ${personnel.full_name}?`,
-                                    "Khóa tài khoản",
-                                    () => {
-                                      console.log("Lock personnel", personnel.id);
-                                      toast.success("Đã khóa tài khoản thành công");
-                                    }
-                                  )}
-                                >
-                                  <LockKeyhole className="inline w-4 h-4 mr-2" />
-                                </button>
-                              </div>
+                          <button
+                            title="Chỉnh sửa"
+                            onClick={() => openEditTeacherModal(personnel)}
+                          >
+                            <PencilLine className="text-amber-500 cursor-pointer w-5 h-5" />
+                          </button>
+                          <button
+                            title={personnel.user?.status === 'active' ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                            onClick={() => openConfirmActionModal(
+                              "lock",
+                              personnel.user?.status === 'active' ? "Xác nhận khóa tài khoản" : "Xác nhận mở khóa tài khoản",
+                              personnel.user?.status === 'active' 
+                                ? `Bạn có chắc chắn muốn khóa tài khoản của ${personnel.full_name}?`
+                                : `Bạn có chắc chắn muốn mở khóa tài khoản của ${personnel.full_name}?`,
+                              personnel.user?.status === 'active' ? "Khóa tài khoản" : "Mở khóa tài khoản",
+                              () => handleToggleUserStatus(personnel)
                             )}
-                          </div>
+                          >
+                            {personnel.user?.status === 'active' ? (
+                              <LockKeyholeOpen className="text-green-500 cursor-pointer w-5 h-5" />
+                            ) : (
+                              <LockKeyhole className="text-red-500 cursor-pointer w-5 h-5" />
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>

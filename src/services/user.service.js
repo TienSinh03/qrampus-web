@@ -106,6 +106,20 @@ class UserService {
   }
 
   /**
+   * Toggle user status (activate/deactivate)
+   * @param {string} username - Username
+   * @returns {Promise} Updated user data
+   */
+  async toggleUserStatus(username) {
+    try {
+      const response = await axiosClient.put(USER_ENDPOINTS.ACTIVATE(username));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Handle and format API errors
    * @param {Error} error - Error object from axios
    * @returns {Error} Formatted error
