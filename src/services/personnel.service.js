@@ -108,6 +108,20 @@ class PersonnelService {
   }
 
   /**
+   * Bulk create personnels
+   * @param {Array<Object>} personnelList - Array of personnel data
+   * @returns {Promise} Result with success/fail counts and details
+   */
+  async bulkCreatePersonnel(personnelList) {
+    try {
+      const response = await axiosClient.post(PERSONNEL_ENDPOINTS.BULK_CREATE, personnelList);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Update personnel by Admin
    * @param {string} teacherCode - Mã nhân sự
    * @param {Object} data - Update data

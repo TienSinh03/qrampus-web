@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
-import ModalUpload from "../../../components/common/ModalUpload";
+import ModalBulkUploadPersonnel from "../../../components/modal/ModalBulkUploadPersonnel";
 import ModalAddTeacher from "../../../components/modal/ModalAddTeacher";
 import ModalEditTeacher from "../../../components/modal/ModalEditTeacher";
 import ModalViewTeacher from "../../../components/modal/ModalViewTeacher";
@@ -156,6 +156,47 @@ const AdminTeacherPage = () => {
     } catch (error) {
       console.error("Error creating personnel:", error);
       toast.error(error.message || "Không thể thêm nhân sự. Vui lòng thử lại!");
+    }
+  };
+
+  const handleBulkUpload = async (personnelList) => {
+    try {
+      console.log("Bulk upload personnel:", personnelList);
+      
+      // Call API to bulk create personnel
+      const response = await personnelService.bulkCreatePersonnel(personnelList);
+      
+      if (response.success) {
+        const { successCount, failCount, errors } = response.data;
+        
+        if (failCount > 0) {
+          // Show warning with details
+          toast.warning(
+            `Đã thêm ${successCount} nhân sự thành công. ${failCount} bản ghi lỗi.`,
+            {
+              duration: 5000,
+              description: 'Vui lòng xem chi tiết lỗi trong modal và tải xuống file lỗi.'
+            }
+          );
+        } else {
+          // All success
+          toast.success(`Đã thêm ${successCount} nhân sự thành công!`);
+          // Close modal after 2 seconds if all success
+          setTimeout(() => {
+            setOpenUpload(false);
+          }, 2000);
+        }
+        
+        // Refresh list
+        fetchPersonnels();
+        
+        // Return result to modal
+        return response;
+      }
+    } catch (error) {
+      console.error("Error bulk creating personnel:", error);
+      toast.error(error.message || "Không thể tải lên danh sách nhân sự. Vui lòng thử lại!");
+      throw error; // Re-throw to let modal handle it
     }
   };
 
@@ -842,7 +883,11 @@ const AdminTeacherPage = () => {
             />
 
             {/* MODALS */}
-            <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
+            <ModalBulkUploadPersonnel 
+              open={openUpload} 
+              onClose={() => setOpenUpload(false)}
+              onUpload={handleBulkUpload}
+            />
             
             <ModalAddTeacher
               isOpen={modalAddTeacher}
