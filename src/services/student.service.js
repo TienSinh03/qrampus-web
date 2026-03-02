@@ -36,6 +36,21 @@ class StudentService {
   }
 
   /**
+   * Get student by student code
+   * GET /api/v1/students/code/:code
+   * @param {string} studentCode - Student code (e.g. 21210001)
+   * @returns {Promise} Full student data including user & roles
+   */
+  async getStudentByCode(studentCode) {
+    try {
+      const response = await axiosClient.get(STUDENT_ENDPOINTS.BY_CODE(studentCode));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Create new student
    * @param {Object} studentData - Student data
    * @returns {Promise} Created student
@@ -50,7 +65,7 @@ class StudentService {
   }
 
   /**
-   * Update student
+   * Update student (self)
    * @param {string} studentId - Student ID
    * @param {Object} studentData - Updated student data
    * @returns {Promise} Updated student
@@ -58,6 +73,22 @@ class StudentService {
   async updateStudent(studentId, studentData) {
     try {
       const response = await axiosClient.put(STUDENT_ENDPOINTS.BY_ID(studentId), studentData);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Update student by Admin (all fields incl. email, dob, device_id)
+   * PUT /api/v1/students/:code
+   * @param {string} studentCode - Student code (e.g. 21210001)
+   * @param {Object} studentData - Fields to update
+   * @returns {Promise} Updated student
+   */
+  async updateStudentByAdmin(studentCode, studentData) {
+    try {
+      const response = await axiosClient.put(STUDENT_ENDPOINTS.BY_ID(studentCode), studentData);
       return response;
     } catch (error) {
       throw this.handleError(error);

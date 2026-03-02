@@ -41,29 +41,27 @@ const ModalViewEnroll = ({ isOpen, onClose, enrollData }) => {
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center"
+        className="fixed inset-0 bg-black/50 z-[999]"
         onClick={onClose}
-      >
-        {/* Modal */}
-        <div
-          className="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-5 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-white">
-              Chi tiết đăng ký môn học
-            </h3>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full text-white hover:bg-white/20 transition-all duration-300"
-            >
-              <X size={20} />
-            </button>
-          </div>
+      />
 
-          {/* Body */}
-          <div className="p-6">
+      {/* Drawer */}
+      <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-teal-100">
+          <h3 className="text-xl font-semibold text-gray-800">
+            Chi tiết đăng ký môn học
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none rounded-full hover:bg-teal-400 transition-all duration-300 ease-in-out p-2 hover:rotate-90"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 p-6 overflow-y-auto pb-32">
             {/* Student Info Header */}
             <div className="flex flex-col items-center mb-6 pb-6 border-b">
               <div className="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mb-4">
@@ -143,15 +141,14 @@ const ModalViewEnroll = ({ isOpen, onClose, enrollData }) => {
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50 border-t flex justify-end">
-            <button
-              onClick={onClose}
-              className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-            >
-              Đóng
-            </button>
-          </div>
+        {/* Footer - Fixed bottom */}
+        <div className="absolute bottom-0 left-0 right-0 flex justify-end gap-4 px-6 py-5 border-t border-gray-200 bg-white">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+          >
+            Đóng
+          </button>
         </div>
       </div>
     </>

@@ -22,29 +22,27 @@ const ModalViewSurvey = ({ isOpen, onClose, surveyData }) => {
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center"
+        className="fixed inset-0 bg-black/50 z-[999]"
         onClick={onClose}
-      >
-        {/* Modal */}
-        <div
-          className="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-5 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-white">
-              Chi tiết khảo sát học phần
-            </h3>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full text-white hover:bg-white/20 transition-all duration-300"
-            >
-              <X size={20} />
-            </button>
-          </div>
+      />
 
-          {/* Body */}
-          <div className="p-6">
+      {/* Drawer */}
+      <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-indigo-100">
+          <h3 className="text-xl font-semibold text-gray-800">
+            Chi tiết khảo sát học phần
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none rounded-full hover:bg-indigo-400 transition-all duration-300 ease-in-out p-2 hover:rotate-90"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 p-6 overflow-y-auto pb-32">
             {/* Course Info Header */}
             <div className="flex flex-col items-center mb-6 pb-6 border-b">
               <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
@@ -137,24 +135,22 @@ const ModalViewSurvey = ({ isOpen, onClose, surveyData }) => {
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
-            <button
-              onClick={onClose}
-              className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              Đóng
-            </button>
-            <button
-              onClick={() => {
-                // Navigate to survey detail page
-                window.location.href = "/dashboard/admin/surveys/detail-survey";
-              }}
-              className="px-6 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition-colors"
-            >
-              Xem câu hỏi khảo sát
-            </button>
-          </div>
+        {/* Footer - Fixed bottom */}
+        <div className="absolute bottom-0 left-0 right-0 flex justify-end gap-3 px-6 py-5 border-t border-gray-200 bg-white">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            Đóng
+          </button>
+          <button
+            onClick={() => {
+              window.location.href = "/dashboard/admin/surveys/detail-survey";
+            }}
+            className="px-6 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transition-colors"
+          >
+            Xem câu hỏi khảo sát
+          </button>
         </div>
       </div>
     </>

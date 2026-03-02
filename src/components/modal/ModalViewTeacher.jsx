@@ -51,33 +51,31 @@ const ModalViewTeacher = ({ isOpen, onClose, teacherData }) => {
     .join(" • ") || "Chưa phân quyền";
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+    <>
+      {/* Overlay */}
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg sm:max-w-xl md:max-w-2xl overflow-hidden transform transition-all duration-300 scale-100"
-        onClick={(e) => e.stopPropagation()}
-      >
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999]"
+        onClick={onClose}
+      />
+
+      {/* Drawer */}
+      <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 px-6 py-7">
-          <div className="absolute inset-0 bg-black/10" />
-          <div className="relative flex items-center justify-between">
-            <h3 className="text-2xl font-semibold text-white tracking-tight">
-              Hồ sơ nhân sự
-            </h3>
-            <button
-              onClick={onClose}
-              className="p-2.5 rounded-full text-white/90 hover:text-white hover:bg-white/15 transition-all duration-200"
-              aria-label="Đóng"
-            >
-              <X size={22} strokeWidth={2.5} />
-            </button>
-          </div>
+        <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-purple-100">
+          <h3 className="text-xl font-semibold text-gray-800">
+            Hồ sơ nhân sự
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none rounded-full hover:bg-purple-400 transition-all duration-300 ease-in-out p-2 hover:rotate-90"
+            aria-label="Đóng"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 md:p-7 space-y-7">
+        <div className="flex-1 p-6 overflow-y-auto pb-32 space-y-7">
           {/* Avatar + Name + Status */}
           <div className="flex flex-col items-center text-center pb-7 border-b border-gray-100">
             {teacherData.avatar_url ? (
@@ -107,7 +105,7 @@ const ModalViewTeacher = ({ isOpen, onClose, teacherData }) => {
           </div>
 
           {/* Information Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="space-y-1">
             <InfoRow icon={User} label="Mã nhân sự" value={teacherData.teacher_code} highlight />
             <InfoRow icon={Mail} label="Email" value={teacherData.email} />
             <InfoRow icon={Phone} label="Số điện thoại" value={teacherData.phone} />
@@ -130,23 +128,23 @@ const ModalViewTeacher = ({ isOpen, onClose, teacherData }) => {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-5 bg-gray-50/80 border-t border-gray-100 flex justify-end gap-3">
+        {/* Footer - Fixed bottom */}
+        <div className="absolute bottom-0 left-0 right-0 flex justify-end gap-3 px-6 py-5 border-t border-gray-200 bg-white">
           <button
             onClick={onClose}
-            className="px-7 py-2.5 rounded-xl bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 transition-colors"
+            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
           >
             Hủy
           </button>
           <button
             onClick={onClose}
-            className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-200/40 transition-all duration-200"
+            className="px-6 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
           >
             Đóng
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

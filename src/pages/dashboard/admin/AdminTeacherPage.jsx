@@ -11,6 +11,7 @@ import ModalExportExcel from "../../../components/modal/ModalExportExcel";
 import personnelService from "../../../services/personnel.service";
 import userService from "../../../services/user.service";
 import LoadingSpinner from "@components/layout/LoadingSpinner";
+import EmptyState from "@components/layout/EmptyState";
 import { toast } from "sonner";
 import { DEPARTMENTS } from "../../../constants/departments";
 import { exportPersonnelToExcel } from "../../../utils/excelExport";
@@ -804,11 +805,11 @@ const AdminTeacherPage = () => {
                       </td>
                     </tr>
                   ) : personnels.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="text-center py-12">
-                        <p className="text-gray-500">Không có dữ liệu</p>
-                      </td>
-                    </tr>
+                    <EmptyState
+                      title="Không tìm thấy nhân sự"
+                      description="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm."
+                      colSpan={8}
+                    />
                   ) : personnels.map((personnel) => (
                     <tr key={personnel.id} className={`border-t hover:bg-slate-50 ${
                       selectedIds.includes(personnel.id) ? 'bg-blue-50' : ''
@@ -909,12 +910,19 @@ const AdminTeacherPage = () => {
               </table>
             </div>
 
+
             {/* PAGINATION */}
-            <Pagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
+            <div className="flex items-center justify-between px-2 mb-4">
+              <span className="text-sm text-gray-500">
+                Tổng: <strong>{pagination.total || 0}</strong> giảng viên
+              </span>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.totalPages || 1}
+                onPageChange={(page) => setCurrentPage(page)}
+                disabled={loading}
+              />
+            </div>
 
             {/* MODALS */}
             <ModalBulkUploadPersonnel 

@@ -7,29 +7,53 @@ import ModalAddStudent from "../../../components/modal/ModalAddStudent";
 import ModalEditStudent from "../../../components/modal/ModalEditStudent";
 import ModalViewStudent from "../../../components/modal/ModalViewStudent";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import studentService from "../../../services/student.service";
+import userService from "../../../services/user.service";
 import { toast } from "sonner";
 import {
   CirclePlus,
-  Trash2,
   LockKeyhole,
+  LockKeyholeOpen,
   CloudUpload,
   Eye,
-  MoreVertical,
   PencilLine,
   Users,
   UserCheck,
   UserX,
   UserPlus,
-  X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX, FileSearchIcon
+  ArrowDown, ArrowUp, FileSpreadsheet, FilterX, FileSearchIcon
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
+import { DEPARTMENTS } from "../../../constants/departments";
+import EmptyState from "@components/layout/EmptyState";
 const AdminStudentPage = () => {
   const { t } = useTranslation();
+
+  // API Data states
+  const [students, setStudents] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0
+  });
+  const [loading, setLoading] = useState(false);
+
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: "",
+    studentCode: "",
+    fullName: "",
+    department: "",
+    status: "",
+    email: "",
+    phone: "",
+    dob: ""
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
   // const [checked, setChecked] = useState(false);
-  const [openMenu, setOpenMenu] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
 
   // Modal states
@@ -49,29 +73,130 @@ const AdminStudentPage = () => {
   const openAddStudentModal = () => setModalAddStudent(true);
   const closeAddStudentModal = () => setModalAddStudent(false);
 
-  const openEditStudentModal = (student) => {
-    setModalEditStudent({ isOpen: true, studentData: student });
-    setOpenMenu(null);
+  const openEditStudentModal = async (student) => {
+    try {
+      const response = await studentService.getStudentByCode(student.student_code);
+      const fullData = response.success && response.data ? response.data : student;
+      setModalEditStudent({ isOpen: true, studentData: fullData });
+    } catch (err) {
+      toast.error(err.message || "Không thể tải thông tin sinh viên");
+      setModalEditStudent({ isOpen: true, studentData: student });
+    }
   };
   const closeEditStudentModal = () => setModalEditStudent({ isOpen: false, studentData: null });
 
-  const openViewStudentModal = (student) => setModalViewStudent({ isOpen: true, studentData: student });
+  const openViewStudentModal = async (student) => {
+    try {
+      const response = await studentService.getStudentByCode(student.student_code);
+      const fullData = response.success && response.data ? response.data : student;
+      setModalViewStudent({ isOpen: true, studentData: fullData });
+    } catch (err) {
+      toast.error(err.message || "Không thể tải thông tin sinh viên");
+      setModalViewStudent({ isOpen: true, studentData: student });
+    }
+  };
   const closeViewStudentModal = () => setModalViewStudent({ isOpen: false, studentData: null });
 
   const openConfirmActionModal = (actionType, title, message, confirmText, onConfirm) => {
     setModalConfirmAction({ isOpen: true, actionType, title, message, confirmText, onConfirm });
-    setOpenMenu(null);
   };
   const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
 
-  const handleAddStudent = (formData) => {
-    console.log("Add student:", formData);
-    toast.success("Đã thêm sinh viên thành công!");
+  const handleAddStudent = async (formData) => {
+    try {
+      await studentService.createStudent(formData);
+      toast.success("Tạo hồ sơ sinh viên thành công!");
+      fetchStudents();
+    } catch (err) {
+      toast.error(err.message || "Không thể tạo sinh viên");
+    }
   };
 
-  const handleEditStudent = (formData) => {
-    console.log("Edit student:", formData);
-    toast.success("Đã cập nhật thông tin sinh viên thành công!");
+  const handleEditStudent = async (formData) => {
+    try {
+      const { student_code, status, avatar, ...rest } = formData;
+      await studentService.updateStudentByAdmin(student_code, rest);
+      toast.success("Đã cập nhật thông tin sinh viên thành công!");
+      fetchStudents();
+    } catch (err) {
+      toast.error(err.message || "Không thể cập nhật sinh viên");
+    }
+  };
+
+  // Toggle user status (active/deactivate)
+  const handleToggleStudentStatus = async (student) => {
+    try {
+      console.log("Toggling user status for:", student.user?.user_name);
+
+      const response = await userService.toggleUserStatus(student.user?.user_name);
+
+      if (response.success) {
+        const newStatus = response.data.status;
+        const statusText = newStatus === 'active' ? 'kích hoạt' : 'tạm ngưng';
+        toast.success(`Đã ${statusText} tài khoản thành công!`);
+        fetchStudents();
+      } else {
+        toast.error(response.message || "Không thể cập nhật trạng thái tài khoản");
+      }
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      toast.error(error.message || "Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại!");
+    }
+  };
+
+  // Fetch students from API
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+
+      const params = {
+        page: currentPage,
+        limit: pagination.limit || 10,
+      };
+
+      if (filters.search) params.search = filters.search;
+      if (filters.studentCode) params.search = filters.studentCode;
+      if (filters.fullName) params.search = filters.fullName;
+      if (filters.department) params.major = filters.department;
+      if (filters.status) params.status = filters.status;
+      if (filters.email) params.email = filters.email;
+      if (filters.phone) params.phone = filters.phone;
+      if (filters.dob) params.dob = filters.dob;
+
+      const response = await studentService.getAllStudents(params);
+
+      // Controller trả về: { success, message, data: [...students], meta: { total, page, limit, totalPages } }
+      if (response.success && response.data) {
+        setStudents(Array.isArray(response.data) ? response.data : []);
+        setPagination(response.meta || { total: 0, page: 1, limit: 10, totalPages: 0 });
+      }
+    } catch (err) {
+      console.error("Error fetching students:", err);
+      toast.error(err.message || "Không thể tải danh sách sinh viên");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch khi trang thay đổi
+  useEffect(() => {
+    fetchStudents();
+  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle filter
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    fetchStudents();
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ search: "", studentCode: "", fullName: "", department: "", status: "", email: "", phone: "", dob: "" });
+    setCurrentPage(1);
+    setTimeout(() => fetchStudents(), 100);
   };
 
   //gọi userfetch open
@@ -86,93 +211,40 @@ const AdminStudentPage = () => {
   //   return () => document.removeEventListener("click", handleClick);
   // }, []);
 
-  const totalPages = 5;
+  const getInitials = (name) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  };
 
-  const users = [
-    {
-      id: 1,
-      full_name: "Nguyễn Thị Yến Nhi",
-      email: "nguyenthiyennhi@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=1",
-      role: "Quản trị viên",
-      user_id: "10001234",
-      status: "Inactive",
-    },
-    {
-      id: 2,
-      full_name: "Nguyễn Thị Quỳnh Như",
-      email: "nguyenthiquynhnhu@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=2",
-      role: "Ban chấm công",
-      user_id: "10001235",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      full_name: "Lê Thị Kim Oanh",
-      email: "lethikimoanh@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=3",
-      role: "Ban chấm công",
-      user_id: "10001236",
-      status: "Active",
-    },
-    {
-      id: 4,
-      full_name: "Võ Thanh Sang",
-      email: "vothanhsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=4",
-      role: "Giảng viên",
-      user_id: "10001237",
-      status: "Inactive",
-    },
-    {
-      id: 5,
-      full_name: "Phạm Đoàn Thanh Sang",
-      email: "phamdoanthanhsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=5",
-      role: "Giảng viên",
-      user_id: "10001238",
-      status: "Pending",
-    },
-    {
-      id: 6,
-      full_name: "Nguyễn Phúc Sang",
-      email: "nguyenphucsang@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=6",
-      role: "Giảng viên",
-      user_id: "10001239",
-      status: "Pending",
-    },
-    {
-      id: 7,
-      full_name: "Dương Thị Thanh Thảo",
-      email: "duongthithanhthao@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=7",
-      role: "Giảng viên",
-      user_id: "10001240",
-      status: "Pending",
-    },
-    {
-      id: 8,
-      full_name: "Trần Thị Thanh Thảo",
-      email: "tranthithanhthao@iuh.edu.vn",
-      avatar_url: "https://i.pravatar.cc/150?img=8",
-      role: "Giảng viên",
-      user_id: "10001241",
-      status: "Pending",
-    },
+  const avatarColors = [
+    "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-rose-500",
+    "bg-amber-500", "bg-cyan-500", "bg-teal-500", "bg-indigo-500",
   ];
+  const getAvatarColor = (name) => {
+    if (!name) return "bg-gray-400";
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return avatarColors[Math.abs(hash) % avatarColors.length];
+  };
 
   const pillStyle = {
-    Active: "bg-green-100 text-green-600",
-    Pending: "bg-yellow-100 text-yellow-600",
-    Inactive: "bg-gray-200 text-gray-600",
+    active: "bg-green-100 text-green-600",
+    inactive: "bg-gray-200 text-gray-600",
+    pending: "bg-yellow-100 text-yellow-600",
+  };
+
+  const statusLabel = {
+    active: "Hoạt động",
+    inactive: "Tạm ngưng",
+    pending: "Chờ duyệt",
   };
 
   // Checkbox handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(users.map(item => item.id));
+      setSelectedIds(students.map(item => item.id));
     } else {
       setSelectedIds([]);
     }
@@ -186,8 +258,8 @@ const AdminStudentPage = () => {
     }
   };
 
-  const isAllSelected = users.length > 0 && selectedIds.length === users.length;
-  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < users.length;
+  const isAllSelected = students.length > 0 && selectedIds.length === students.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < students.length;
 
   const [expanded, setExpanded] = useState(false);
 
@@ -282,6 +354,8 @@ const AdminStudentPage = () => {
                   <input
                     type="text"
                     placeholder="Ví dụ: 4203001549"
+                    value={filters.studentCode}
+                    onChange={(e) => handleFilterChange("studentCode", e.target.value)}
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -291,18 +365,27 @@ const AdminStudentPage = () => {
                   </label>
                   <input
                     type="text"
-                    className="w-full rounded-lg border px-3 py-2"
+                    placeholder="Nhập họ tên"
+                    value={filters.fullName}
+                    onChange={(e) => handleFilterChange("fullName", e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Khoa/Viện
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Khoa Công nghệ thông tin</option>
-                    <option>Khoa Điện tử - Viễn thông</option>
-                    <option>Khoa Cơ khí</option>
-                    <option>Khoa Kinh tế</option>
+                  <select
+                    value={filters.department}
+                    onChange={(e) => handleFilterChange("department", e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    {DEPARTMENTS.map((dept, index) => (
+                      <option key={index} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -310,10 +393,14 @@ const AdminStudentPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Trạng thái
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Đang hoạt động</option>
-                    <option>Tạm ngưng</option>
-                    <option>Đã xóa</option>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange("status", e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="inactive">Tạm ngưng</option>
                   </select>
                 </div>
                 {expanded && (
@@ -325,8 +412,10 @@ const AdminStudentPage = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
+                        placeholder="Ví dụ: example@iuh.edu.vn"
+                        value={filters.email}
+                        onChange={(e) => handleFilterChange("email", e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -335,8 +424,10 @@ const AdminStudentPage = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
+                        placeholder="Ví dụ: 0912345678"
+                        value={filters.phone}
+                        onChange={(e) => handleFilterChange("phone", e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
@@ -345,8 +436,9 @@ const AdminStudentPage = () => {
                       </label>
                       <input
                         type="date"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
+                        value={filters.dob}
+                        onChange={(e) => handleFilterChange("dob", e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </>
@@ -363,16 +455,60 @@ const AdminStudentPage = () => {
                     className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 
                     py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md 
                     focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Thêm sinh viên, thủ công"
+                    title="Thêm sinh viên thủ công"
                   >
                     <CirclePlus className="w-5 h-5" />
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Xóa sinh viên, chuyển thành trạng thái tạm ngưng"
+                    onClick={async () => {
+                      if (selectedIds.length === 0) {
+                        toast.warning("Vui lòng chọn ít nhất 1 sinh viên để khóa/mở khóa");
+                        return;
+                      }
+
+                      const selectedStudents = students.filter(s => selectedIds.includes(s.id));
+                      const usernames = selectedStudents.map(s => s.user?.user_name).filter(Boolean);
+
+                      if (usernames.length === 0) {
+                        toast.error("Không tìm thấy user_name cho các tài khoản đã chọn");
+                        return;
+                      }
+
+                      openConfirmActionModal(
+                        "lock",
+                        "Xác nhận khóa/mở khóa tài khoản",
+                        `Bạn có chắc chắn muốn thay đổi trạng thái ${usernames.length} tài khoản đã chọn?`,
+                        "Xác nhận",
+                        async () => {
+                          try {
+                            const response = await userService.bulkToggleUserStatus(usernames);
+                            if (response.success) {
+                              const { successCount, failCount } = response.data;
+                              if (failCount > 0) {
+                                toast.warning(`Đã cập nhật ${successCount} tài khoản thành công. ${failCount} tài khoản thất bại.`);
+                              } else {
+                                toast.success(`Đã cập nhật ${successCount} tài khoản thành công!`);
+                              }
+                              setSelectedIds([]);
+                              fetchStudents();
+                            }
+                          } catch (error) {
+                            console.error("Error bulk toggling status:", error);
+                            toast.error(error.message || "Có lỗi xảy ra khi cập nhật trạng thái");
+                          }
+                        }
+                      );
+                    }}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedIds.length > 0
+                        ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700 hover:shadow-md focus:ring-amber-500"
+                        : "border-amber-400 text-amber-400 hover:bg-amber-100 hover:shadow-md focus:ring-amber-500"
+                    }`}
+                    title={selectedIds.length > 0 ? `Khóa/Mở khóa ${selectedIds.length} mục đã chọn` : "Chọn sinh viên để khóa/mở khóa"}
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <LockKeyhole className="w-5 h-5" />
+                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
                   </button>
 
                   <button
@@ -384,25 +520,43 @@ const AdminStudentPage = () => {
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
+                    onClick={handleSearch}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Tìm kiếm"
                   >
-                    <FileSearchIcon className="w-5 h-5" />
+                    {loading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700" />
+                    ) : (
+                      <FileSearchIcon className="w-5 h-5" />
+                    )}
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Xuất danh sách excel"
+                    onClick={() => {
+                      if (selectedIds.length === 0) return;
+                      console.log("Export selected:", selectedIds);
+                      toast.success(`Đã xuất ${selectedIds.length} sinh viên thành công`);
+                    }}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedIds.length > 0
+                        ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md focus:ring-emerald-500"
+                        : "border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500"
+                    }`}
+                    title={selectedIds.length > 0 ? `Xuất ${selectedIds.length} mục đã chọn` : "Chọn sinh viên để xuất excel"}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
+                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                    onClick={handleClearFilters}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Xóa bộ lọc, truy vấn bộ lọc khác"
                   >
                     <FilterX className="w-5 h-5" />
                   </button>
-
 
                 </div>
 
@@ -415,56 +569,8 @@ const AdminStudentPage = () => {
             </div>
 
 
-            {/* Bulk Actions Bar */}
-            {selectedIds.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-blue-900">
-                    Đã chọn {selectedIds.length} mục
-                  </span>
-                  <button
-                    onClick={() => setSelectedIds([])}
-                    className="text-sm text-blue-600 hover:text-blue-800 underline"
-                  >
-                    Bỏ chọn tất cả
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      console.log("Export selected:", selectedIds);
-                      toast.success("Xuất dữ liệu thành công");
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
-                  >
-                    <FileSpreadsheet className="w-4 h-4" />
-                    Xuất dữ liệu
-                  </button>
-                  <button
-                    onClick={() => {
-                      openConfirmActionModal(
-                        "delete",
-                        "Xác nhận xóa nhiều sinh viên",
-                        `Bạn có chắc chắn muốn xóa ${selectedIds.length} sinh viên đã chọn? Hành động này không thể hoàn tác.`,
-                        "Xóa tất cả",
-                        () => {
-                          console.log("Delete selected:", selectedIds);
-                          toast.success(`Đã xóa ${selectedIds.length} sinh viên thành công`);
-                          setSelectedIds([]);
-                        }
-                      );
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Xóa đã chọn
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* TABLE */}
-            <div className="w-full overflow-x-auto bg-white rounded-xl shadow mb-6">
+            <div className="w-full overflow-x-auto bg-white shadow mb-6">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-100">
@@ -485,14 +591,30 @@ const AdminStudentPage = () => {
                     <th className="h-12 px-4">MSSV</th>
                     <th className="h-12 px-4">{t("users.name")}</th>
                     <th className="h-12 px-4">{t("users.email")}</th>
-                    <th className="h-12 px-4">{t("users.role")}</th>
+                    <th className="h-12 px-4">Lớp học</th>
                     <th className="h-12 px-4">{t("users.status")}</th>
                     <th className="h-12 px-4">{t("users.actions")}</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {users.map((u) => (
+                  {loading ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-10">
+                        <div className="flex justify-center items-center gap-3">
+                          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-emerald-600"></div>
+                          <span className="text-gray-500">Đang tải dữ liệu...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : students.length === 0 ? (
+                    <EmptyState
+                      title="Không tìm thấy sinh viên"
+                      description="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm."
+                      colSpan={8}
+                    />
+                  ) : (
+                  students.map((u) => (
                     <tr key={u.id} className={`border-t hover:bg-slate-50 ${
                       selectedIds.includes(u.id) ? 'bg-blue-50' : ''
                     }`}>
@@ -505,98 +627,85 @@ const AdminStudentPage = () => {
                         />
                       </td>
                       <td className="px-2 h-10 flex items-center gap-2 p-6">
-                        <img src={u.avatar_url} className="w-8 h-8 rounded-full" />
+                        {u.avatar_url ? (
+                          <img
+                            src={u.avatar_url}
+                            className="w-8 h-8 rounded-full object-cover"
+                            alt={u.full_name}
+                          />
+                        ) : (
+                          <div className={`w-8 h-8 rounded-full ${getAvatarColor(u.full_name)} flex items-center justify-center text-white text-xs font-semibold`}>
+                            {getInitials(u.full_name)}
+                          </div>
+                        )}
                       </td>
-                      <td className="px-4">{u.user_id}</td>
+                      <td className="px-4">{u.student_code}</td>
                       <td className="px-4 min-w-max">{u.full_name}</td>
 
                       <td className="px-4">{u.email}</td>
-                      <td className="px-4">{u.role}</td>
+                      <td className="px-4">{u.class_name  || '-'}</td>
 
                       <td className="px-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs ${pillStyle[u.status]
-                            }`}
+                          className={`px-3 py-1 rounded-full text-xs ${pillStyle[u.user?.status] || pillStyle['inactive']}`}
                         >
-                          {u.status}
+                          {statusLabel[u.user?.status] || 'Tạm ngưng'}
                         </span>
                       </td>
 
                       <td className="px-4">
                         <div className="flex gap-3">
                           <button
-                            title="Xóa"
-                            onClick={() => openConfirmActionModal(
-                              "delete",
-                              "Xác nhận xóa sinh viên",
-                              `Bạn có chắc chắn muốn xóa sinh viên ${u.full_name}? Trạng thái sẽ chuyển thành tạm ngưng.`,
-                              "Xóa sinh viên",
-                              () => {
-                                console.log("Delete student", u.id);
-                                toast.success("Đã xóa sinh viên thành công");
-                              }
-                            )}
-                          >
-                            <Trash2 className="text-red-500 cursor-pointer w-5 h-5" />
-                          </button>
-                          <button
                             title="Xem chi tiết"
                             onClick={() => openViewStudentModal(u)}
                           >
                             <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
                           </button>
-                          {/* More Menu */}
-                          <div className="relative">
-                            <MoreVertical
-                              className="cursor-pointer w-5 h-5"
-                              onClick={() =>
-                                setOpenMenu(openMenu === u.id ? null : u.id)
-                              }
-                            />
-
-                            {/* Dropdown */}
-                            {openMenu === u.id && (
-                              <div className="absolute mt-2 w-25 bg-white shadow-lg rounded-md border z-20">
-                                <button
-                                  className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  title="Chỉnh sửa"
-                                  onClick={() => openEditStudentModal(u)}
-                                >
-                                  <PencilLine className="inline w-4 h-4 mr-2" />
-                                </button>
-                                <button
-                                  className="w-full text-left px-4 py-2 hover:bg-slate-100"
-                                  title="Khóa tài khoản"
-                                  onClick={() => openConfirmActionModal(
-                                    "lock",
-                                    "Xác nhận khóa tài khoản",
-                                    `Bạn có chắc chắn muốn khóa tài khoản của ${u.full_name}?`,
-                                    "Khóa tài khoản",
-                                    () => {
-                                      console.log("Lock student", u.id);
-                                      toast.success("Đã khóa tài khoản thành công");
-                                    }
-                                  )}
-                                >
-                                  <LockKeyhole className="inline w-4 h-4 mr-2" />
-                                </button>
-                              </div>
+                          <button
+                            title="Chỉnh sửa"
+                            onClick={() => openEditStudentModal(u)}
+                          >
+                            <PencilLine className="text-amber-500 cursor-pointer w-5 h-5" />
+                          </button>
+                          <button
+                            title={u.user?.status === 'active' ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                            onClick={() => openConfirmActionModal(
+                              "lock",
+                              u.user?.status === 'active' ? "Xác nhận khóa tài khoản" : "Xác nhận mở khóa tài khoản",
+                              u.user?.status === 'active'
+                                ? `Bạn có chắc chắn muốn khóa tài khoản của ${u.full_name}?`
+                                : `Bạn có chắc chắn muốn mở khóa tài khoản của ${u.full_name}?`,
+                              u.user?.status === 'active' ? "Khóa tài khoản" : "Mở khóa tài khoản",
+                              () => handleToggleStudentStatus(u)
                             )}
-                          </div>
+                          >
+                            {u.user?.status === 'active' ? (
+                              <LockKeyholeOpen className="text-green-500 cursor-pointer w-5 h-5" />
+                            ) : (
+                              <LockKeyhole className="text-red-500 cursor-pointer w-5 h-5" />
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                  )}
                 </tbody>
               </table>
             </div>
 
             {/* PAGINATION */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
+            <div className="flex items-center justify-between px-2 mb-4">
+              <span className="text-sm text-gray-500">
+                Tổng: <strong>{pagination.total || 0}</strong> sinh viên
+              </span>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.totalPages || 1}
+                onPageChange={(page) => setCurrentPage(page)}
+                disabled={loading}
+              />
+            </div>
 
             {/* MODALS */}
             <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
@@ -630,131 +739,7 @@ const AdminStudentPage = () => {
               onConfirm={modalConfirmAction.onConfirm}
             />
 
-            {/* OLD DRAWER REMOVED - Now using ModalAddStudent */}
-            {false && (
-              <>
-                <div
-                  className="fixed inset-0 bg-black bg-opacity-50 z-[1000]"
-                  onClick={closeDrawer}
-                />
-
-                {/* Drawer từ bên phải trượt ra */}
-                <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
-                  {/* Header Drawer */}
-                  <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-lime-100">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-800">
-                        Thêm hồ sơ Giảng viên
-                      </h3>
-                    </div>
-                    <button
-                      onClick={closeDrawer}
-                      className="text-gray-500 hover:text-gray-700 focus:outline-none  rounded-full hover:bg-lime-400 transition-all  duration-300 ease-in-out p-2 hover:rotate-90"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-
-                  {/* Body Form */}
-                  <div className="p-6 overflow-y-auto h-full pb-32">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mã giảng viên
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Họ tên Giảng viên
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Ngày sinh
-                        </label>
-                        <input
-                          type="date"
-                          className="w-full border  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Khoa/Viện
-                        </label>
-                        <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                          <option>Khoa Công nghệ thông tin</option>
-                          <option>Khoa Điện tử - Viễn thông</option>
-                          <option>Khoa Cơ khí</option>
-                          <option>Khoa Kinh tế</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Số điện thoại
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Phân quyền tài khoản
-                        </label>
-                        <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                          <option>Giảng viên</option>
-                          <option>Quản trị viên</option>
-                          <option>Bộ phận chấm công</option>
-                        </select>
-                      </div>
-
-                      {/* ảnh đại diện */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Ảnh đại diện
-                        </label>
-                        <input
-                          type="file"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Footer Buttons - Fixed bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 flex justify-end gap-4 px-6 py-5 border-t border-gray-200 bg-white">
-                    <button
-                      onClick={closeDrawer}
-                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                    >
-                      Hủy
-                    </button>
-                    <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                      Tạo hồ sơ
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
+            {/* OLD DRAWER REMOVED */}
           </div>
         </div>
       </div>
