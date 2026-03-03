@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import Pagination from "../../../components/common/Pagination";
@@ -8,13 +8,16 @@ import ModalAddRoom from "../../../components/modal/ModalAddRoom";
 import ModalEditRoom from "../../../components/modal/ModalEditRoom";
 import ModalViewRoom from "../../../components/modal/ModalViewRoom";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import ModalExportRoomExcel from "../../../components/modal/ModalExportRoomExcel";
+import ModalBulkUploadRoom from "../../../components/modal/ModalBulkUploadRoom";
+import roomService from "../../../services/room.service";
+import { exportRoomsToExcel } from "../../../utils/excelExport";
 import {
   CirclePlus,
-  Trash2,
   LockKeyhole,
+  LockKeyholeOpen,
   CloudUpload,
   Eye,
-  MoreVertical,
   PencilLine,
   Users,
   UserCheck,
@@ -22,17 +25,40 @@ import {
   UserPlus,
   X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX, FileSearchIcon,
   ArrowDownToLine,
-  File, Settings
+  File, Settings,
+  MapPin
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
+import EmptyState from "@components/layout/EmptyState";
 const AdminRoomPage = () => {
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [openUpload, setOpenUpload] = useState(false);
-  // const [checked, setChecked] = useState(false);
-  const [openMenu, setOpenMenu] = useState(null);
+  const [openBulkUpload, setOpenBulkUpload] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectAllPages, setSelectAllPages] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
+  
+  // Room data and pagination
+  const [rooms, setRooms] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 5,
+    totalPages: 1
+  });
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loadingRoomDetail, setLoadingRoomDetail] = useState(false);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    roomCode: "",
+    roomName: "",
+    status: ""
+  });
 
   // Modal states
   const [modalAddRoom, setModalAddRoom] = useState({ isOpen: false });
@@ -47,6 +73,7 @@ const AdminRoomPage = () => {
     onConfirm: null,
     userData: null,
   });
+  const [modalExportExcel, setModalExportExcel] = useState({ isOpen: false, data: [] });
 
   // Modal handlers
   const openAddRoomModal = () => setModalAddRoom({ isOpen: true });
@@ -55,7 +82,32 @@ const AdminRoomPage = () => {
   const openEditRoomModal = (room) => setModalEditRoom({ isOpen: true, roomData: room });
   const closeEditRoomModal = () => setModalEditRoom({ isOpen: false, roomData: null });
 
-  const openViewRoomModal = (room) => setModalViewRoom({ isOpen: true, roomData: room });
+  const openViewRoomModal = async (roomId) => {
+    setLoadingRoomDetail(true);
+    setModalViewRoom({ isOpen: true, roomData: null }); // Open modal first
+    
+    try {
+      const response = await roomService.getRoomById(roomId);
+      
+      if (response && response.success) {
+        // Handle response structure
+        const roomData = response.data?.room || response.data;
+        setModalViewRoom({ isOpen: true, roomData });
+      } else if (response && response.data) {
+        setModalViewRoom({ isOpen: true, roomData: response.data });
+      } else {
+        toast.error("Không thể tải thông tin phòng");
+        setModalViewRoom({ isOpen: false, roomData: null });
+      }
+    } catch (error) {
+      console.error("Error fetching room detail:", error);
+      toast.error("Đã có lỗi khi tải thông tin phòng");
+      setModalViewRoom({ isOpen: false, roomData: null });
+    } finally {
+      setLoadingRoomDetail(false);
+    }
+  };
+  
   const closeViewRoomModal = () => setModalViewRoom({ isOpen: false, roomData: null });
 
   const openConfirmActionModal = (actionType, title, message, confirmText, onConfirm, userData = null) => {
@@ -71,88 +123,226 @@ const AdminRoomPage = () => {
   };
   const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
 
+  // Fetch rooms from API
+  const fetchRooms = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      
+      // Add search filters
+      if (filters.roomCode) {
+        params.search = filters.roomCode;
+      } else if (filters.roomName) {
+        params.search = filters.roomName;
+      } else if (searchQuery) {
+        params.search = searchQuery;
+      }
+      
+      // Add status filter
+      if (filters.status !== "") {
+        params.is_active = filters.status === "active";
+      }
+
+      const response = await roomService.getRooms(params);
+      console.log("API Response:", response); // Debug log
+      
+      // Handle response based on actual API structure
+      if (response && response.success) {
+        // API returns: { success: true, data: { rooms: [...], pagination: {...} } }
+        // or: { success: true, data: [...] }
+        const responseData = response.data;
+        
+        if (Array.isArray(responseData)) {
+          // data is directly an array
+          setRooms(responseData);
+          setPagination(response.pagination || {
+            total: responseData.length,
+            page: currentPage,
+            limit: itemsPerPage,
+            totalPages: Math.ceil(responseData.length / itemsPerPage)
+          });
+        } else if (responseData && Array.isArray(responseData.rooms)) {
+          // data is an object with rooms array
+          setRooms(responseData.rooms);
+          setPagination(responseData.pagination || response.pagination || {
+            total: responseData.rooms.length,
+            page: currentPage,
+            limit: itemsPerPage,
+            totalPages: Math.ceil(responseData.rooms.length / itemsPerPage)
+          });
+        } else if (responseData && typeof responseData === 'object') {
+          // data is an object, might be pagination info in root
+          // Try to find the rooms array in the data object
+          const rooms = Object.values(responseData).find(val => Array.isArray(val));
+          if (rooms) {
+            setRooms(rooms);
+            setPagination(responseData.pagination || {
+              total: rooms.length,
+              page: currentPage,
+              limit: itemsPerPage,
+              totalPages: Math.ceil(rooms.length / itemsPerPage)
+            });
+          } else {
+            console.error("No array found in response.data:", responseData);
+            setRooms([]);
+            toast.error("Không tìm thấy danh sách phòng trong dữ liệu");
+          }
+        } else {
+          console.error("Unexpected data format:", responseData);
+          setRooms([]);
+          toast.error("Định dạng dữ liệu không đúng");
+        }
+      } else if (response && response.data && Array.isArray(response.data)) {
+        // Standard response format: { data: [...], pagination: {...} }
+        setRooms(response.data);
+        setPagination(response.pagination || {
+          total: response.data.length,
+          page: currentPage,
+          limit: itemsPerPage,
+          totalPages: Math.ceil(response.data.length / itemsPerPage)
+        });
+      } else if (Array.isArray(response)) {
+        // Response is directly an array
+        setRooms(response);
+        setPagination({
+          total: response.length,
+          page: currentPage,
+          limit: itemsPerPage,
+          totalPages: Math.ceil(response.length / itemsPerPage)
+        });
+      } else if (response && response.success === false) {
+        // Error response
+        setRooms([]);
+        toast.error(response.message || "Không thể tải danh sách phòng học");
+      } else {
+        // Unexpected format
+        console.error("Unexpected response format:", response);
+        setRooms([]);
+        toast.error("Không thể tải dữ liệu phòng học");
+      }
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+      setRooms([]); // Ensure rooms is always an array
+      toast.error(error.message || "Đã có lỗi xảy ra khi tải dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, searchQuery, filters]);
+
+  // Load rooms on component mount
+  useEffect(() => {
+    fetchRooms();
+  }, [currentPage, itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset selection when changing pages (unless select all pages is active)
+  useEffect(() => {
+    if (!selectAllPages) {
+      setSelectedIds([]);
+    }
+  }, [currentPage, selectAllPages]);
+
+  // When selectAllPages = true and new page data loads, auto-select all on that page (except excluded)
+  useEffect(() => {
+    if (selectAllPages && rooms.length > 0) {
+      setSelectedIds(rooms.filter(r => !excludedIds.includes(r.id)).map(r => r.id));
+    }
+  }, [rooms, selectAllPages, excludedIds]);
+
   const handleAddRoom = (formData) => {
     console.log("Add room:", formData);
     toast.success("Đã thêm phòng học thành công!");
+    fetchRooms(); // Refresh the list
   };
 
   const handleEditRoom = (formData) => {
     console.log("Edit room:", formData);
     toast.success("Đã cập nhật thông tin phòng thành công!");
+    fetchRooms(); // Refresh the list
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (!e.target.closest(".relative")) {
-        setOpenMenu(null);
+  // Handle toggle room status (active/inactive)
+  const handleToggleRoomStatus = async (room) => {
+    try {
+      const response = await roomService.toggleRoomStatus(room.id);
+      
+      if (response && response.success) {
+        toast.success(
+          room.is_active 
+            ? `Đã khóa phòng ${room.room_name} thành công`
+            : `Đã mở khóa phòng ${room.room_name} thành công`
+        );
+        fetchRooms(); // Refresh the list
+      } else {
+        toast.error(response?.message || "Không thể thay đổi trạng thái phòng");
       }
-    };
+    } catch (error) {
+      console.error("Error toggling room status:", error);
+      toast.error(error.message || "Đã có lỗi xảy ra");
+    }
+  };
 
-    if (openMenu !== null) {
-      document.addEventListener("click", handleClick);
+  // Open export Excel modal
+  const openExportExcelModal = async () => {
+    if (selectedIds.length === 0) {
+      toast.warning("Vui lòng chọn ít nhất 1 phòng học để xuất dữ liệu");
+      return;
     }
 
-    return () => document.removeEventListener("click", handleClick);
-  }, [openMenu]);
+    // Lấy dữ liệu phòng đã chọn (trang hiện tại)
+    const selectedRooms = rooms.filter(room => selectedIds.includes(room.id));
+    setModalExportExcel({ isOpen: true, data: selectedRooms });
+  };
 
-  const totalPages = 5;
+  const closeExportExcelModal = () => setModalExportExcel({ isOpen: false, data: [] });
 
-  const PHONG = [
-    {
-      ma_phong: "B1.04",
-      ten_phong: "B1.04",
-      x1: "10,0",
-      y1: "10,5",
-
-      x2: "30,5",
-      y2: "10,0",
-
-      x3: "30,0",
-      y3: "0,0",
-
-      x4: "10,0",
-      y4: "0,5",
-      trang_thai: 1      // Thường dùng Int trong SQL (1: Trống, 2: Bận, 0: Bảo trì)
-    },
-    {
-      ma_phong: "H3.01",
-      ten_phong: "H3.01",
-
-      x1: "15,0",
-      y1: "15,10",
-
-      x2: "35,10",
-      y2: "15,0",
-
-      x3: "35,0",
-      y3: "5,0",
-
-      x4: "15,0",
-      y4: "5,10",
-
-      trang_thai: 1
-    },
-    {
-      ma_phong: "H3.02",
-      ten_phong: "H3.02",
-      x1: "20,0",
-      y1: "20,15",
-
-      x2: "50,15",
-      y2: "20,0",
-
-      x3: "50,0",
-      y3: "10,0",
-
-      x4: "20,0",
-      y4: "10,15",
-
-      trang_thai: 0
+  // Handle export to Excel
+  const handleExportExcel = ({ selectedColumns, filename }) => {
+    try {
+      exportRoomsToExcel(modalExportExcel.data, filename, selectedColumns);
+      toast.success(`Đã xuất ${modalExportExcel.data.length} phòng học ra file Excel thành công`);
+      closeExportExcelModal();
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Không thể xuất file Excel. Vui lòng thử lại!");
     }
-  ];
+  };
 
+  // Handle bulk upload rooms
+  const handleBulkUpload = async (roomsList) => {
+    try {
+      const response = await roomService.bulkCreateRooms(roomsList);
+      
+      if (response && response.success) {
+        const result = response.data;
+        
+        if (result.successCount > 0) {
+          toast.success(`Đã thêm thành công ${result.successCount} phòng học`);
+        }
+        
+        if (result.failCount > 0) {
+          toast.warning(`${result.failCount} phòng thất bại. Vui lòng kiểm tra chi tiết lỗi.`);
+        }
+        
+        // Refresh room list
+        fetchRooms();
+        
+        return response;
+      } else {
+        toast.error(response?.message || "Không thể upload danh sách phòng học");
+        return response;
+      }
+    } catch (error) {
+      console.error("Bulk upload error:", error);
+      toast.error(error.message || "Đã có lỗi xảy ra khi upload");
+      throw error;
+    }
+  };
 
+  // Hardcoded PHONG data removed - now fetching from API
+  // const PHONG = [...];
 
   const pillStyle = {
     Active: "bg-green-100 text-green-600",
@@ -163,22 +353,69 @@ const AdminRoomPage = () => {
   // Checkbox handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(PHONG.map(item => item.ma_phong));
+      // Remove page IDs from excluded when re-selecting header
+      const pageIds = rooms.map(item => item.id);
+      setSelectedIds(pageIds);
+      if (selectAllPages) {
+        setExcludedIds(excludedIds.filter(id => !pageIds.includes(id)));
+      }
     } else {
       setSelectedIds([]);
+      setSelectAllPages(false);
+      setExcludedIds([]);
     }
   };
 
-  const handleSelectOne = (ma_phong) => {
-    if (selectedIds.includes(ma_phong)) {
-      setSelectedIds(selectedIds.filter(selectedId => selectedId !== ma_phong));
+  const handleSelectOne = (roomId) => {
+    if (selectAllPages) {
+      if (excludedIds.includes(roomId)) {
+        // Re-select: remove from excluded, add to selected
+        setExcludedIds(excludedIds.filter(eid => eid !== roomId));
+        setSelectedIds([...selectedIds, roomId]);
+      } else {
+        // Deselect: add to excluded, remove from selected
+        setExcludedIds([...excludedIds, roomId]);
+        setSelectedIds(selectedIds.filter(sid => sid !== roomId));
+      }
     } else {
-      setSelectedIds([...selectedIds, ma_phong]);
+      if (selectedIds.includes(roomId)) {
+        setSelectedIds(selectedIds.filter(selectedId => selectedId !== roomId));
+      } else {
+        setSelectedIds([...selectedIds, roomId]);
+      }
     }
   };
 
-  const isAllSelected = PHONG.length > 0 && selectedIds.length === PHONG.length;
-  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < PHONG.length;
+  // Actual selected count
+  const selectedCount = selectAllPages ? pagination.total - excludedIds.length : selectedIds.length;
+
+  const isAllSelected = rooms.length > 0 && selectedIds.length === rooms.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < rooms.length;
+
+  // Helper function to format coordinates
+  const formatCoordinate = (coord) => {
+    if (!coord || coord.x === undefined || coord.y === undefined) return 'N/A';
+    // Format numbers, remove unnecessary decimals
+    const x = Number(coord.x) % 1 === 0 ? coord.x : Number(coord.x).toFixed(1);
+    const y = Number(coord.y) % 1 === 0 ? coord.y : Number(coord.y).toFixed(1);
+    return (
+      <div className="rounded-lg border bg-card/50 px-3.5 py-2 text-sm shadow-xs">
+        <div className="space-y-2.5">
+          {[x, y].map((loc, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <div className="rounded-full bg-red-50/70 p-1">
+                <MapPin className="h-3.5 w-3.5 text-red-600" />
+              </div>
+              <span className="font-medium leading-snug">{loc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
 
 
@@ -253,33 +490,13 @@ const AdminRoomPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Kỳ học
-                  </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Kỳ 1</option>
-                    <option>Kỳ 2</option>
-                    <option>Kỳ 3</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Năm học
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: ...."
-                    className="w-full rounded-lg border px-3 py-2"
-                  />
-                </div>
-
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Mã phòng
                   </label>
                   <input
                     type="text"
-                    placeholder="Ví dụ: 4203001549"
+                    placeholder="Ví dụ: A.001"
+                    value={filters.roomCode}
+                    onChange={(e) => setFilters({ ...filters, roomCode: e.target.value })}
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -289,10 +506,27 @@ const AdminRoomPage = () => {
                   </label>
                   <input
                     type="text"
-                    placeholder="Ví dụ: 4203001549"
+                    placeholder="Ví dụ: Phòng thí nghiệm"
+                    value={filters.roomName}
+                    onChange={(e) => setFilters({ ...filters, roomName: e.target.value })}
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Trạng thái phòng
+                  </label>
+                  <select 
+                    value={filters.status}
+                    onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="active">Hoạt động</option>
+                    <option value="inactive">Tạm ngưng</option>
+                  </select>
+                </div>
+
 
 
               </div>
@@ -309,38 +543,56 @@ const AdminRoomPage = () => {
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Xóa sinh viên đã chọn, chuyển đổi trạng thái"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-
-                  <button
-                    onClick={() => setOpenUpload(true)}
+                    onClick={() => setOpenBulkUpload(true)}
                     className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Upload danh sách sinh viên, vui lòng tải mẫu excel bên dưới"
+                    title="Upload danh sách phòng học bằng file Excel"
                   >
                     <CloudUpload className="w-5 h-5" />
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
+                    onClick={() => {
+                      setCurrentPage(1);
+                      fetchRooms();
+                    }}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" 
+                    title="Tìm kiếm"
                   >
-                    <FileSearchIcon className="w-5 h-5" />
+                    {loading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700" />
+                    ) : (
+                      <FileSearchIcon className="w-5 h-5" />
+                    )}
                   </button>
 
                   <button
-                    className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Xuất danh sách excel"
+                    onClick={openExportExcelModal}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedIds.length > 0
+                        ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md focus:ring-emerald-500"
+                        : "border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500"
+                    }`}
+                    title={selectedIds.length > 0 ? `Xuất ${selectedIds.length} phòng đã chọn` : "Chọn phòng để xuất excel"}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
+                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
                   </button>
 
                   <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Tải file mẫu excel">
                     <File className="w-5 h-5" />
                   </button>
                   <button
-                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                    onClick={() => {
+                      setFilters({ roomCode: "", roomName: "", status: "" });
+                      setSearchQuery("");
+                      setCurrentPage(1);
+                      setSelectedIds([]);
+                      setSelectAllPages(false);
+                      setExcludedIds([]);
+                    }}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Xóa bộ lọc, truy vấn bộ lọc khác"
                   >
                     <FilterX className="w-5 h-5" />
@@ -350,51 +602,27 @@ const AdminRoomPage = () => {
             </div>
 
 
-            {/* Bulk Actions Bar */}
-            {selectedIds.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-blue-900">
-                    Đã chọn {selectedIds.length} mục
-                  </span>
-                  <button
-                    onClick={() => setSelectedIds([])}
-                    className="text-sm text-blue-600 hover:text-blue-800 underline"
-                  >
-                    Bỏ chọn tất cả
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      console.log("Export selected:", selectedIds);
-                      toast.success("Xuất dữ liệu thành công");
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
-                  >
-                    <FileSpreadsheet className="w-4 h-4" />
-                    Xuất dữ liệu
-                  </button>
-                  <button
-                    onClick={() => {
-                      openConfirmActionModal(
-                        "delete",
-                        "Xác nhận xóa nhiều sinh viên",
-                        `Bạn có chắc chắn muốn xóa ${selectedIds.length} sinh viên đã chọn? Hành động này không thể hoàn tác.`,
-                        "Xóa tất cả",
-                        () => {
-                          console.log("Delete selected:", selectedIds);
-                          toast.success(`Đã xóa ${selectedIds.length} sinh viên thành công`);
-                          setSelectedIds([]);
-                        }
-                      );
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Xóa đã chọn
-                  </button>
-                </div>
+            {/* Select all pages banner */}
+            {isAllSelected && !selectAllPages && pagination.total > rooms.length && (
+              <div className="bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedIds.length}</strong> phòng trên trang này.{" "}
+                <button
+                  onClick={() => setSelectAllPages(true)}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Chọn tất cả {pagination.total} phòng trong tất cả trang
+                </button>
+              </div>
+            )}
+            {selectAllPages && (
+              <div className="bg-blue-100 border border-blue-300  px-4 py-3 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedCount}</strong> phòng trong tất cả trang.{" "}
+                <button
+                  onClick={() => { setSelectAllPages(false); setSelectedIds([]); setExcludedIds([]); }}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Bỏ chọn tất cả
+                </button>
               </div>
             )}
 
@@ -430,13 +658,16 @@ const AdminRoomPage = () => {
                       Tên phòng
                     </th>
                     <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      Ví trí 1
+                      Mô tả
                     </th>
                     <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      Ví trí 2
+                      Vị trí 1
                     </th>
                     <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      Ví trí 3
+                      Vị trí 2
+                    </th>
+                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                      Vị trí 3
                     </th>
                     <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
                       Vị trí 4
@@ -456,138 +687,134 @@ const AdminRoomPage = () => {
 
                 {/* ================== BODY ================== */}
                 <tbody>
-                  {PHONG.map((u) => (
-                    <tr
-                      key={u.ma_phong}
-                      className={`border-b hover:bg-slate-50 transition-colors h-12 ${
-                        selectedIds.includes(u.ma_phong) ? 'bg-blue-50' : ''
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <td className="px-4 py-2">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedIds.includes(u.ma_phong)}
-                          onChange={() => handleSelectOne(u.ma_phong)}
-                          className="cursor-pointer"
-                        />
-                      </td>
-                      <td className="px-4 py-2">{u.ma_phong}</td>
-                      <td className="px-4 py-2">{u.ten_phong}</td>
-                      <td className="px-4 py-2">
-                        ({u.x1}, {u.y1})
-                      </td>
-                      <td className="px-4 py-2">
-                        ({u.x2}, {u.y2})
-                      </td>
-                      <td className="px-4 py-2">
-                        ({u.x3}, {u.y3})
-                      </td>
-                      <td className="px-4 py-2">
-                        ({u.x4}, {u.y4})
-                      </td>
-
-
-                      <td className="px-4 py-2 text-center">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${u.trangThai === "Thành công"
-                            ? pillStyle.Active
-                            : u.trangThai === "Chờ duyệt"
-                              ? pillStyle.Pending
-                              : pillStyle.Inactive
-                            }`}
-                        >
-                          {u.trangThai}
-                        </span>
-                      </td>
-
-
-                      {/* Actions */}
-                      <td className="px-4 py-2">
-                        <div className="flex justify-center gap-3">
-                          <Trash2 
-                            className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-700" 
-                            onClick={() => openConfirmActionModal(
-                              "delete",
-                              "Xác nhận xóa phòng",
-                              `Bạn có chắc chắn muốn xóa phòng ${u.ten_phong}? Hành động này không thể hoàn tác.`,
-                              "Xóa phòng",
-                              () => {
-                                console.log("Delete room", u.ma_phong);
-                                toast.success("Đã xóa phòng thành công");
-                              }
-                            )}
-                          />
-                          <Eye 
-                            className="w-5 h-5 text-blue-500 cursor-pointer hover:text-blue-700" 
-                            onClick={() => openViewRoomModal(u)}
-                          />
-
-                          {/* More Menu */}
-                          <div className="relative">
-                            <MoreVertical
-                              className="w-5 h-5 cursor-pointer hover:text-slate-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenu(openMenu === u.ma_phong ? null : u.ma_phong);
-                              }}
-                            />
-
-                            {openMenu === u.ma_phong && (
-                              <div className="absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-lg z-20">
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-slate-100"
-                                  onClick={() => {
-                                    openEditRoomModal(u);
-                                    setOpenMenu(null);
-                                  }}
-                                >
-                                  <PencilLine className="w-4 h-4 mr-2" />
-                                  Sửa
-                                </button>
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-slate-100"
-                                  onClick={() => {
-                                    openConfirmActionModal(
-                                      "lock",
-                                      "Xác nhận khóa phòng",
-                                      `Bạn có chắc chắn muốn khóa phòng ${u.ten_phong}?`,
-                                      "Khóa phòng",
-                                      () => {
-                                        console.log("Lock room", u.ma_phong);
-                                        toast.success("Đã khóa phòng thành công");
-                                      }
-                                    );
-                                    setOpenMenu(null);
-                                  }}
-                                >
-                                  <LockKeyhole className="w-4 h-4 mr-2" />
-                                  Khoá
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="10" className="px-4 py-8 text-center text-gray-500">
+                        <div className="flex justify-center items-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <span className="ml-3">Đang tải dữ liệu...</span>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : rooms.length === 0 ? (
+                    <EmptyState
+                      title="Không tìm thấy phòng học"
+                      description="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm."
+                      colSpan={10}
+                    />
+                  ) : (
+                    rooms.map((room) => (
+                      <tr
+                        key={room.id}
+                        className={`border-b hover:bg-slate-50 transition-colors h-12 ${
+                          selectedIds.includes(room.id) ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        {/* Checkbox */}
+                        <td className="px-4 py-2">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedIds.includes(room.id)}
+                            onChange={() => handleSelectOne(room.id)}
+                            className="cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-4 py-2">{room.room_code}</td>
+                        <td className="px-4 py-2">{room.room_name}</td>
+                        <td className="px-4 py-2">
+                          <span className="text-sm text-gray-600">
+                            {room.description || 'Chưa có mô tả'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          {formatCoordinate(room.coordinates?.[0])}
+                        </td>
+                        <td className="px-4 py-2">
+                          {formatCoordinate(room.coordinates?.[1])}
+                        </td>
+                        <td className="px-4 py-2">
+                          {formatCoordinate(room.coordinates?.[2])}
+                        </td>
+                        <td className="px-4 py-2">
+                          {formatCoordinate(room.coordinates?.[3])}
+                        </td>
+
+
+                        <td className="px-4 py-2 text-center">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              room.is_active ? pillStyle.Active : pillStyle.Inactive
+                            }`}
+                          >
+                            {room.is_active ? 'Hoạt động' : 'Không hoạt động'}
+                          </span>
+                        </td>
+
+
+                        {/* Actions */}
+                        <td className="px-4 py-2">
+                          <div className="flex justify-center gap-3">
+                            <button
+                              title="Xem chi tiết"
+                              onClick={() => openViewRoomModal(room.id)}
+                            >
+                              <Eye className="w-5 h-5 text-blue-500 cursor-pointer hover:text-blue-700" />
+                            </button>
+                            <button
+                              title="Chỉnh sửa"
+                              onClick={() => openEditRoomModal(room)}
+                            >
+                              <PencilLine className="w-5 h-5 text-amber-500 cursor-pointer hover:text-amber-700" />
+                            </button>
+                            <button
+                              title={room.is_active ? "Khóa phòng" : "Mở khóa phòng"}
+                              onClick={() => openConfirmActionModal(
+                                "lock",
+                                room.is_active ? "Xác nhận khóa phòng" : "Xác nhận mở khóa phòng",
+                                room.is_active 
+                                  ? `Bạn có chắc chắn muốn khóa phòng ${room.room_name}?`
+                                  : `Bạn có chắc chắn muốn mở khóa phòng ${room.room_name}?`,
+                                room.is_active ? "Khóa phòng" : "Mở khóa phòng",
+                                () => handleToggleRoomStatus(room)
+                              )}
+                            >
+                              {room.is_active ? (
+                                <LockKeyholeOpen className="w-5 h-5 text-green-500 cursor-pointer hover:text-green-700" />
+                              ) : (
+                                <LockKeyhole className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-700" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
 
             {/* PAGINATION */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
+            <div className="flex items-center justify-between px-2 mb-4">
+              <span className="text-sm text-gray-500">
+                Tổng: <strong>{pagination.total || 0}</strong> phòng học
+              </span>
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+            </div>
 
             {/* MODAL UPLOAD */}
             <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
 
             {/* Modals */}
-            <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
+            <ModalBulkUploadRoom
+              open={openBulkUpload}
+              onClose={() => setOpenBulkUpload(false)}
+              onUpload={handleBulkUpload}
+            />
 
             <ModalAddRoom
               isOpen={modalAddRoom.isOpen}
@@ -606,6 +833,7 @@ const AdminRoomPage = () => {
               isOpen={modalViewRoom.isOpen}
               onClose={closeViewRoomModal}
               roomData={modalViewRoom.roomData}
+              loading={loadingRoomDetail}
             />
 
             <ModalConfirmAction
@@ -616,6 +844,12 @@ const AdminRoomPage = () => {
               message={modalConfirmAction.message}
               confirmText={modalConfirmAction.confirmText}
               onConfirm={modalConfirmAction.onConfirm}
+            />
+
+            <ModalExportRoomExcel
+              isOpen={modalExportExcel.isOpen}
+              onClose={closeExportExcelModal}
+              onExport={handleExportExcel}
             />
 
             {/* Old Drawer - Removed */}

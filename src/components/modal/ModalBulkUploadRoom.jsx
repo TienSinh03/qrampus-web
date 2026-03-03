@@ -3,7 +3,7 @@ import { X, Upload, Download, FileSpreadsheet, Trash2, AlertCircle, CheckCircle,
 import * as XLSX from 'xlsx';
 import { toast } from "sonner";
 
-const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
+const ModalBulkUploadRoom = ({ open, onClose, onUpload }) => {
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [parsedData, setParsedData] = useState([]);
@@ -75,35 +75,34 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
         // Parse data (skip header row)
         const rows = jsonData.slice(1);
         
-        const personnelData = rows
+        const roomData = rows
           .filter(row => row.some(cell => cell !== '')) // Skip empty rows
           .map((row, index) => {
-            // Map columns: Mã giảng viên, Họ và tên, Ngày sinh, Khoa/Viện, Email, Số điện thoại, Phân quyền
-            const code = String(row[0] || '').trim();
-            const fullName = String(row[1] || '').trim();
-            const dob = row[2] ? formatDate(row[2]) : '';
-            const department = String(row[3] || '').trim();
-            const email = String(row[4] || '').trim();
-            const phone = String(row[5] || '').trim();
-            const roles = String(row[6] || '').trim();
+            // Map columns: Mã phòng, Tên phòng, Mô tả, Vị trí 1 x, Vị trí 1 y, Vị trí 2 x, Vị trí 2 y, Vị trí 3 x, Vị trí 3 y, Vị trí 4 x, Vị trí 4 y
+            const room_code = String(row[0] || '').trim();
+            const room_name = String(row[1] || '').trim();
+            const description = String(row[2] || '').trim();
             
-            const parsedRoles = parseRoles(roles);
+            // Parse coordinates
+            const coordinates = [
+              { x: parseFloat(row[3]) || 0, y: parseFloat(row[4]) || 0 }, // Vị trí 1
+              { x: parseFloat(row[5]) || 0, y: parseFloat(row[6]) || 0 }, // Vị trí 2
+              { x: parseFloat(row[7]) || 0, y: parseFloat(row[8]) || 0 }, // Vị trí 3
+              { x: parseFloat(row[9]) || 0, y: parseFloat(row[10]) || 0 }  // Vị trí 4
+            ];
+            
             return {
-              code,
-              full_name: fullName,
-              dob,
-              department,
-              email,
-              phone,
-              // Send roles as array if multiple, or role as string if single
-              ...(parsedRoles.length > 1 ? { roles: parsedRoles } : { role: parsedRoles[0] }),
+              room_code,
+              room_name,
+              description: description || null,
+              coordinates,
               _originalRow: index + 2 // +2 because: +1 for 0-index, +1 for header
             };
           });
         
-        // Validate data
-        const validData = personnelData.filter(item => 
-          item.code && item.full_name && item.email
+        // Validate data - must have room_code and room_name
+        const validData = roomData.filter(item => 
+          item.room_code && item.room_name
         );
         
         if (validData.length === 0) {
@@ -114,7 +113,7 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
         
         setParsedData(validData);
         setPreview(validData.slice(0, 5)); // Show first 5 rows for preview
-        toast.success(`Đã tải ${validData.length} bản ghi từ file Excel`);
+        toast.success(`Đã tải ${validData.length} phòng từ file Excel`);
         
       } catch (error) {
         console.error("Error parsing Excel:", error);
@@ -127,122 +126,38 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
   };
 
   /**
-   * Format date from Excel serial or string to YYYY-MM-DD
-   * Supports: dd-MM-yyyy, dd/MM/yyyy, Excel serial, YYYY-MM-DD
-   */
-  const formatDate = (value) => {
-    if (!value) return '';
-    
-    // If it's an Excel serial date (number)
-    if (typeof value === 'number') {
-      const date = XLSX.SSF.parse_date_code(value);
-      if (date) {
-        const year = date.y;
-        const month = String(date.m).padStart(2, '0');
-        const day = String(date.d).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      }
-    }
-    
-    // If it's a string date
-    const strValue = String(value).trim();
-    
-    // Pattern 1: dd/MM/yyyy or dd-MM-yyyy (e.g., 04/11/1993, 4-11-1993)
-    // eslint-disable-next-line no-useless-escape
-    const datePattern1 = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
-    
-    // Pattern 2: yyyy/MM/dd or yyyy-MM-dd (e.g., 1993/11/04, 1993-11-04)
-    // eslint-disable-next-line no-useless-escape
-    const datePattern2 = /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/;
-    
-    // Try pattern 1: dd/MM/yyyy or dd-MM-yyyy
-    let match = strValue.match(datePattern1);
-    if (match) {
-      const [, day, month, year] = match;
-      const d = parseInt(day, 10);
-      const m = parseInt(month, 10);
-      
-      // Validate day and month ranges
-      if (d >= 1 && d <= 31 && m >= 1 && m <= 12) {
-        return `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      }
-    }
-    
-    // Try pattern 2: yyyy/MM/dd or yyyy-MM-dd
-    match = strValue.match(datePattern2);
-    if (match) {
-      const [, year, month, day] = match;
-      const d = parseInt(day, 10);
-      const m = parseInt(month, 10);
-      
-      // Validate day and month ranges
-      if (d >= 1 && d <= 31 && m >= 1 && m <= 12) {
-        return `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      }
-    }
-    
-    // If no pattern matches, return as is
-    return strValue;
-  };
-
-  /**
-   * Parse roles from string (can be comma-separated for multiple roles)
-   */
-  const parseRoles = (rolesStr) => {
-    if (!rolesStr) return ['teacher']; // Default role as array
-    
-    const roleMap = {
-      'teacher': 'teacher',
-      'giảng viên': 'teacher',
-      'giang vien': 'teacher',
-      'admin': 'admin',
-      'quản trị viên': 'admin',
-      'quan tri vien': 'admin',
-      'attendance_staff': 'attendance_staff',
-      'nhân viên chấm công': 'attendance_staff',
-      'nhan vien cham cong': 'attendance_staff',
-      'ban chấm công': 'attendance_staff',
-      'ban cham cong': 'attendance_staff'
-    };
-    
-    // Split by comma for multiple roles
-    const roles = rolesStr.toLowerCase().split(',').map(r => r.trim());
-    const mappedRoles = roles
-      .map(r => roleMap[r])
-      .filter(r => r);
-    
-    // Return array of roles or default to teacher
-    return mappedRoles.length > 0 ? mappedRoles : ['teacher'];
-  };
-
-  /**
    * Download Excel template
    */
   const handleDownloadTemplate = () => {
     const templateData = [
-      ['Mã giảng viên', 'Họ và tên', 'Ngày sinh', 'Khoa/Viện', 'Email', 'Số điện thoại', 'Phân quyền'],
-      ['12312345', 'Nguyễn Văn Dũng', '1993-11-04', 'Khoa Công nghệ thông tin', 'nguyenvandung@iuh.edu.vn', '0123456789', 'teacher'],
-      ['12312346', 'Trần Quang Hà', '1993-11-04', 'Khoa Khoa học Cơ bản', 'tranquangha@iuh.edu.vn', '0123456790', 'teacher'],
-      ['12312347', 'IUH Admin', '1993-11-05', 'Khoa Khoa học Cơ bản', 'iuhadmin@iuh.edu.vn', '0123456791', 'attendance_staff, admin']
+      ['Mã phòng (Vd: X101), không trùng', 'Tên phòng (Vd X101)', 'Mô tả', 'Vị trí 1 x', 'Vị trí 1 y', 'Vị trí 2 x', 'Vị trí 2 y', 'Vị trí 3 x', 'Vị trí 3 y', 'Vị trí 4 x', 'Vị trí 4 y'],
+      ['T1002', 'T1002', 'Phòng lý thuyết', 10, 10, 12, 12, 13, 13, 14, 14],
+      ['T1003', 'T1003', 'Phòng lý thuyết', 10, 10, 12, 12, 13, 13, 14, 14],
+      ['B3.5', 'Phòng B3.5', 'Phòng giảng dạy', 10.5, 20.3, 20.5, 20.3, 20.5, 30.8, 10.5, 30.8],
+      ['A103', 'Phòng A103', 'Phòng thực hành', 30.0, 40.0, 40.0, 40.0, 40.0, 50.0, 30.0, 50.0]
     ];
     
     const ws = XLSX.utils.aoa_to_sheet(templateData);
     
     // Set column widths
     ws['!cols'] = [
-      { wch: 15 }, // Mã giảng viên
-      { wch: 25 }, // Họ và tên
-      { wch: 12 }, // Ngày sinh
-      { wch: 30 }, // Khoa/Viện
-      { wch: 30 }, // Email
-      { wch: 15 }, // Số điện thoại
-      { wch: 20 }  // Phân quyền
+      { wch: 30 }, // Mã phòng
+      { wch: 20 }, // Tên phòng
+      { wch: 25 }, // Mô tả
+      { wch: 10 }, // Vị trí 1 x
+      { wch: 10 }, // Vị trí 1 y
+      { wch: 10 }, // Vị trí 2 x
+      { wch: 10 }, // Vị trí 2 y
+      { wch: 10 }, // Vị trí 3 x
+      { wch: 10 }, // Vị trí 3 y
+      { wch: 10 }, // Vị trí 4 x
+      { wch: 10 }  // Vị trí 4 y
     ];
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
     
-    XLSX.writeFile(wb, 'Template_Import_Personnel.xlsx');
+    XLSX.writeFile(wb, 'Template_Import_Rooms.xlsx');
     toast.success("Đã tải xuống file mẫu");
   };
 
@@ -298,11 +213,11 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
     }
 
     const errorData = [
-      ['STT', 'Mã giảng viên', 'Email', 'Lỗi'],
+      ['STT', 'Mã phòng', 'Tên phòng', 'Lỗi'],
       ...uploadResult.errors.map((error, index) => [
         index + 1,
-        error.code || '',
-        error.email || '',
+        error.room_code || '',
+        error.room_name || '',
         error.error || ''
       ])
     ];
@@ -312,8 +227,8 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
     // Set column widths
     ws['!cols'] = [
       { wch: 5 },  // STT
-      { wch: 15 }, // Mã
-      { wch: 30 }, // Email
+      { wch: 15 }, // Mã phòng
+      { wch: 25 }, // Tên phòng
       { wch: 50 }  // Lỗi
     ];
 
@@ -321,7 +236,7 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
     XLSX.utils.book_append_sheet(wb, ws, 'Lỗi Upload');
     
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    XLSX.writeFile(wb, `Loi_Upload_Personnel_${timestamp}.xlsx`);
+    XLSX.writeFile(wb, `Loi_Upload_Rooms_${timestamp}.xlsx`);
     toast.success("Đã tải xuống file lỗi");
   };
 
@@ -349,10 +264,10 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-lime-100">
           <div>
             <h3 className="text-xl font-semibold text-gray-800">
-              Upload danh sách nhân sự
+              Upload danh sách phòng học
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Tải lên file Excel để thêm nhiều giảng viên cùng lúc
+              Tải lên file Excel để thêm nhiều phòng học cùng lúc
             </p>
           </div>
           <button
@@ -377,20 +292,18 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
               </p>
               <ul className="text-sm text-blue-800 mb-4 list-disc list-inside space-y-2 leading-relaxed">
                 <li>
-                  <strong>Ngày sinh:</strong><br />
-                  dd-MM-yyyy, dd/MM/yyyy, yyyy-MM-dd<br />
-                  Ví dụ: 04-11-1993
+                  <strong>Mã phòng:</strong> Bắt buộc, không trùng (Vd: T1002, B3.5)
                 </li>
-
                 <li>
-                  <strong>Phân quyền:</strong><br />
-                  Nhiều quyền cách nhau bằng dấu phẩy<br />
-                  Ví dụ: attendance_staff (Bộ phận chấm công), admin(admin), teacher (Giảng viên)
+                  <strong>Tên phòng:</strong> Bắt buộc (Vd: Phòng lý thuyết)
                 </li>
-
                 <li>
-                  <strong>Quyền hợp lệ:</strong><br />
-                  teacher, admin, attendance_staff
+                  <strong>Tọa độ:</strong> 4 vị trí, mỗi vị trí có x và y<br />
+                  - X (longitude): từ -180 đến 180<br />
+                  - Y (latitude): từ -90 đến 90
+                </li>
+                <li>
+                  <strong>Mô tả:</strong> Tùy chọn
                 </li>
               </ul>
               <button
@@ -442,7 +355,7 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
                   <div>
                     <p className="font-medium text-gray-800">{file.name}</p>
                     <p className="text-sm text-gray-500">
-                      {(file.size / 1024).toFixed(1)} KB • {parsedData.length} bản ghi
+                      {(file.size / 1024).toFixed(1)} KB • {parsedData.length} phòng
                     </p>
                   </div>
                 </div>
@@ -463,39 +376,29 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
             <div>
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-600" />
-                Xem trước dữ liệu ({preview.length} / {parsedData.length} bản ghi)
+                Xem trước dữ liệu ({preview.length} / {parsedData.length} phòng)
               </h3>
               <div className="overflow-x-auto border border-gray-200 rounded-lg">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">Mã</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">Họ tên</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">Ngày sinh</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">Khoa/Viện</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">Email</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">SĐT</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-700">Vai trò</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Mã phòng</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Tên phòng</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Mô tả</th>
+                      <th className="px-4 py-2 text-left font-medium text-gray-700">Tọa độ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {preview.map((item, index) => (
                       <tr key={index} className="border-t border-gray-100 hover:bg-gray-50">
-                        <td className="px-4 py-2">{item.code}</td>
-                        <td className="px-4 py-2">{item.full_name}</td>
-                        <td className="px-4 py-2">{item.dob}</td>
-                        <td className="px-4 py-2 text-xs">{item.department}</td>
-                        <td className="px-4 py-2 text-xs">{item.email}</td>
-                        <td className="px-4 py-2">{item.phone}</td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 font-medium">{item.room_code}</td>
+                        <td className="px-4 py-2">{item.room_name}</td>
+                        <td className="px-4 py-2 text-xs">{item.description || '-'}</td>
+                        <td className="px-4 py-2 text-xs">
                           <div className="flex flex-wrap gap-1">
-                            {(item.roles || [item.role]).map((role, idx) => (
-                              <span key={idx} className={`px-2 py-1 rounded text-xs font-medium ${
-                                role === 'admin' ? 'bg-red-100 text-red-700' :
-                                role === 'attendance_staff' ? 'bg-green-100 text-green-700' :
-                                'bg-blue-100 text-blue-700'
-                              }`}>
-                                {role}
+                            {item.coordinates.map((coord, idx) => (
+                              <span key={idx} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                                {idx + 1}: ({coord.x}, {coord.y})
                               </span>
                             ))}
                           </div>
@@ -507,7 +410,7 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
               </div>
               {parsedData.length > 5 && (
                 <p className="text-sm text-gray-500 mt-2 text-center">
-                  ... và {parsedData.length - 5} bản ghi khác
+                  ... và {parsedData.length - 5} phòng khác
                 </p>
               )}
             </div>
@@ -533,11 +436,11 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
                     </h3>
                     <div className="text-sm space-y-1">
                       <p className="text-green-700">
-                        ✓ Thành công: <strong>{uploadResult.successCount}</strong> bản ghi
+                        ✓ Thành công: <strong>{uploadResult.successCount}</strong> phòng
                       </p>
                       {uploadResult.failCount > 0 && (
                         <p className="text-red-700">
-                          ✗ Thất bại: <strong>{uploadResult.failCount}</strong> bản ghi
+                          ✗ Thất bại: <strong>{uploadResult.failCount}</strong> phòng
                         </p>
                       )}
                     </div>
@@ -567,8 +470,8 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
                       <thead className="bg-red-50 sticky top-0">
                         <tr>
                           <th className="px-4 py-2 text-left font-medium text-gray-700 w-12">STT</th>
-                          <th className="px-4 py-2 text-left font-medium text-gray-700">Mã</th>
-                          <th className="px-4 py-2 text-left font-medium text-gray-700">Email</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-700">Mã phòng</th>
+                          <th className="px-4 py-2 text-left font-medium text-gray-700">Tên phòng</th>
                           <th className="px-4 py-2 text-left font-medium text-gray-700">Lỗi</th>
                         </tr>
                       </thead>
@@ -576,8 +479,8 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
                         {uploadResult.errors.map((error, index) => (
                           <tr key={index} className="border-t border-red-100 hover:bg-red-50">
                             <td className="px-4 py-2 text-gray-600">{index + 1}</td>
-                            <td className="px-4 py-2 font-mono text-xs">{error.code || '-'}</td>
-                            <td className="px-4 py-2 text-xs">{error.email || '-'}</td>
+                            <td className="px-4 py-2 font-mono text-xs">{error.room_code || '-'}</td>
+                            <td className="px-4 py-2 text-xs">{error.room_name || '-'}</td>
                             <td className="px-4 py-2 text-red-700 text-xs">{error.error}</td>
                           </tr>
                         ))}
@@ -633,7 +536,7 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
                   ) : (
                     <>
                       <Upload className="w-4 h-4" />
-                      Tải lên ({parsedData.length} bản ghi)
+                      Tải lên ({parsedData.length} phòng)
                     </>
                   )}
                 </button>
@@ -659,4 +562,4 @@ const ModalBulkUploadPersonnel = ({ open, onClose, onUpload }) => {
   );
 };
 
-export default ModalBulkUploadPersonnel;
+export default ModalBulkUploadRoom;

@@ -59,7 +59,7 @@ const ModalViewTeacher = ({ isOpen, onClose, teacherData }) => {
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col">
+      <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-in-right">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-purple-100">
           <h3 className="text-xl font-semibold text-gray-800">

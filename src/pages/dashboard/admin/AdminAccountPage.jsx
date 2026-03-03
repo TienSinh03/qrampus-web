@@ -7,7 +7,9 @@ import ModalEditUser from "../../../components/modal/ModalEditUser";
 import ModalViewUser from "../../../components/modal/ModalViewUser";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
 import ModalResetPassword from "../../../components/modal/ModalResetPassword";
+import ModalExportAccountExcel from "../../../components/modal/ModalExportAccountExcel";
 import userService from "../../../services/user.service";
+import { exportAccountsToExcel } from "../../../utils/excelExport";
 import LoadingSpinner from "@components/layout/LoadingSpinner";
 import EmptyState from "@components/layout/EmptyState";
 import { toast } from "sonner";
@@ -85,6 +87,7 @@ const AdminAccountPage = () => {
     isBulk: false,
     userData: null
   });
+  const [modalExportExcel, setModalExportExcel] = useState({ isOpen: false, data: [] });
 
   // Modal handlers
   const openEditUserModal = (user) => setModalEditUser({ isOpen: true, userData: user });
@@ -117,6 +120,59 @@ const AdminAccountPage = () => {
     });
     // Refresh data after reset
     fetchUsers();
+  };
+
+  // Export Excel handlers
+  const openExportExcelModal = async () => {
+    if (selectedCount === 0) {
+      toast.warning("Vui lòng chọn ít nhất 1 tài khoản để xuất dữ liệu");
+      return;
+    }
+
+    // Nếu chọn tất cả trang, fetch toàn bộ rồi lọc bỏ excluded
+    if (selectAllPages) {
+      try {
+        const params = {
+          page: 1,
+          limit: pagination.total,
+        };
+        if (filters.search) params.search = filters.search;
+        if (filters.code) params.search = filters.code;
+        if (filters.fullName) params.search = filters.fullName;
+        if (filters.email) params.email = filters.email;
+        if (filters.status) params.status = filters.status;
+        if (filters.type) params.type = filters.type;
+        if (filters.department) params.department = filters.department;
+        if (filters.phone) params.phone = filters.phone;
+        if (filters.dob) params.dob = filters.dob;
+
+        const response = await userService.getAdminUsers(params);
+        if (response && response.data && response.data.users) {
+          const allUsers = (response.data.users || []).filter(u => !excludedIds.includes(u.id));
+          setModalExportExcel({ isOpen: true, data: allUsers });
+        }
+      } catch (error) {
+        toast.error("Không thể tải danh sách tài khoản để xuất.");
+      }
+      return;
+    }
+
+    // Lấy dữ liệu user đã chọn (trang hiện tại)
+    const selectedUsers = users.filter(u => selectedIds.includes(u.id));
+    setModalExportExcel({ isOpen: true, data: selectedUsers });
+  };
+
+  const closeExportExcelModal = () => setModalExportExcel({ isOpen: false, data: [] });
+
+  const handleExportExcel = ({ selectedColumns, filename }) => {
+    try {
+      exportAccountsToExcel(modalExportExcel.data, filename, selectedColumns);
+      toast.success(`Đã xuất ${modalExportExcel.data.length} tài khoản ra file Excel thành công`);
+      closeExportExcelModal();
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Không thể xuất file Excel. Vui lòng thử lại!");
+    }
   };
 
   const handleResetPassword = async (password) => {
@@ -692,8 +748,17 @@ const AdminAccountPage = () => {
                     {loading ? <LoadingSpinner size="sm" color="blue" /> : <FileSearchIcon className="w-5 h-5" />}
                   </button>
 
-                  <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 transition-all duration-200" title="Tải file excel">
+                  <button
+                    onClick={openExportExcelModal}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedCount > 0
+                        ? "border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:shadow-md focus:ring-teal-500"
+                        : "border-teal-500 text-teal-500 hover:bg-teal-100 hover:shadow-md focus:ring-teal-500"
+                    }`}
+                    title={selectedCount > 0 ? `Xuất ${selectedCount} tài khoản đã chọn` : "Chọn tài khoản để xuất excel"}
+                  >
                     <FileSpreadsheet className="w-5 h-5" />
+                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
                   </button>
 
                   <button
@@ -931,6 +996,12 @@ const AdminAccountPage = () => {
               userIds={modalResetPassword.userIds}
               isBulk={modalResetPassword.isBulk}
               userData={modalResetPassword.userData}
+            />
+
+            <ModalExportAccountExcel
+              isOpen={modalExportExcel.isOpen}
+              onClose={closeExportExcelModal}
+              onExport={handleExportExcel}
             />
 
             {/* OLD DRAWER REMOVED - Now using ModalEditUser */}

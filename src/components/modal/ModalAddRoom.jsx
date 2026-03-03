@@ -1,49 +1,161 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import { toast } from "sonner";
+import roomService from "../../services/room.service";
+import {
+  validateRoomCode,
+  validateRoomName,
+  validateCoordinates,
+  validateDescription,
+} from "../../utils/validation/roomValidation";
 
 const ModalAddRoom = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
-    ma_phong: "",
-    ten_phong: "",
-    x1: "",
-    y1: "",
-    x2: "",
-    y2: "",
-    x3: "",
-    y3: "",
-    x4: "",
-    y4: "",
-    trang_thai: 1,
+    room_code: "",
+    room_name: "",
+    description: "",
+    coordinates: [
+      { x: "", y: "" },
+      { x: "", y: "" },
+      { x: "", y: "" },
+      { x: "", y: "" },
+    ],
+    is_active: true,
   });
+
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
-  const handleSubmit = () => {
-    // Validate and submit logic
-    if (onSubmit) {
-      onSubmit(formData);
+  const handleCoordinateChange = (index, field, value) => {
+    const newCoordinates = [...formData.coordinates];
+    newCoordinates[index] = {
+      ...newCoordinates[index],
+      [field]: value,
+    };
+    setFormData((prev) => ({ ...prev, coordinates: newCoordinates }));
+    
+    // Clear coordinate error when user types
+    if (errors.coordinates) {
+      setErrors((prev) => ({ ...prev, coordinates: "" }));
     }
-    handleReset();
-    onClose();
+  };
+
+  const handleBlur = (field) => {
+    let error = "";
+    
+    switch (field) {
+      case "room_code":
+        error = validateRoomCode(formData.room_code);
+        break;
+      case "room_name":
+        error = validateRoomName(formData.room_name);
+        break;
+      case "description":
+        error = validateDescription(formData.description);
+        break;
+      default:
+        break;
+    }
+    
+    if (error) {
+      setErrors((prev) => ({ ...prev, [field]: error }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    const roomCodeError = validateRoomCode(formData.room_code);
+    if (roomCodeError) newErrors.room_code = roomCodeError;
+    
+    const roomNameError = validateRoomName(formData.room_name);
+    if (roomNameError) newErrors.room_name = roomNameError;
+    
+    // Convert coordinates to proper format for validation
+    const coordsForValidation = formData.coordinates.map(coord => ({
+      x: coord.x === "" ? NaN : parseFloat(coord.x),
+      y: coord.y === "" ? NaN : parseFloat(coord.y),
+    }));
+    
+    const coordinatesError = validateCoordinates(coordsForValidation);
+    if (coordinatesError) newErrors.coordinates = coordinatesError;
+    
+    const descriptionError = validateDescription(formData.description);
+    if (descriptionError) newErrors.description = descriptionError;
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      toast.error("Vui lòng kiểm tra lại thông tin!");
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Convert coordinates to proper format
+      const coordinates = formData.coordinates.map(coord => ({
+        x: parseFloat(coord.x),
+        y: parseFloat(coord.y),
+      }));
+      
+      const payload = {
+        room_code: formData.room_code.trim(),
+        room_name: formData.room_name.trim(),
+        coordinates,
+        description: formData.description?.trim() || "",
+        is_active: formData.is_active,
+      };
+      
+      const response = await roomService.createRoom(payload);
+      
+      if (response && response.success) {
+        toast.success("Thêm phòng học thành công!");
+        handleReset();
+        onClose();
+        
+        // Call parent callback to refresh list
+        if (onSubmit) {
+          onSubmit(response.data);
+        }
+      } else {
+        toast.error(response?.message || "Không thể thêm phòng học");
+      }
+    } catch (error) {
+      console.error("Error creating room:", error);
+      toast.error(error.message || "Đã có lỗi xảy ra khi thêm phòng học");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReset = () => {
     setFormData({
-      ma_phong: "",
-      ten_phong: "",
-      x1: "",
-      y1: "",
-      x2: "",
-      y2: "",
-      x3: "",
-      y3: "",
-      x4: "",
-      y4: "",
-      trang_thai: 1,
+      room_code: "",
+      room_name: "",
+      description: "",
+      coordinates: [
+        { x: "", y: "" },
+        { x: "", y: "" },
+        { x: "", y: "" },
+        { x: "", y: "" },
+      ],
+      is_active: true,
     });
+    setErrors({});
   };
 
   if (!isOpen) return null;
@@ -57,7 +169,7 @@ const ModalAddRoom = ({ isOpen, onClose, onSubmit }) => {
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col">
+      <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-in-right">
         {/* Header Drawer */}
         <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-cyan-100">
           <div>
@@ -82,12 +194,18 @@ const ModalAddRoom = ({ isOpen, onClose, onSubmit }) => {
               </label>
               <input
                 type="text"
-                name="ma_phong"
-                value={formData.ma_phong}
+                name="room_code"
+                value={formData.room_code}
                 onChange={handleChange}
-                placeholder="Ví dụ: B1.04"
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                onBlur={() => handleBlur("room_code")}
+                placeholder="Ví dụ: B1.04 hoặc T1.10"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${
+                  errors.room_code ? "border-red-500 focus:ring-red-500" : "focus:ring-cyan-500"
+                }`}
               />
+              {errors.room_code && (
+                <p className="text-red-500 text-xs mt-1">{errors.room_code}</p>
+              )}
             </div>
             
             <div>
@@ -96,148 +214,85 @@ const ModalAddRoom = ({ isOpen, onClose, onSubmit }) => {
               </label>
               <input
                 type="text"
-                name="ten_phong"
-                value={formData.ten_phong}
+                name="room_name"
+                value={formData.room_name}
                 onChange={handleChange}
-                placeholder="Ví dụ: Phòng B1.04"
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                onBlur={() => handleBlur("room_name")}
+                placeholder="Ví dụ: Phòng A101 - Giảng đường"
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${
+                  errors.room_name ? "border-red-500 focus:ring-red-500" : "focus:ring-cyan-500"
+                }`}
               />
+              {errors.room_name && (
+                <p className="text-red-500 text-xs mt-1">{errors.room_name}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mô tả
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                onBlur={() => handleBlur("description")}
+                placeholder="Ví dụ: Phòng giảng dạy 50 chỗ ngồi"
+                rows={3}
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${
+                  errors.description ? "border-red-500 focus:ring-red-500" : "focus:ring-cyan-500"
+                }`}
+              />
+              {errors.description && (
+                <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+              )}
             </div>
 
             <div className="border-t pt-4 mt-2">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                Tọa độ điểm 1
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    X1
-                  </label>
-                  <input
-                    type="text"
-                    name="x1"
-                    value={formData.x1}
-                    onChange={handleChange}
-                    placeholder="10,0"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Y1
-                  </label>
-                  <input
-                    type="text"
-                    name="y1"
-                    value={formData.y1}
-                    onChange={handleChange}
-                    placeholder="10,5"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-gray-700">
+                  Tọa độ 4 điểm <span className="text-red-500">*</span>
+                </h4>
+                {errors.coordinates && (
+                  <p className="text-red-500 text-xs">{errors.coordinates}</p>
+                )}
               </div>
-            </div>
-
-            <div className="border-t pt-4 mt-2">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                Tọa độ điểm 2
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    X2
-                  </label>
-                  <input
-                    type="text"
-                    name="x2"
-                    value={formData.x2}
-                    onChange={handleChange}
-                    placeholder="30,5"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
+              
+              {[0, 1, 2, 3].map((index) => (
+                <div key={index} className="mb-4 pb-4 border-b last:border-b-0">
+                  <h5 className="text-xs font-medium text-gray-600 mb-2">
+                    Điểm {index + 1}
+                  </h5>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        X{index + 1} (Longitude: -180 đến 180)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={formData.coordinates[index].x}
+                        onChange={(e) => handleCoordinateChange(index, "x", e.target.value)}
+                        placeholder="10.5"
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Y{index + 1} (Latitude: -90 đến 90)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={formData.coordinates[index].y}
+                        onChange={(e) => handleCoordinateChange(index, "y", e.target.value)}
+                        placeholder="20.3"
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Y2
-                  </label>
-                  <input
-                    type="text"
-                    name="y2"
-                    value={formData.y2}
-                    onChange={handleChange}
-                    placeholder="10,0"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t pt-4 mt-2">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                Tọa độ điểm 3
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    X3
-                  </label>
-                  <input
-                    type="text"
-                    name="x3"
-                    value={formData.x3}
-                    onChange={handleChange}
-                    placeholder="30,0"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Y3
-                  </label>
-                  <input
-                    type="text"
-                    name="y3"
-                    value={formData.y3}
-                    onChange={handleChange}
-                    placeholder="0,0"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t pt-4 mt-2">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                Tọa độ điểm 4
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    X4
-                  </label>
-                  <input
-                    type="text"
-                    name="x4"
-                    value={formData.x4}
-                    onChange={handleChange}
-                    placeholder="10,0"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Y4
-                  </label>
-                  <input
-                    type="text"
-                    name="y4"
-                    value={formData.y4}
-                    onChange={handleChange}
-                    placeholder="0,5"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                </div>
-              </div>
+              ))}
             </div>
 
             <div className="border-t pt-4 mt-2">
@@ -245,13 +300,13 @@ const ModalAddRoom = ({ isOpen, onClose, onSubmit }) => {
                 Trạng thái
               </label>
               <select
-                name="trang_thai"
-                value={formData.trang_thai}
-                onChange={handleChange}
+                name="is_active"
+                value={formData.is_active}
+                onChange={(e) => setFormData((prev) => ({ ...prev, is_active: e.target.value === "true" }))}
                 className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                <option value={1}>Hoạt động</option>
-                <option value={0}>Không hoạt động</option>
+                <option value="true">Hoạt động</option>
+                <option value="false">Không hoạt động</option>
               </select>
             </div>
 
@@ -263,21 +318,31 @@ const ModalAddRoom = ({ isOpen, onClose, onSubmit }) => {
           <button
             type="button"
             onClick={handleReset}
-            className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+            disabled={loading}
+            className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Đặt lại
           </button>
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+            disabled={loading}
+            className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Hủy
           </button>
           <button
             onClick={handleSubmit}
-            className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 shadow-md transition-colors"
+            disabled={loading}
+            className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Thêm phòng
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Đang thêm...
+              </>
+            ) : (
+              "Thêm phòng"
+            )}
           </button>
         </div>
       </div>

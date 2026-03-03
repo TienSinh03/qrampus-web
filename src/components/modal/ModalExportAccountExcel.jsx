@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { X, Download } from "lucide-react";
 
-const ModalExportExcel = ({ 
+const ModalExportAccountExcel = ({ 
   isOpen, 
   onClose, 
   onExport,
@@ -9,8 +9,7 @@ const ModalExportExcel = ({
 }) => {
   const availableColumns = [
     { key: 'stt', label: 'STT', enabled: true, fixed: true },
-    { key: 'student_code', label: 'MSSV', enabled: true },
-    { key: 'teacher_code', label: 'Mã nhân sự', enabled: true },
+    { key: 'code', label: 'Mã GV/SV', enabled: true },
     { key: 'full_name', label: 'Họ và tên', enabled: true },
     { key: 'email', label: 'Email', enabled: true },
     { key: 'phone', label: 'Số điện thoại', enabled: true },
@@ -18,7 +17,6 @@ const ModalExportExcel = ({
     { key: 'department', label: 'Khoa/Viện', enabled: true },
     { key: 'roles', label: 'Vai trò', enabled: true },
     { key: 'status', label: 'Trạng thái', enabled: true },
-    { key: 'user_name', label: 'Username', enabled: true },
   ];
 
   const [selectedColumns, setSelectedColumns] = useState(
@@ -27,7 +25,7 @@ const ModalExportExcel = ({
       : availableColumns.filter(col => col.enabled).map(col => col.key)
   );
   
-  const [filename, setFilename] = useState(`danh_sach_${new Date().toISOString().split('T')[0]}`);
+  const [filename, setFilename] = useState(`danh_sach_tai_khoan_${new Date().toISOString().split('T')[0]}`);
 
   if (!isOpen) return null;
 
@@ -194,4 +192,4 @@ const ModalExportExcel = ({
   );
 };
 
-export default ModalExportExcel;
+export default ModalExportAccountExcel;
