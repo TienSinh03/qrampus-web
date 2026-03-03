@@ -9,4 +9,7 @@ export const USER_ENDPOINTS = {
   PROFILE: `${API_VERSION}/users/profile`,
   ACTIVATE: (username) => `${API_VERSION}/admin/users/${username}/activate`,
   BULK_ACTIVATE: `${API_VERSION}/admin/users/bulk/activate`,
+  ADMIN_USERS: `${API_VERSION}/admin/users`,
+  RESET_PASSWORD: (id) => `${API_VERSION}/admin/users/${id}/reset-password`,
+  BULK_RESET_PASSWORD: `${API_VERSION}/admin/users/bulk/reset-password`,
 };

@@ -76,9 +76,9 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+        <div className="h-1 bg-gradient-to-r from-[#224397] to-[#224397]" />
 
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           {/* Logo */}
@@ -188,11 +188,9 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:scale-[1.02] transition disabled:opacity-50"
+              className="w-full bg-blue-800 hover:bg-blue-900 text-white py-3 rounded-lg font-semibold transition-all shadow-sm active:scale-[0.98] disabled:opacity-50"
             >
-              {isLoading
-                ? t('auth.loggingIn')
-                : t('auth.loginButton')}
+              {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
             </button>
           </form>
 

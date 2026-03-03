@@ -63,6 +63,19 @@ class UserService {
   }
 
   /**
+   * Admin: get paginated account list (students + personnel) with roles
+   * @param {Object} params - { page, limit, search, status, type }
+   */
+  async getAdminUsers(params = {}) {
+    try {
+      const response = await axiosClient.get(USER_ENDPOINTS.ADMIN_USERS, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Create new user
    * @param {Object} userData - User data
    * @returns {Promise} Created user
@@ -128,6 +141,41 @@ class UserService {
     try {
       const response = await axiosClient.put(USER_ENDPOINTS.BULK_ACTIVATE, {
         user_names: usernames
+      });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Reset password for a single user
+   * @param {string} userId - User ID
+   * @param {string} password - New password (optional, defaults to 12345678)
+   * @returns {Promise} Reset result
+   */
+  async resetPassword(userId, password) {
+    try {
+      const response = await axiosClient.post(USER_ENDPOINTS.RESET_PASSWORD(userId), {
+        password
+      });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Bulk reset password for multiple users
+   * @param {Array<string>} userIds - Array of user IDs
+   * @param {string} password - New password (optional, defaults to 12345678)
+   * @returns {Promise} Results with success/failure info
+   */
+  async bulkResetPassword(userIds, password) {
+    try {
+      const response = await axiosClient.post(USER_ENDPOINTS.BULK_RESET_PASSWORD, {
+        user_ids: userIds,
+        password
       });
       return response;
     } catch (error) {

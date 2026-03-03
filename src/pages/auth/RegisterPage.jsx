@@ -61,9 +61,9 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+        <div className="h-1 bg-gradient-to-r from-[#224397] to-[#224397]" />
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
           {/* Logo & Title */}
           <div className="text-center space-y-2">
@@ -87,7 +87,7 @@ const RegisterPage = () => {
                   name="manhasu"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition`}
+                  className={`w-full pl-10 pr-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                   placeholder="012345"
                 />
               </div>
@@ -104,7 +104,7 @@ const RegisterPage = () => {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition`}
+                  className={`w-full pl-10 pr-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                   placeholder="Nguyễn Văn A"
                 />
               </div>
@@ -121,7 +121,7 @@ const RegisterPage = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition`}
+                  className={`w-full pl-10 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                   placeholder="example@email.com"
                 />
               </div>
@@ -138,7 +138,7 @@ const RegisterPage = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition`}
+                  className={`w-full pl-10 pr-12 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                   placeholder="••••••••"
                 />
                 <button
@@ -162,7 +162,7 @@ const RegisterPage = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition`}
+                  className={`w-full pl-10 pr-12 py-3 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                   placeholder="••••••••"
                 />
                 <button
@@ -180,10 +180,12 @@ const RegisterPage = () => {
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-blue-700 transform hover:scale-[1.02] transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-blue-800 hover:bg-blue-900 text-white py-3 rounded-lg font-semibold transition-all shadow-sm active:scale-[0.98] disabled:opacity-50"
             >
               {isLoading ? t('auth.registering') : t('auth.registerButton')}
             </button>
+
+            
           </div>
 
           <div className="relative">
@@ -201,7 +203,7 @@ const RegisterPage = () => {
               {t('auth.haveAccount')}{' '}
               <button
                 onClick={() => navigate('/login')}
-                className="text-purple-600 hover:text-purple-700 font-semibold"
+                className="text-blue-800 hover:text-blue-900 font-semibold"
               >
                 {t('auth.loginNow')}
               </button>

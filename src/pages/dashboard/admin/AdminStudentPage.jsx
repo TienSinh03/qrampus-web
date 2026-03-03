@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
-import ModalUpload from "../../../components/common/ModalUpload";
+import ModalBulkUploadStudent from "../../../components/modal/ModalBulkUploadStudent";
 import ModalAddStudent from "../../../components/modal/ModalAddStudent";
 import ModalEditStudent from "../../../components/modal/ModalEditStudent";
 import ModalViewStudent from "../../../components/modal/ModalViewStudent";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import ModalExportExcel from "../../../components/modal/ModalExportExcel";
 import studentService from "../../../services/student.service";
+import { exportPersonnelToExcel } from "../../../utils/excelExport";
 import userService from "../../../services/user.service";
 import { toast } from "sonner";
 import {
@@ -53,8 +55,10 @@ const AdminStudentPage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
-  // const [checked, setChecked] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectAllPages, setSelectAllPages] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
+  const [modalExportExcel, setModalExportExcel] = useState({ isOpen: false, data: [] });
 
   // Modal states
   const [modalAddStudent, setModalAddStudent] = useState(false);
@@ -101,6 +105,86 @@ const AdminStudentPage = () => {
     setModalConfirmAction({ isOpen: true, actionType, title, message, confirmText, onConfirm });
   };
   const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
+
+  const openExportStudentsModal = async () => {
+    if (selectedCount === 0) {
+      toast.warning("Vui lòng chọn ít nhất 1 sinh viên để xuất dữ liệu");
+      return;
+    }
+
+    // Nếu chọn tất cả trang, fetch toàn bộ rồi lọc bỏ excluded
+    if (selectAllPages) {
+      try {
+        const params = {
+          page: 1,
+          limit: pagination.total,
+        };
+        if (filters.search) params.search = filters.search;
+        if (filters.studentCode) params.search = filters.studentCode;
+        if (filters.fullName) params.search = filters.fullName;
+        if (filters.department) params.major = filters.department;
+        if (filters.status) params.status = filters.status;
+        if (filters.email) params.email = filters.email;
+        if (filters.phone) params.phone = filters.phone;
+        if (filters.dob) params.dob = filters.dob;
+
+        const response = await studentService.getAllStudents(params);
+        if (response.success && response.data) {
+          const allStudents = (Array.isArray(response.data) ? response.data : []).filter(s => !excludedIds.includes(s.id));
+          setModalExportExcel({ isOpen: true, data: allStudents });
+        }
+      } catch (error) {
+        toast.error("Không thể tải danh sách sinh viên để xuất.");
+      }
+      return;
+    }
+
+    // Lấy dữ liệu sinh viên đã chọn (trang hiện tại)
+    const selectedStudents = students.filter(s => selectedIds.includes(s.id));
+    setModalExportExcel({ isOpen: true, data: selectedStudents });
+  };
+
+  const closeExportStudentsModal = () => setModalExportExcel({ isOpen: false, data: [] });
+
+  const handleExportStudents = ({ selectedColumns, filename }) => {
+    try {
+      exportPersonnelToExcel(modalExportExcel.data, filename, selectedColumns);
+      toast.success(`Đã xuất ${modalExportExcel.data.length} sinh viên ra file Excel thành công`);
+      closeExportStudentsModal();
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Không thể xuất file Excel. Vui lòng thử lại!");
+    }
+  };
+
+  const handleBulkUpload = async (studentList) => {
+    try {
+      console.log("Bulk upload students:", studentList);
+
+      const response = await studentService.bulkCreateStudents(studentList);
+
+      if (response.success) {
+        const { successCount, failCount } = response.data;
+
+        if (failCount > 0) {
+          toast.warning(
+            `Đã thêm ${successCount} sinh viên thành công. ${failCount} bản ghi lỗi.`,
+            { duration: 5000, description: 'Vui lòng xem chi tiết lỗi trong modal và tải xuống file lỗi.' }
+          );
+        } else {
+          toast.success(`Đã thêm ${successCount} sinh viên thành công!`);
+          setTimeout(() => setOpenUpload(false), 2000);
+        }
+
+        fetchStudents();
+        return response;
+      }
+    } catch (error) {
+      console.error("Error bulk creating students:", error);
+      toast.error(error.message || "Không thể tải lên danh sách sinh viên. Vui lòng thử lại!");
+      throw error;
+    }
+  };
 
   const handleAddStudent = async (formData) => {
     try {
@@ -181,7 +265,17 @@ const AdminStudentPage = () => {
   // Fetch khi trang thay đổi
   useEffect(() => {
     fetchStudents();
+    if (!selectAllPages) {
+      setSelectedIds([]);
+    }
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Khi selectAllPages = true và dữ liệu trang mới load xong, tự động chọn tất cả trên trang đó (trừ excluded)
+  useEffect(() => {
+    if (selectAllPages && students.length > 0) {
+      setSelectedIds(students.filter(s => !excludedIds.includes(s.id)).map(s => s.id));
+    }
+  }, [students]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle filter
   const handleFilterChange = (key, value) => {
@@ -196,6 +290,9 @@ const AdminStudentPage = () => {
   const handleClearFilters = () => {
     setFilters({ search: "", studentCode: "", fullName: "", department: "", status: "", email: "", phone: "", dob: "" });
     setCurrentPage(1);
+    setSelectedIds([]);
+    setSelectAllPages(false);
+    setExcludedIds([]);
     setTimeout(() => fetchStudents(), 100);
   };
 
@@ -244,19 +341,38 @@ const AdminStudentPage = () => {
   // Checkbox handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(students.map(item => item.id));
+      const pageIds = students.map(item => item.id);
+      setSelectedIds(pageIds);
+      if (selectAllPages) {
+        setExcludedIds(excludedIds.filter(id => !pageIds.includes(id)));
+      }
     } else {
       setSelectedIds([]);
+      setSelectAllPages(false);
+      setExcludedIds([]);
     }
   };
 
   const handleSelectOne = (id) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    if (selectAllPages) {
+      if (excludedIds.includes(id)) {
+        setExcludedIds(excludedIds.filter(eid => eid !== id));
+        setSelectedIds([...selectedIds, id]);
+      } else {
+        setExcludedIds([...excludedIds, id]);
+        setSelectedIds(selectedIds.filter(sid => sid !== id));
+      }
     } else {
-      setSelectedIds([...selectedIds, id]);
+      if (selectedIds.includes(id)) {
+        setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+      } else {
+        setSelectedIds([...selectedIds, id]);
+      }
     }
   };
+
+  // Số lượng thực sự đang được chọn
+  const selectedCount = selectAllPages ? pagination.total - excludedIds.length : selectedIds.length;
 
   const isAllSelected = students.length > 0 && selectedIds.length === students.length;
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < students.length;
@@ -462,13 +578,32 @@ const AdminStudentPage = () => {
 
                   <button
                     onClick={async () => {
-                      if (selectedIds.length === 0) {
+                      if (selectedCount === 0) {
                         toast.warning("Vui lòng chọn ít nhất 1 sinh viên để khóa/mở khóa");
                         return;
                       }
 
-                      const selectedStudents = students.filter(s => selectedIds.includes(s.id));
-                      const usernames = selectedStudents.map(s => s.user?.user_name).filter(Boolean);
+                      let usernames = [];
+                      if (selectAllPages) {
+                        try {
+                          const params = { page: 1, limit: pagination.total };
+                          if (filters.department) params.major = filters.department;
+                          if (filters.status) params.status = filters.status;
+                          const res = await studentService.getAllStudents(params);
+                          if (res.success && res.data) {
+                            usernames = (Array.isArray(res.data) ? res.data : [])
+                              .filter(s => !excludedIds.includes(s.id))
+                              .map(s => s.user?.user_name)
+                              .filter(Boolean);
+                          }
+                        } catch {
+                          toast.error("Không thể tải danh sách để khóa/mở khóa");
+                          return;
+                        }
+                      } else {
+                        const selectedStudents = students.filter(s => selectedIds.includes(s.id));
+                        usernames = selectedStudents.map(s => s.user?.user_name).filter(Boolean);
+                      }
 
                       if (usernames.length === 0) {
                         toast.error("Không tìm thấy user_name cho các tài khoản đã chọn");
@@ -491,6 +626,8 @@ const AdminStudentPage = () => {
                                 toast.success(`Đã cập nhật ${successCount} tài khoản thành công!`);
                               }
                               setSelectedIds([]);
+                              setSelectAllPages(false);
+                              setExcludedIds([]);
                               fetchStudents();
                             }
                           } catch (error) {
@@ -501,14 +638,14 @@ const AdminStudentPage = () => {
                       );
                     }}
                     className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
-                      selectedIds.length > 0
+                      selectedCount > 0
                         ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700 hover:shadow-md focus:ring-amber-500"
                         : "border-amber-400 text-amber-400 hover:bg-amber-100 hover:shadow-md focus:ring-amber-500"
                     }`}
-                    title={selectedIds.length > 0 ? `Khóa/Mở khóa ${selectedIds.length} mục đã chọn` : "Chọn sinh viên để khóa/mở khóa"}
+                    title={selectedCount > 0 ? `Khóa/Mở khóa ${selectedCount} mục đã chọn` : "Chọn sinh viên để khóa/mở khóa"}
                   >
                     <LockKeyhole className="w-5 h-5" />
-                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
+                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
                   </button>
 
                   <button
@@ -533,20 +670,16 @@ const AdminStudentPage = () => {
                   </button>
 
                   <button
-                    onClick={() => {
-                      if (selectedIds.length === 0) return;
-                      console.log("Export selected:", selectedIds);
-                      toast.success(`Đã xuất ${selectedIds.length} sinh viên thành công`);
-                    }}
+                    onClick={openExportStudentsModal}
                     className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
-                      selectedIds.length > 0
+                      selectedCount > 0
                         ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md focus:ring-emerald-500"
                         : "border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500"
                     }`}
-                    title={selectedIds.length > 0 ? `Xuất ${selectedIds.length} mục đã chọn` : "Chọn sinh viên để xuất excel"}
+                    title={selectedCount > 0 ? `Xuất ${selectedCount} mục đã chọn` : "Chọn sinh viên để xuất excel"}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
-                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
+                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
                   </button>
 
                   <button
@@ -568,6 +701,30 @@ const AdminStudentPage = () => {
               </div>
             </div>
 
+
+            {/* Select all pages banner */}
+            {isAllSelected && !selectAllPages && pagination.total > students.length && (
+              <div className="bg-blue-50 border-x border-b border-blue-200 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedIds.length}</strong> sinh viên trên trang này.{" "}
+                <button
+                  onClick={() => setSelectAllPages(true)}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Chọn tất cả {pagination.total} sinh viên trong tất cả trang
+                </button>
+              </div>
+            )}
+            {selectAllPages && (
+              <div className="bg-blue-100 border-x border-b border-blue-300 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedCount}</strong> sinh viên trong tất cả trang.{" "}
+                <button
+                  onClick={() => { setSelectAllPages(false); setSelectedIds([]); setExcludedIds([]); }}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Bỏ chọn tất cả
+                </button>
+              </div>
+            )}
 
             {/* TABLE */}
             <div className="w-full overflow-x-auto bg-white shadow mb-6">
@@ -708,7 +865,11 @@ const AdminStudentPage = () => {
             </div>
 
             {/* MODALS */}
-            <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
+            <ModalBulkUploadStudent
+              open={openUpload}
+              onClose={() => setOpenUpload(false)}
+              onUpload={handleBulkUpload}
+            />
             
             <ModalAddStudent
               isOpen={modalAddStudent}
@@ -739,7 +900,12 @@ const AdminStudentPage = () => {
               onConfirm={modalConfirmAction.onConfirm}
             />
 
-            {/* OLD DRAWER REMOVED */}
+            <ModalExportExcel
+              isOpen={modalExportExcel.isOpen}
+              onClose={closeExportStudentsModal}
+              personnels={modalExportExcel.data}
+              onExport={handleExportStudents}
+            />
           </div>
         </div>
       </div>

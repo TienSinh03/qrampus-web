@@ -60,7 +60,7 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 mb-6" />
+        <div className="h-1 bg-[#153898] mb-6" />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Dashboard Quản trị</h1>

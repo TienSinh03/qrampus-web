@@ -58,7 +58,7 @@ const AdminQRDetailPage = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Top accent */}
-            <div className="h-1 bg-gradient-to-r from-blue-600 to-indigo-600" />
+            <div className="h-1 bg-[#153898] mb-6" />
 
             {/* ================= GIẢNG VIÊN ================= */}
             <div className="bg-white shadow-lg p-6 md:p-8">

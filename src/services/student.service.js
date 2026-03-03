@@ -96,6 +96,21 @@ class StudentService {
   }
 
   /**
+   * Bulk create students from Excel upload
+   * POST /api/v1/students/bulk
+   * @param {Array} studentsList - Array of student objects
+   * @returns {Promise} Bulk creation result with successCount, failCount, errors
+   */
+  async bulkCreateStudents(studentsList) {
+    try {
+      const response = await axiosClient.post(STUDENT_ENDPOINTS.BULK, studentsList);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Delete student
    * @param {string} studentId - Student ID
    * @returns {Promise} Deletion result

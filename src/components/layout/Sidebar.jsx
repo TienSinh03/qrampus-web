@@ -234,7 +234,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             relative flex items-center 
             ${isCollapsed ? 'justify-center' : 'justify-between'} 
             px-4 py-4 border-b 
-            bg-gradient-to-r from-blue-500 to-indigo-500
+            bg-[#153898]
           `}>
             {/* Logo */}
             {isCollapsed ? (
@@ -282,7 +282,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           {!isCollapsed && (
             <div className="px-5 py-4 border-b">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow">
+                <div className="w-11 h-11 rounded-full bg-[#153898] flex items-center justify-center text-white font-bold text-lg shadow">
                   {user?.user_name?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
 
@@ -297,14 +297,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                           key={role}
                           className={`
                             text-[10px] px-2 py-0.5 rounded-full font-medium
-                            ${role === ROLES.ADMIN ? 'bg-purple-100 text-purple-700' :
+                            ${role === ROLES.ADMIN ? 'bg-blue-100 text-purple-700' :
                               role === ROLES.TEACHER ? 'bg-blue-100 text-blue-700' :
                               'bg-amber-100 text-amber-700'}
                           `}
                         >
                           {role === ROLES.ADMIN ? 'Admin' :
                            role === ROLES.TEACHER ? 'GV' :
-                           'NV'}
+                           'BPCC'}
                         </span>
                       ))}
                     </div>
@@ -344,7 +344,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                         ${isCollapsed ? 'justify-center' : 'gap-3 px-4'}
                         py-3 rounded-sm transition-all duration-200
                         ${active
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                        ? 'bg-[#153898] text-white shadow-md'
                         : 'text-slate-700 hover:bg-slate-100'
                         }
                       `}

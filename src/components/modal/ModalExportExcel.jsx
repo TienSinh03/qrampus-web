@@ -26,7 +26,7 @@ const ModalExportExcel = ({
       : availableColumns.filter(col => col.enabled).map(col => col.key)
   );
   
-  const [filename, setFilename] = useState(`danh_sach_nhan_su_${new Date().toISOString().split('T')[0]}`);
+  const [filename, setFilename] = useState(`danh_sach_${new Date().toISOString().split('T')[0]}`);
 
   if (!isOpen) return null;
 

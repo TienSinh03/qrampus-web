@@ -190,7 +190,7 @@ const AdminEnrollPage = () => {
       <div className="bg-gray-50 p-1">
         <div className="mx-auto">
           {/* Header */}
-          <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+          <div className="h-1 bg-[#153898] mb-6" />
           <div className="">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard

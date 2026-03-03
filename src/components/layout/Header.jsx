@@ -157,7 +157,7 @@ const Header = ({ toggleSidebar }) => {
             >
               <Bell className="w-6 h-6" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-purple-600 rounded-full">
+                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-[#153898] rounded-full">
                   {unreadCount}
                 </span>
               )}
@@ -178,7 +178,7 @@ const Header = ({ toggleSidebar }) => {
                         Notifications
                       </h3>
                       {unreadCount > 0 && (
-                        <span className="px-3 py-1 text-xs font-bold text-white bg-purple-600 rounded-full">
+                        <span className="px-3 py-1 text-xs font-bold text-white bg-[#153898] rounded-full">
                           {unreadCount} New
                         </span>
                       )}
@@ -224,7 +224,7 @@ const Header = ({ toggleSidebar }) => {
 
                           {/* Unread dot */}
                           {index < unreadCount && (
-                            <div className="w-2.5 h-2.5 bg-purple-600 rounded-full mt-2 flex-shrink-0" />
+                            <div className="w-2.5 h-2.5 bg-blue-900 rounded-full mt-2 flex-shrink-0" />
                           )}
                         </div>
                       ))}
@@ -232,7 +232,7 @@ const Header = ({ toggleSidebar }) => {
 
                     {/* Footer */}
                     <div className="p-4 border-t border-gray-100">
-                      <button className="w-full py-3 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition">
+                      <button className="w-full py-3 text-sm font-bold text-white bg-blue-900 hover:bg-blue-800 rounded-xl transition">
                         View All Notifications
                       </button>
                     </div>
@@ -248,7 +248,7 @@ const Header = ({ toggleSidebar }) => {
               onClick={() => setOpenUserMenu(!openUserMenu)}
               className="flex items-center gap-3 hover:bg-gray-100 rounded-xl px-3 py-2 transition"
             >
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+              <div className="w-9 h-9 bg-[#153898] rounded-full flex items-center justify-center text-white font-bold">
                 {user?.name?.charAt(0).toUpperCase() || "A"}
               </div>
               <div className="hidden md:block text-left">

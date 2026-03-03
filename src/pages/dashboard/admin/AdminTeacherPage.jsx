@@ -62,6 +62,8 @@ const AdminTeacherPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectAllPages, setSelectAllPages] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
   const [expanded, setExpanded] = useState(false);
 
   // Modal states
@@ -119,13 +121,41 @@ const AdminTeacherPage = () => {
   };
   const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
 
-  const openExportExcelModal = () => {
-    if (selectedIds.length === 0) {
+  const openExportExcelModal = async () => {
+    if (selectedCount === 0) {
       toast.warning("Vui lòng chọn ít nhất 1 nhân sự để xuất dữ liệu");
       return;
     }
-    
-    // Lấy dữ liệu personnel đã chọn
+
+    // Nếu chọn tất cả trang, fetch toàn bộ rồi lọc bỏ excluded
+    if (selectAllPages) {
+      try {
+        const params = {
+          page: 1,
+          limit: pagination.total,
+        };
+        if (filters.search) params.search = filters.search;
+        if (filters.teacherCode) params.search = filters.teacherCode;
+        if (filters.fullName) params.search = filters.fullName;
+        if (filters.department) params.department = filters.department;
+        if (filters.status) params.status = filters.status;
+        if (filters.email) params.email = filters.email;
+        if (filters.phone) params.phone = filters.phone;
+        if (filters.dob) params.dob = filters.dob;
+        if (filters.role) params.role = filters.role;
+
+        const response = await personnelService.getAllPersonnels(params);
+        if (response.success && response.data) {
+          const allPersonnels = (response.data.personnels || []).filter(p => !excludedIds.includes(p.id));
+          setModalExportExcel({ isOpen: true, data: allPersonnels });
+        }
+      } catch (error) {
+        toast.error("Không thể tải danh sách nhân sự để xuất.");
+      }
+      return;
+    }
+
+    // Lấy dữ liệu personnel đã chọn (trang hiện tại)
     const selectedPersonnels = personnels.filter(p => selectedIds.includes(p.id));
     setModalExportExcel({ isOpen: true, data: selectedPersonnels });
   };
@@ -348,7 +378,17 @@ const AdminTeacherPage = () => {
   // Fetch data on mount and when filters/currentPage change
   useEffect(() => {
     fetchPersonnels();
-  }, [currentPage]);
+    if (!selectAllPages) {
+      setSelectedIds([]);
+    }
+  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Khi selectAllPages = true và dữ liệu trang mới load xong, tự động chọn tất cả trên trang đó (trừ excluded)
+  useEffect(() => {
+    if (selectAllPages && personnels.length > 0) {
+      setSelectedIds(personnels.filter(p => !excludedIds.includes(p.id)).map(p => p.id));
+    }
+  }, [personnels]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // Handle filter change
@@ -379,6 +419,9 @@ const AdminTeacherPage = () => {
       role: ""
     });
     setCurrentPage(1);
+    setSelectedIds([]);
+    setSelectAllPages(false);
+    setExcludedIds([]);
     // Fetch will be triggered by useEffect
     setTimeout(() => fetchPersonnels(), 100);
   };
@@ -406,19 +449,41 @@ const AdminTeacherPage = () => {
   // Checkbox handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(personnels.map(item => item.id));
+      // Bỏ các id trên trang này khỏi excluded khi chọn lại header
+      const pageIds = personnels.map(item => item.id);
+      setSelectedIds(pageIds);
+      if (selectAllPages) {
+        setExcludedIds(excludedIds.filter(id => !pageIds.includes(id)));
+      }
     } else {
       setSelectedIds([]);
+      setSelectAllPages(false);
+      setExcludedIds([]);
     }
   };
 
   const handleSelectOne = (id) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    if (selectAllPages) {
+      if (excludedIds.includes(id)) {
+        // Re-select: xóa khỏi excluded, thêm vào selected
+        setExcludedIds(excludedIds.filter(eid => eid !== id));
+        setSelectedIds([...selectedIds, id]);
+      } else {
+        // Deselect: thêm vào excluded, xóa khỏi selected
+        setExcludedIds([...excludedIds, id]);
+        setSelectedIds(selectedIds.filter(sid => sid !== id));
+      }
     } else {
-      setSelectedIds([...selectedIds, id]);
+      if (selectedIds.includes(id)) {
+        setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+      } else {
+        setSelectedIds([...selectedIds, id]);
+      }
     }
   };
+
+  // Số lượng thực sự đang được chọn
+  const selectedCount = selectAllPages ? pagination.total - excludedIds.length : selectedIds.length;
 
   const isAllSelected = personnels.length > 0 && selectedIds.length === personnels.length;
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < personnels.length;
@@ -659,20 +724,39 @@ const AdminTeacherPage = () => {
 
                   <button
                     onClick={async () => {
-                      if (selectedIds.length === 0) {
+                      if (selectedCount === 0) {
                         toast.warning("Vui lòng chọn ít nhất 1 nhân sự để khóa/mở khóa");
                         return;
                       }
-                      
-                      // Lấy danh sách personnel đã chọn
-                      const selectedPersonnels = personnels.filter(p => selectedIds.includes(p.id));
-                      const usernames = selectedPersonnels.map(p => p.user?.user_name).filter(Boolean);
-                      
+
+                      let usernames = [];
+                      if (selectAllPages) {
+                        try {
+                          const params = { page: 1, limit: pagination.total };
+                          if (filters.department) params.department = filters.department;
+                          if (filters.status) params.status = filters.status;
+                          if (filters.role) params.role = filters.role;
+                          const res = await personnelService.getAllPersonnels(params);
+                          if (res.success && res.data) {
+                            usernames = (res.data.personnels || [])
+                              .filter(p => !excludedIds.includes(p.id))
+                              .map(p => p.user?.user_name)
+                              .filter(Boolean);
+                          }
+                        } catch {
+                          toast.error("Không thể tải danh sách để khóa/mở khóa");
+                          return;
+                        }
+                      } else {
+                        const selectedPersonnels = personnels.filter(p => selectedIds.includes(p.id));
+                        usernames = selectedPersonnels.map(p => p.user?.user_name).filter(Boolean);
+                      }
+
                       if (usernames.length === 0) {
                         toast.error("Không tìm thấy user_name cho các tài khoản đã chọn");
                         return;
                       }
-                      
+
                       openConfirmActionModal(
                         "lock",
                         "Xác nhận khóa/mở khóa tài khoản",
@@ -681,10 +765,10 @@ const AdminTeacherPage = () => {
                         async () => {
                           try {
                             const response = await userService.bulkToggleUserStatus(usernames);
-                            
+
                             if (response.success) {
                               const { successCount, failCount } = response.data;
-                              
+
                               if (failCount > 0) {
                                 toast.warning(
                                   `Đã cập nhật ${successCount} tài khoản thành công. ${failCount} tài khoản thất bại.`
@@ -692,8 +776,10 @@ const AdminTeacherPage = () => {
                               } else {
                                 toast.success(`Đã cập nhật ${successCount} tài khoản thành công!`);
                               }
-                              
+
                               setSelectedIds([]);
+                              setSelectAllPages(false);
+                              setExcludedIds([]);
                               fetchPersonnels();
                             }
                           } catch (error) {
@@ -704,14 +790,14 @@ const AdminTeacherPage = () => {
                       );
                     }}
                     className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
-                      selectedIds.length > 0
+                      selectedCount > 0
                         ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700 hover:shadow-md focus:ring-amber-500"
                         : "border-amber-400 text-amber-400 hover:bg-amber-100 hover:shadow-md focus:ring-amber-500"
                     }`}
-                    title={selectedIds.length > 0 ? `Khóa/Mở khóa ${selectedIds.length} mục đã chọn` : "Chọn nhân sự để khóa/mở khóa"}
+                    title={selectedCount > 0 ? `Khóa/Mở khóa ${selectedCount} mục đã chọn` : "Chọn nhân sự để khóa/mở khóa"}
                   >
                     <LockKeyhole className="w-5 h-5" />
-                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
+                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
                   </button>
 
                   <button
@@ -734,14 +820,14 @@ const AdminTeacherPage = () => {
                   <button
                     onClick={openExportExcelModal}
                     className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
-                      selectedIds.length > 0
+                      selectedCount > 0
                         ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md focus:ring-emerald-500"
                         : "border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500"
                     }`}
-                    title={selectedIds.length > 0 ? `Xuất ${selectedIds.length} mục đã chọn` : "Chọn nhân sự để xuất excel"}
+                    title={selectedCount > 0 ? `Xuất ${selectedCount} mục đã chọn` : "Chọn nhân sự để xuất excel"}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
-                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
+                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
                   </button>
 
                   <button
@@ -756,6 +842,30 @@ const AdminTeacherPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Select all pages banner */}
+            {isAllSelected && !selectAllPages && pagination.total > personnels.length && (
+              <div className="bg-blue-50 border-x border-b border-blue-200 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedIds.length}</strong> nhân sự trên trang này.{" "}
+                <button
+                  onClick={() => setSelectAllPages(true)}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Chọn tất cả {pagination.total} nhân sự trong tất cả trang
+                </button>
+              </div>
+            )}
+            {selectAllPages && (
+              <div className="bg-blue-100 border-x border-b border-blue-300 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedCount}</strong> nhân sự trong tất cả trang.{" "}
+                <button
+                  onClick={() => { setSelectAllPages(false); setSelectedIds([]); setExcludedIds([]); }}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Bỏ chọn tất cả
+                </button>
+              </div>
+            )}
 
             {/* TABLE */}
             <div className="w-full overflow-x-auto bg-white shadow mb-6">
