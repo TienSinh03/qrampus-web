@@ -65,16 +65,13 @@ const ModalViewRoom = ({ isOpen, onClose, roomData, loading = false }) => {
           ) : (
             <>
               {/* Room Info Header */}
-              <div className="flex flex-col items-center mb-6 pb-6 border-b">
+              <div className="flex flex-col items-center pb-6 border-b">
                 <div className="w-20 h-20 bg-cyan-100 rounded-full flex items-center justify-center mb-4">
                   <DoorOpen className="w-10 h-10 text-cyan-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-1 text-center">
                   {roomData.room_name || roomData.ten_phong}
                 </h2>
-                <p className="text-gray-500 text-sm mb-2">
-                  {roomData.room_code || roomData.ma_phong}
-                </p>
                 <span
                   className={`px-4 py-1.5 rounded-full text-sm font-medium ${getStatusStyle(roomData.is_active ?? roomData.trang_thai)}`}
                 >

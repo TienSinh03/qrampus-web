@@ -130,13 +130,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     },
     { 
       icon: BookOpen, 
-      label: 'Quản lý Khảo sát [Admin]', 
+      label: 'Quản lý Khảo sát', 
       path: '/dashboard/admin/surveys',
       roles: [ROLES.ADMIN]
     },
     { 
       icon: ScanQrCode, 
-      label: 'Quản lý Điểm danh [Admin]', 
+      label: 'Quản lý Điểm danh', 
       path: '/dashboard/admin/qrcode',
       roles: [ROLES.ADMIN]
     },

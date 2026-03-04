@@ -5,9 +5,11 @@ const ModalExportExcel = ({
   isOpen, 
   onClose, 
   onExport,
-  defaultColumns = []
+  defaultColumns = [],
+  entityType = 'personnel' // 'personnel' or 'course'
 }) => {
-  const availableColumns = [
+  // Define columns based on entity type
+  const personnelColumns = [
     { key: 'stt', label: 'STT', enabled: true, fixed: true },
     { key: 'student_code', label: 'MSSV', enabled: true },
     { key: 'teacher_code', label: 'Mã nhân sự', enabled: true },
@@ -20,6 +22,19 @@ const ModalExportExcel = ({
     { key: 'status', label: 'Trạng thái', enabled: true },
     { key: 'user_name', label: 'Username', enabled: true },
   ];
+
+  const courseColumns = [
+    { key: 'stt', label: 'STT', enabled: true, fixed: true },
+    { key: 'code', label: 'Mã học phần', enabled: true },
+    { key: 'name', label: 'Tên học phần', enabled: true },
+    { key: 'credits', label: 'Tín chỉ', enabled: true },
+    { key: 'semester', label: 'Học kỳ', enabled: true },
+    { key: 'max_students', label: 'Số lượng tối đa', enabled: true },
+    { key: 'practice_sessions', label: 'Số nhóm thực hành', enabled: true },
+    { key: 'description', label: 'Mô tả', enabled: false },
+  ];
+
+  const availableColumns = entityType === 'course' ? courseColumns : personnelColumns;
 
   const [selectedColumns, setSelectedColumns] = useState(
     defaultColumns.length > 0 

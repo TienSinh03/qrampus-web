@@ -333,7 +333,7 @@ const ModalAddRoom = ({ isOpen, onClose, onSubmit }) => {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-5 py-2 rounded-lg border border-cyan-600 text-cyan-600 hover:bg-cyan-50 shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <>

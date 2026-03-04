@@ -222,4 +222,47 @@ export const exportAccountsToExcel = (accounts, filename = 'danh_sach_tai_khoan'
   return exportToExcel(data, filename, 'Danh sách tài khoản');
 };
 
+/**
+ * Export course sections to Excel
+ */
+export const exportCourseToExcel = (courses, filename = 'danh_sach_hoc_phan', selectedColumns = []) => {
+  const columnMapping = {
+    stt: 'STT',
+    code: 'Mã học phần',
+    name: 'Tên học phần',
+    credits: 'Tín chỉ',
+    semester: 'Học kỳ',
+    max_students: 'Số lượng tối đa',
+    practice_sessions: 'Số buổi thực hành',
+    description: 'Mô tả'
+  };
+
+  // Build data with selected columns
+  const data = courses.map((course, index) => {
+    const row = {};
+    
+    selectedColumns.forEach(columnKey => {
+      const label = columnMapping[columnKey];
+      
+      if (columnKey === 'stt') {
+        row[label] = index + 1;
+      } else if (columnKey === 'semester') {
+        // Parse semester from format "2026-1" to "Học kỳ 1 năm 2026"
+        if (course.semester) {
+          const [year, sem] = course.semester.split('-');
+          row[label] = `Học kỳ ${sem} năm ${year}`;
+        } else {
+          row[label] = '-';
+        }
+      } else {
+        row[label] = course[columnKey] || '-';
+      }
+    });
+    
+    return row;
+  });
+
+  return exportToExcel(data, filename, 'Danh sách học phần');
+};
+
 export default exportToExcel;

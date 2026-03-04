@@ -256,7 +256,7 @@ const ModalAddEnroll = ({ isOpen, onClose, onSubmit }) => {
           </button>
           <button 
             onClick={handleSubmit}
-            className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+            className="px-6 py-2 border border-teal-600 text-teal-600 rounded-lg hover:bg-teal-50"
           >
             Thêm đăng ký
           </button>

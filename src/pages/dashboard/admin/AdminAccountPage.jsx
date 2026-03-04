@@ -750,21 +750,26 @@ const AdminAccountPage = () => {
 
                   <button
                     onClick={openExportExcelModal}
-                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                    disabled={selectedCount === 0}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
                       selectedCount > 0
-                        ? "border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:shadow-md focus:ring-teal-500"
-                        : "border-teal-500 text-teal-500 hover:bg-teal-100 hover:shadow-md focus:ring-teal-500"
+                        ? 'border border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500'
+                        : 'border border-gray-300 text-gray-400 cursor-not-allowed'
                     }`}
-                    title={selectedCount > 0 ? `Xuất ${selectedCount} tài khoản đã chọn` : "Chọn tài khoản để xuất excel"}
+                    title={selectedCount > 0 ? `Xuất ${selectedCount} mục đã chọn` : "Xuất danh sách excel"}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
-                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
+                    {selectedCount > 0 && (
+                      <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                        {selectedCount}
+                      </span>
+                    )}
                   </button>
 
                   <button
                     onClick={handleClearFilters}
                     disabled={loading}
-                    className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" 
+                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" 
                     title="Xóa bộ lọc"
                   >
                     <FilterX className="w-5 h-5" />

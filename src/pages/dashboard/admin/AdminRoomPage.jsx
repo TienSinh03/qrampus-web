@@ -62,7 +62,7 @@ const AdminRoomPage = () => {
 
   // Modal states
   const [modalAddRoom, setModalAddRoom] = useState({ isOpen: false });
-  const [modalEditRoom, setModalEditRoom] = useState({ isOpen: false, roomData: null });
+  const [modalEditRoom, setModalEditRoom] = useState({ isOpen: false, roomData: null, roomId: null });
   const [modalViewRoom, setModalViewRoom] = useState({ isOpen: false, roomData: null });
   const [modalConfirmAction, setModalConfirmAction] = useState({
     isOpen: false,
@@ -79,8 +79,40 @@ const AdminRoomPage = () => {
   const openAddRoomModal = () => setModalAddRoom({ isOpen: true });
   const closeAddRoomModal = () => setModalAddRoom({ isOpen: false });
 
-  const openEditRoomModal = (room) => setModalEditRoom({ isOpen: true, roomData: room });
-  const closeEditRoomModal = () => setModalEditRoom({ isOpen: false, roomData: null });
+  const openEditRoomModal = async (roomId) => {
+    // Validate roomId
+    if (!roomId || typeof roomId !== 'string' && typeof roomId !== 'number') {
+      console.error('Invalid roomId:', roomId);
+      toast.error("ID phòng không hợp lệ");
+      return;
+    }
+    
+    setLoadingRoomDetail(true);
+    setModalEditRoom({ isOpen: true, roomData: null, roomId }); // Open modal first with roomId
+    
+    try {
+      const response = await roomService.getRoomById(roomId);
+      
+      if (response && response.success) {
+        // Handle response structure
+        const roomData = response.data?.room || response.data;
+        setModalEditRoom({ isOpen: true, roomData, roomId });
+      } else if (response && response.data) {
+        setModalEditRoom({ isOpen: true, roomData: response.data, roomId });
+      } else {
+        toast.error("Không thể tải thông tin phòng");
+        setModalEditRoom({ isOpen: false, roomData: null, roomId: null });
+      }
+    } catch (error) {
+      console.error("Error fetching room detail:", error);
+      toast.error("Đã có lỗi khi tải thông tin phòng");
+      setModalEditRoom({ isOpen: false, roomData: null, roomId: null });
+    } finally {
+      setLoadingRoomDetail(false);
+    }
+  };
+  
+  const closeEditRoomModal = () => setModalEditRoom({ isOpen: false, roomData: null, roomId: null });
 
   const openViewRoomModal = async (roomId) => {
     setLoadingRoomDetail(true);
@@ -257,10 +289,30 @@ const AdminRoomPage = () => {
     fetchRooms(); // Refresh the list
   };
 
-  const handleEditRoom = (formData) => {
-    console.log("Edit room:", formData);
-    toast.success("Đã cập nhật thông tin phòng thành công!");
-    fetchRooms(); // Refresh the list
+  const handleEditRoom = async (formData) => {
+    const roomId = modalEditRoom.roomId;
+    
+    if (!roomId) {
+      toast.error("Không tìm thấy ID phòng");
+      return;
+    }
+    
+    try {
+      console.log("Updating room:", roomId, formData);
+      
+      const response = await roomService.updateRoom(roomId, formData);
+      
+      if (response && response.success) {
+        toast.success("Đã cập nhật thông tin phòng thành công!");
+        fetchRooms(); // Refresh the list
+        closeEditRoomModal();
+      } else {
+        toast.error(response?.message || "Cập nhật phòng thất bại");
+      }
+    } catch (error) {
+      console.error("Error updating room:", error);
+      toast.error(error?.message || "Đã có lỗi khi cập nhật phòng");
+    }
   };
 
   // Handle toggle room status (active/inactive)
@@ -568,18 +620,23 @@ const AdminRoomPage = () => {
 
                   <button
                     onClick={openExportExcelModal}
-                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
-                      selectedIds.length > 0
-                        ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md focus:ring-emerald-500"
-                        : "border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500"
+                    disabled={selectedCount === 0}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedCount > 0
+                        ? 'border border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500'
+                        : 'border border-gray-300 text-gray-400 cursor-not-allowed'
                     }`}
-                    title={selectedIds.length > 0 ? `Xuất ${selectedIds.length} phòng đã chọn` : "Chọn phòng để xuất excel"}
+                    title={selectedCount > 0 ? `Xuất ${selectedCount} mục đã chọn` : "Xuất danh sách excel"}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
-                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
+                    {selectedCount > 0 && (
+                      <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                        {selectedCount}
+                      </span>
+                    )}
                   </button>
 
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Tải file mẫu excel">
+                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Tải file mẫu excel">
                     <File className="w-5 h-5" />
                   </button>
                   <button
@@ -762,7 +819,10 @@ const AdminRoomPage = () => {
                             </button>
                             <button
                               title="Chỉnh sửa"
-                              onClick={() => openEditRoomModal(room)}
+                              onClick={() => {
+                                console.log('Edit room clicked, room:', room, 'room.id:', room.id);
+                                openEditRoomModal(room.id);
+                              }}
                             >
                               <PencilLine className="w-5 h-5 text-amber-500 cursor-pointer hover:text-amber-700" />
                             </button>
@@ -827,6 +887,7 @@ const AdminRoomPage = () => {
               onClose={closeEditRoomModal}
               roomData={modalEditRoom.roomData}
               onSubmit={handleEditRoom}
+              loading={loadingRoomDetail}
             />
 
             <ModalViewRoom

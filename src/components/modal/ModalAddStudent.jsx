@@ -172,7 +172,7 @@ const ModalAddStudent = ({ isOpen, onClose, onSubmit }) => {
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
+            className="px-6 py-2 border border-cyan-600 text-cyan-600 rounded-lg hover:bg-cyan-50"
           >
             Tạo hồ sơ
           </button>

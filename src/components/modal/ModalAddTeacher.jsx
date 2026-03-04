@@ -267,7 +267,7 @@ const ModalAddTeacher = ({ isOpen, onClose, onSubmit }) => {
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="px-6 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50"
           >
             Tạo hồ sơ
           </button>

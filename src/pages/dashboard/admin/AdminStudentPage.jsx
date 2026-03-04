@@ -671,15 +671,20 @@ const AdminStudentPage = () => {
 
                   <button
                     onClick={openExportStudentsModal}
-                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                    disabled={selectedCount === 0}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
                       selectedCount > 0
-                        ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md focus:ring-emerald-500"
-                        : "border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500"
+                        ? 'border border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500'
+                        : 'border border-gray-300 text-gray-400 cursor-not-allowed'
                     }`}
-                    title={selectedCount > 0 ? `Xuất ${selectedCount} mục đã chọn` : "Chọn sinh viên để xuất excel"}
+                    title={selectedCount > 0 ? `Xuất ${selectedCount} mục đã chọn` : "Xuất danh sách excel"}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
-                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
+                    {selectedCount > 0 && (
+                      <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                        {selectedCount}
+                      </span>
+                    )}
                   </button>
 
                   <button
