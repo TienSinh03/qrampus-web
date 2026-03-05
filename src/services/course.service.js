@@ -50,6 +50,49 @@ class CourseService {
   }
 
   /**
+   * Get all course sections as rows (1 LT + N TH per course)
+   * @param {Object} params - Query parameters (page, limit, semester, year, name, code)
+   * @returns {Promise} List of rows with pagination
+   */
+  async getCourseSectionRows(params = {}) {
+    try {
+      const response = await axiosClient.get(COURSE_ENDPOINTS.SECTIONS_ROWS, { params });
+      console.log("Course Rows Service Response:", response);
+      
+      // API returns: { success, message, data: { rows: [...], pagination: {...} } }
+      const rowsArray = response.data?.rows || response.data || [];
+      const paginationData = response.data?.pagination || null;
+      
+      return {
+        success: response.success || true,
+        data: Array.isArray(rowsArray) ? rowsArray : [],
+        message: response.message || '',
+        pagination: paginationData || {
+          total: 0,
+          page: params.page || 1,
+          limit: params.limit || 5,
+          totalPages: 0,
+          totalRows: 0
+        }
+      };
+    } catch (error) {
+      console.error("Course Rows Service Error:", error);
+      return {
+        success: false,
+        data: [],
+        message: error.message || 'Đã có lỗi xảy ra',
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: params.limit || 5,
+          totalPages: 0,
+          totalRows: 0
+        }
+      };
+    }
+  }
+
+  /**
    * Get course section by ID
    * @param {string} courseSectionId - Course section ID (UUID)
    * @returns {Promise} Course section data with practice groups

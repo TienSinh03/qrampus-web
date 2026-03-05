@@ -118,6 +118,52 @@ class ScheduleService {
   }
 
   /**
+   * Create schedule template
+   * @param {Object} templateData - Template data
+   * @param {string} templateData.course_section_id - Course section ID
+   * @param {string} templateData.personnel_id - Personnel/Teacher ID
+   * @param {string} [templateData.practice_group_id] - Practice group ID (optional)
+   * @param {string} templateData.schedule_type - 'LT' or 'TH'
+   * @param {string} templateData.day_of_week - Day of week (Thứ 2, Thứ 3, etc.)
+   * @param {string} templateData.start_hour - Start hour (e.g., "6h30")
+   * @param {string} templateData.end_hour - End hour (e.g., "7h20")
+   * @param {string} templateData.start_date - Start date (YYYY-MM-DD)
+   * @param {string} templateData.end_date - End date (YYYY-MM-DD)
+   * @param {string} templateData.room_id - Room ID
+   * @param {boolean} [templateData.is_active] - Active status (default: true)
+   * @returns {Promise} Created schedule template
+   */
+  async createScheduleTemplate(templateData) {
+    try {
+      const response = await axiosClient.post(SCHEDULE_ENDPOINTS.TEMPLATES, templateData);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Check schedule availability for a teacher
+   * @param {Object} checkData - Check data
+   * @param {string} checkData.personnel_id - Personnel/Teacher ID
+   * @param {string} checkData.class_date - Class date
+   * @param {string} checkData.start_hour - Start hour
+   * @param {string} checkData.end_hour - End hour
+   * @param {string} checkData.session_number - Session number
+   * @param {string} checkData.schedule_type - Schedule type
+   * @param {string} [checkData.exclude_schedule_id] - Schedule ID to exclude
+   * @returns {Promise} Availability result
+   */
+  async checkScheduleAvailability(checkData) {
+    try {
+      const response = await axiosClient.post(SCHEDULE_ENDPOINTS.CHECK_AVAILABILITY, checkData);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Handle and format API errors
    * @param {Error} error - Error object from axios
    * @returns {Error} Formatted error

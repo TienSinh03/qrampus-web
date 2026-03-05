@@ -121,6 +121,30 @@ class RoomService {
   }
 
   /**
+   * Get available rooms (not scheduled at given time)
+   * @param {Object} params - Query parameters
+   * @param {string} params.day_of_week - Day of week (e.g., 'Thứ 2', 'Thứ 3')
+   * @param {string} params.start_hour - Start time (e.g., '7h30')
+   * @param {string} params.end_hour - End time (e.g., '9h00')
+   * @param {string} params.start_date - Course start date (YYYY-MM-DD)
+   * @param {string} params.end_date - Course end date (YYYY-MM-DD)
+   * @returns {Promise} List of available rooms
+   */
+  async getAvailableRooms(params = {}) {
+    try {
+      const response = await axiosClient.get(ROOM_ENDPOINTS.AVAILABLE, { params });
+      return response;
+    } catch (error) {
+      console.error("Get Available Rooms Error:", error);
+      return {
+        success: false,
+        data: { rooms: [] },
+        message: error.message || 'Đã có lỗi xảy ra khi lấy danh sách phòng trống',
+      };
+    }
+  }
+
+  /**
    * Error handler
    * @param {Object} error - Error object
    * @returns {Object} Formatted error
