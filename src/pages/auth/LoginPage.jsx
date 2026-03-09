@@ -4,6 +4,7 @@ import { Lock, Eye, EyeOff, IdCardLanyard, AlertCircle } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { ROLES } from '@constants/roles';
+import backgroundImg from '../../assets/background.jpg';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -76,11 +77,21 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="h-1 bg-gradient-to-r from-[#224397] to-[#224397]" />
+    <div
+      className="min-h-screen w-full flex items-center justify-center relative"
+      style={{
+        backgroundImage: `url(${backgroundImg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Overlay gradient for readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a8a]/70 to-[#3b82f6]/50"></div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+      {/* Login Form Container */}
+      <div className="relative z-10 w-full max-w-md mx-auto">
+        <div className="h-1 bg-gradient-to-r from-[#ff4949] to-[#224397]" />
+        <div className="bg-white rounded-b-xl shadow-xl p-8 space-y-6">
           {/* Logo */}
           <div className="text-center space-y-2">
             <div className="flex justify-center">
