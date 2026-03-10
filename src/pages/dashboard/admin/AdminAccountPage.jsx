@@ -195,26 +195,26 @@ const AdminAccountPage = () => {
     }
   };
 
-  // Toggle user status (active/deactivate)
-  const handleToggleUserStatus = async (user) => {
+  // Toggle user lock status (lock/unlock)
+  const handleToggleUserLock = async (user) => {
     try {
-      console.log("Toggling user status for:", user.user_name);
+      console.log("Toggling user lock for:", user.user_name);
       
-      const response = await userService.toggleUserStatus(user.user_name);
+      const response = await userService.toggleUserLock(user.user_name);
       
       if (response.success) {
         const newStatus = response.data.status;
-        const statusText = newStatus === 'active' ? 'kích hoạt' : 'tạm ngưng';
+        const statusText = newStatus === 'locked' ? 'khóa' : 'mở khóa';
         toast.success(`Đã ${statusText} tài khoản thành công!`);
         
         // Refresh data
         fetchUsers();
       } else {
-        toast.error(response.message || "Không thể cập nhật trạng thái tài khoản");
+        toast.error(response.message || "Không thể cập nhật trạng thái khóa tài khoản");
       }
     } catch (error) {
-      console.error("Error toggling user status:", error);
-      toast.error(error.message || "Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại!");
+      console.error("Error toggling user lock:", error);
+      toast.error(error.message || "Không thể cập nhật trạng thái khóa tài khoản. Vui lòng thử lại!");
     }
   };
 
@@ -373,7 +373,7 @@ const AdminAccountPage = () => {
 
   const pillStyle = {
     active: "bg-green-100 text-green-600",
-    pending: "bg-yellow-100 text-yellow-600",
+    locked: "bg-red-100 text-red-600",
     inactive: "bg-gray-200 text-gray-600",
   };
 
@@ -523,7 +523,7 @@ const AdminAccountPage = () => {
                     <option value="">Tất cả</option>
                     <option value="active">Đang hoạt động</option>
                     <option value="inactive">Chưa kích hoạt</option>
-                    <option value="pending">Chờ duyệt</option>
+                    <option value="locked">Đã khóa</option>
                   </select>
                 </div>
                 <div>
@@ -703,7 +703,7 @@ const AdminAccountPage = () => {
                         "Xác nhận",
                         async () => {
                           try {
-                            const response = await userService.bulkToggleUserStatus(usernames);
+                            const response = await userService.bulkToggleUserLock(usernames);
 
                             if (response.success) {
                               const { successCount, failCount } = response.data;
@@ -911,7 +911,7 @@ const AdminAccountPage = () => {
                         >
                           {u.status === 'active' ? 'Hoạt động' : 
                            u.status === 'inactive' ? 'Tạm ngưng' : 
-                           u.status === 'pending' ? 'Chờ duyệt' :
+                           u.status === 'locked' ? 'Đã khóa' :
                            u.status || '-'}
                         </span>
                       </td>
@@ -931,18 +931,18 @@ const AdminAccountPage = () => {
                             <GitPullRequest className="text-amber-500 cursor-pointer w-5 h-5" />
                           </button>
                           <button
-                            title={u.status === 'active' ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                            title={u.status === 'locked' ? "Mở khóa tài khoản" : "Khóa tài khoản"}
                             onClick={() => openConfirmActionModal(
                               "lock",
-                              u.status === 'active' ? "Xác nhận khóa tài khoản" : "Xác nhận mở khóa tài khoản",
-                              u.status === 'active' 
-                                ? `Bạn có chắc chắn muốn khóa tài khoản của ${u.full_name}?`
-                                : `Bạn có chắc chắn muốn mở khóa tài khoản của ${u.full_name}?`,
-                              u.status === 'active' ? "Khóa tài khoản" : "Mở khóa tài khoản",
-                              () => handleToggleUserStatus(u)
+                              u.status === 'locked' ? "Xác nhận mở khóa tài khoản" : "Xác nhận khóa tài khoản",
+                              u.status === 'locked'
+                                ? `Bạn có chắc chắn muốn mở khóa tài khoản của ${u.full_name}?`
+                                : `Bạn có chắc chắn muốn khóa tài khoản của ${u.full_name}?`,
+                              u.status === 'locked' ? "Mở khóa tài khoản" : "Khóa tài khoản",
+                              () => handleToggleUserLock(u)
                             )}
                           >
-                            {u.status === 'active' ? (
+                            {u.status === 'locked' ? (
                               <LockKeyholeOpen className="text-green-500 cursor-pointer w-5 h-5" />
                             ) : (
                               <LockKeyhole className="text-red-500 cursor-pointer w-5 h-5" />

@@ -119,7 +119,21 @@ class UserService {
   }
 
   /**
-   * Toggle user status (activate/deactivate)
+   * Toggle user lock status (lock/unlock)
+   * @param {string} username - Username
+   * @returns {Promise} Updated user data
+   */
+  async toggleUserLock(username) {
+    try {
+      const response = await axiosClient.put(USER_ENDPOINTS.LOCK(username));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Toggle user status (active/inactive)
    * @param {string} username - Username
    * @returns {Promise} Updated user data
    */
@@ -133,14 +147,57 @@ class UserService {
   }
 
   /**
-   * Bulk toggle user status (activate/deactivate)
+   * Bulk toggle user lock status (lock/unlock)
+   * @param {Array<string>} usernames - Array of usernames
+   * @returns {Promise} Results with success/failure info
+   */
+  async bulkToggleUserLock(usernames) {
+    try {
+      const settled = await Promise.allSettled(
+        usernames.map((username) => this.toggleUserLock(username))
+      );
+
+      const results = settled.map((item, index) => {
+        if (item.status === 'fulfilled') {
+          return {
+            success: true,
+            user_name: usernames[index],
+            status: item.value?.data?.status,
+          };
+        }
+
+        return {
+          success: false,
+          user_name: usernames[index],
+          error: item.reason?.message || 'Unknown error',
+        };
+      });
+
+      const successCount = results.filter((r) => r.success).length;
+      const failCount = results.length - successCount;
+
+      return {
+        success: true,
+        data: {
+          successCount,
+          failCount,
+          results,
+        },
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Bulk toggle user status (active/inactive)
    * @param {Array<string>} usernames - Array of usernames
    * @returns {Promise} Results with success/failure info
    */
   async bulkToggleUserStatus(usernames) {
     try {
       const response = await axiosClient.put(USER_ENDPOINTS.BULK_ACTIVATE, {
-        user_names: usernames
+        user_names: usernames,
       });
       return response;
     } catch (error) {

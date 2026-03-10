@@ -1,38 +1,129 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { 
   Users, 
   GraduationCap, 
   BookOpen, 
   Building2,
-  UserCheck,
   FileText,
   AlertCircle,
   TrendingUp,
   Activity,
-  Clock,
   CheckCircle,
-  XCircle,
   AlertTriangle,
   ArrowUpRight,
   ArrowDownRight,
   Calendar,
-  BarChart3
+  BarChart3,
+  Hand
 } from "lucide-react";
 import { useAuth } from "@contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import reportService from "@services/report.service";
+
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Mock data - sẽ được thay thế bằng API calls
-  const stats = {
-    totalStudents: 1250,
-    totalTeachers: 85,
-    totalCourses: 156,
-    totalRooms: 42,
+  const [dashboardStats, setDashboardStats] = useState({
+    students: { total: 0, growth: 0 },
+    teachers: { total: 0, growth: 0 },
+    courses: { total: 0, growth: 0 },
+    rooms: { total: 0, growth: 0 },
+  });
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [statsError, setStatsError] = useState("");
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        setIsLoadingStats(true);
+        setStatsError("");
+        const response = await reportService.getDashboardStats();
+
+        if (response?.success && response?.data) {
+          setDashboardStats({
+            students: {
+              total: response.data.students?.total || 0,
+              growth: response.data.students?.growth || 0,
+            },
+            teachers: {
+              total: response.data.teachers?.total || 0,
+              growth: response.data.teachers?.growth || 0,
+            },
+            courses: {
+              total: response.data.courses?.total || 0,
+              growth: response.data.courses?.growth || 0,
+            },
+            rooms: {
+              total: response.data.rooms?.total || 0,
+              growth: response.data.rooms?.growth || 0,
+            },
+          });
+        } else {
+          setStatsError("Khong the tai thong ke dashboard");
+        }
+      } catch (error) {
+        setStatsError(error.message || "Khong the tai thong ke dashboard");
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
+
+
+  const stats = useMemo(() => ({
+    totalStudents: dashboardStats.students.total,
+    totalTeachers: dashboardStats.teachers.total,
+    totalCourses: dashboardStats.courses.total,
+    totalRooms: dashboardStats.rooms.total,
+    studentsGrowth: dashboardStats.students.growth,
+    teachersGrowth: dashboardStats.teachers.growth,
+    coursesGrowth: dashboardStats.courses.growth,
+    roomsGrowth: dashboardStats.rooms.growth,
     activeSchedules: 234,
     pendingSurveys: 12,
     todayAttendance: 892,
     systemAlerts: 3,
+  }), [dashboardStats]);
+
+  const formatGrowth = (value) => {
+    const n = Number(value || 0);
+    if (n > 0) return `+${n.toFixed(1)}%`;
+    return `${n.toFixed(1)}%`;
+  };
+
+  const GrowthIndicator = ({ growth }) => {
+    const n = Number(growth || 0);
+
+    if (n > 0) {
+      return (
+        <>
+          <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+          <span className="text-sm text-emerald-500 font-medium">{formatGrowth(n)}</span>
+          <span className="text-xs text-gray-500">so với tháng trước</span>
+        </>
+      );
+    }
+
+    if (n < 0) {
+      return (
+        <>
+          <ArrowDownRight className="w-4 h-4 text-rose-500" />
+          <span className="text-sm text-rose-500 font-medium">{formatGrowth(n)}</span>
+          <span className="text-xs text-gray-500">so với tháng trước</span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className="text-sm text-gray-500 font-medium">Khong doi</span>
+        <span className="text-xs text-gray-500">so với tháng trước</span>
+      </>
+    );
   };
 
   const recentActivities = [
@@ -65,7 +156,8 @@ export default function AdminDashboardPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Dashboard Quản trị</h1>
             <p className="text-gray-600 mt-1">
-              Xin chào, <span className="font-semibold">{user?.user_name || 'Admin'}</span> 👋
+              Xin chào, <span className="font-semibold">{user?.user_name || 'Admin'}</span> 
+              <Hand className="w-5 h-5 inline-block ml-2 text-yellow-500 animate-wave" />
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -73,20 +165,23 @@ export default function AdminDashboardPage() {
             <span>{new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
         </div>
+        {statsError && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            {statsError}
+          </div>
+        )}
       </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Students */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-start justify-between">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" title="Tổng số sinh viên trong hệ thống" onClick={() => navigate("/dashboard/admin/students")}>
+          <div className="flex items-start justify-between" title="Tổng số sinh viên trong hệ thống">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Tổng sinh viên</p>
-              <h3 className="text-3xl font-bold text-gray-800">{stats.totalStudents.toLocaleString()}</h3>
+              <h3 className="text-3xl font-bold text-gray-800">{isLoadingStats ? '...' : stats.totalStudents.toLocaleString()}</h3>
               <div className="flex items-center gap-1 mt-2">
-                <ArrowUpRight className="w-4 h-4 text-emerald-500" />
-                <span className="text-sm text-emerald-500 font-medium">+12.5%</span>
-                <span className="text-xs text-gray-500">so với tháng trước</span>
+                {!isLoadingStats && <GrowthIndicator growth={stats.studentsGrowth} />}
               </div>
             </div>
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
@@ -96,15 +191,13 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Total Teachers */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-start justify-between">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" title="Tổng số giảng viên trong hệ thống" onClick={() => navigate("/dashboard/admin/teachers")}>
+          <div className="flex items-start justify-between" title="Tổng số giảng viên trong hệ thống">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Tổng giảng viên</p>
-              <h3 className="text-3xl font-bold text-gray-800">{stats.totalTeachers}</h3>
+              <h3 className="text-3xl font-bold text-gray-800">{isLoadingStats ? '...' : stats.totalTeachers}</h3>
               <div className="flex items-center gap-1 mt-2">
-                <ArrowUpRight className="w-4 h-4 text-emerald-500" />
-                <span className="text-sm text-emerald-500 font-medium">+5.2%</span>
-                <span className="text-xs text-gray-500">so với tháng trước</span>
+                {!isLoadingStats && <GrowthIndicator growth={stats.teachersGrowth} />}
               </div>
             </div>
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -114,15 +207,13 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Total Courses */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" title="Tổng số khóa học trong hệ thống" onClick={() => navigate("/dashboard/admin/courses")}>
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Tổng khóa học</p>
-              <h3 className="text-3xl font-bold text-gray-800">{stats.totalCourses}</h3>
+              <h3 className="text-3xl font-bold text-gray-800">{isLoadingStats ? '...' : stats.totalCourses}</h3>
               <div className="flex items-center gap-1 mt-2">
-                <ArrowUpRight className="w-4 h-4 text-emerald-500" />
-                <span className="text-sm text-emerald-500 font-medium">+8.1%</span>
-                <span className="text-xs text-gray-500">so với tháng trước</span>
+                {!isLoadingStats && <GrowthIndicator growth={stats.coursesGrowth} />}
               </div>
             </div>
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg">
@@ -132,14 +223,13 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Total Rooms */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" title="Tổng số phòng học trong hệ thống" onClick={() => navigate("/dashboard/admin/rooms")}>
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Tổng phòng học</p>
-              <h3 className="text-3xl font-bold text-gray-800">{stats.totalRooms}</h3>
+              <h3 className="text-3xl font-bold text-gray-800">{isLoadingStats ? '...' : stats.totalRooms}</h3>
               <div className="flex items-center gap-1 mt-2">
-                <span className="text-sm text-gray-500 font-medium">Không đổi</span>
-                <span className="text-xs text-gray-500">so với tháng trước</span>
+                {!isLoadingStats && <GrowthIndicator growth={stats.roomsGrowth} />}
               </div>
             </div>
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-lg">
@@ -191,7 +281,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Hành động nhanh</h3>
           <div className="space-y-3">
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors text-left border border-gray-200">
+            <button onClick={() => navigate("/dashboard/admin/accounts")} className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors text-left border border-gray-200">
               <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
@@ -201,7 +291,7 @@ export default function AdminDashboardPage() {
               </div>
             </button>
 
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-purple-50 transition-colors text-left border border-gray-200">
+            <button onClick={() => navigate("/dashboard/admin/courses")} className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-purple-50 transition-colors text-left border border-gray-200">
               <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-purple-600" />
               </div>
@@ -211,7 +301,7 @@ export default function AdminDashboardPage() {
               </div>
             </button>
 
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-amber-50 transition-colors text-left border border-gray-200">
+            <button onClick={() => navigate("/dashboard/admin/schedules")} className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-amber-50 transition-colors text-left border border-gray-200">
               <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-amber-600" />
               </div>
@@ -221,7 +311,7 @@ export default function AdminDashboardPage() {
               </div>
             </button>
 
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors text-left border border-gray-200">
+            <button onClick={() => navigate("/dashboard/admin/surveys")} className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors text-left border border-gray-200">
               <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
                 <FileText className="w-5 h-5 text-emerald-600" />
               </div>

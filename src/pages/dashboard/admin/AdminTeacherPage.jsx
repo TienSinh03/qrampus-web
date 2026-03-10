@@ -18,8 +18,6 @@ import { exportPersonnelToExcel } from "../../../utils/excelExport";
 import {
   CirclePlus,
   Trash2,
-  LockKeyhole,
-  LockKeyholeOpen,
   CloudUpload,
   Eye,
   MoreVertical,
@@ -149,7 +147,7 @@ const AdminTeacherPage = () => {
           const allPersonnels = (response.data.personnels || []).filter(p => !excludedIds.includes(p.id));
           setModalExportExcel({ isOpen: true, data: allPersonnels });
         }
-      } catch (error) {
+      } catch {
         toast.error("Không thể tải danh sách nhân sự để xuất.");
       }
       return;
@@ -225,7 +223,7 @@ const AdminTeacherPage = () => {
       const response = await personnelService.bulkCreatePersonnel(personnelList);
       
       if (response.success) {
-        const { successCount, failCount, errors } = response.data;
+        const { successCount, failCount } = response.data;
         
         if (failCount > 0) {
           // Show warning with details
@@ -309,7 +307,7 @@ const AdminTeacherPage = () => {
     }
   };
 
-  // Toggle user status (active/deactivate)
+  // Toggle user status (active/inactive)
   const handleToggleUserStatus = async (personnel) => {
     try {
       console.log("Toggling user status for:", personnel.user?.user_name);
@@ -725,7 +723,7 @@ const AdminTeacherPage = () => {
                   <button
                     onClick={async () => {
                       if (selectedCount === 0) {
-                        toast.warning("Vui lòng chọn ít nhất 1 nhân sự để khóa/mở khóa");
+                        toast.warning("Vui lòng chọn ít nhất 1 nhân sự để đổi trạng thái");
                         return;
                       }
 
@@ -744,7 +742,7 @@ const AdminTeacherPage = () => {
                               .filter(Boolean);
                           }
                         } catch {
-                          toast.error("Không thể tải danh sách để khóa/mở khóa");
+                          toast.error("Không thể tải danh sách để cập nhật trạng thái");
                           return;
                         }
                       } else {
@@ -759,7 +757,7 @@ const AdminTeacherPage = () => {
 
                       openConfirmActionModal(
                         "lock",
-                        "Xác nhận khóa/mở khóa tài khoản",
+                        "Xác nhận cập nhật trạng thái tài khoản",
                         `Bạn có chắc chắn muốn thay đổi trạng thái ${usernames.length} tài khoản đã chọn?`,
                         "Xác nhận",
                         async () => {
@@ -783,7 +781,7 @@ const AdminTeacherPage = () => {
                               fetchPersonnels();
                             }
                           } catch (error) {
-                            console.error("Error bulk toggling status:", error);
+                            console.error("Error bulk toggling active/inactive:", error);
                             toast.error(error.message || "Có lỗi xảy ra khi cập nhật trạng thái");
                           }
                         }
@@ -794,9 +792,9 @@ const AdminTeacherPage = () => {
                         ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700 hover:shadow-md focus:ring-amber-500"
                         : "border-amber-400 text-amber-400 hover:bg-amber-100 hover:shadow-md focus:ring-amber-500"
                     }`}
-                    title={selectedCount > 0 ? `Khóa/Mở khóa ${selectedCount} mục đã chọn` : "Chọn nhân sự để khóa/mở khóa"}
+                    title={selectedCount > 0 ? `Đổi trạng thái ${selectedCount} mục đã chọn` : "Chọn nhân sự để đổi trạng thái"}
                   >
-                    <LockKeyhole className="w-5 h-5" />
+                    <UserCheck className="w-5 h-5" />
                     {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
                   </button>
 
@@ -1000,21 +998,21 @@ const AdminTeacherPage = () => {
                             <PencilLine className="text-amber-500 cursor-pointer w-5 h-5" />
                           </button>
                           <button
-                            title={personnel.user?.status === 'active' ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                            title={personnel.user?.status === 'active' ? "Chuyển sang tạm ngưng" : "Kích hoạt tài khoản"}
                             onClick={() => openConfirmActionModal(
                               "lock",
-                              personnel.user?.status === 'active' ? "Xác nhận khóa tài khoản" : "Xác nhận mở khóa tài khoản",
+                              personnel.user?.status === 'active' ? "Xác nhận tạm ngưng tài khoản" : "Xác nhận kích hoạt tài khoản",
                               personnel.user?.status === 'active' 
-                                ? `Bạn có chắc chắn muốn khóa tài khoản của ${personnel.full_name}?`
-                                : `Bạn có chắc chắn muốn mở khóa tài khoản của ${personnel.full_name}?`,
-                              personnel.user?.status === 'active' ? "Khóa tài khoản" : "Mở khóa tài khoản",
+                                ? `Bạn có chắc chắn muốn tạm ngưng tài khoản của ${personnel.full_name}?`
+                                : `Bạn có chắc chắn muốn kích hoạt tài khoản của ${personnel.full_name}?`,
+                              personnel.user?.status === 'active' ? "Tạm ngưng" : "Kích hoạt",
                               () => handleToggleUserStatus(personnel)
                             )}
                           >
                             {personnel.user?.status === 'active' ? (
-                              <LockKeyholeOpen className="text-green-500 cursor-pointer w-5 h-5" />
+                              <UserX className="text-amber-500 cursor-pointer w-5 h-5" />
                             ) : (
-                              <LockKeyhole className="text-red-500 cursor-pointer w-5 h-5" />
+                              <UserCheck className="text-green-500 cursor-pointer w-5 h-5" />
                             )}
                           </button>
                         </div>
@@ -1081,132 +1079,6 @@ const AdminTeacherPage = () => {
               personnels={modalExportExcel.data}
               onExport={handleExportExcel}
             />
-
-            {/* OLD DRAWER REMOVED - Now using ModalAddTeacher */}
-            {false && (
-              <>
-                <div
-                  className="fixed inset-0 bg-black bg-opacity-50 z-[1000]"
-                  onClick={closeDrawer}
-                />
-
-                {/* Drawer từ bên phải trượt ra */}
-                <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-in-out">
-                  {/* Header Drawer */}
-                  <div className="flex items-center justify-between px-6 py-6 border-b border-gray-200 bg-lime-100">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-800">
-                        Thêm hồ sơ Giảng viên
-                      </h3>
-                    </div>
-                    <button
-                      onClick={closeDrawer}
-                      className="text-gray-500 hover:text-gray-700 focus:outline-none  rounded-full hover:bg-lime-400 transition-all  duration-300 ease-in-out p-2 hover:rotate-90"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-
-                  {/* Body Form */}
-                  <div className="p-6 overflow-y-auto h-full pb-32">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mã giảng viên
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Họ tên Giảng viên
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Ngày sinh
-                        </label>
-                        <input
-                          type="date"
-                          className="w-full border  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Khoa/Viện
-                        </label>
-                        <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                          <option>Khoa Công nghệ thông tin</option>
-                          <option>Khoa Điện tử - Viễn thông</option>
-                          <option>Khoa Cơ khí</option>
-                          <option>Khoa Kinh tế</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Số điện thoại
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Phân quyền tài khoản
-                        </label>
-                        <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                          <option>Giảng viên</option>
-                          <option>Quản trị viên</option>
-                          <option>Bộ phận chấm công</option>
-                        </select>
-                      </div>
-
-                      {/* ảnh đại diện */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Ảnh đại diện
-                        </label>
-                        <input
-                          type="file"
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Footer Buttons - Fixed bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 flex justify-end gap-4 px-6 py-5 border-t border-gray-200 bg-white">
-                    <button
-                      onClick={closeDrawer}
-                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                    >
-                      Hủy
-                    </button>
-                    <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                      Tạo hồ sơ
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
           </div>
         </div>
       </div>

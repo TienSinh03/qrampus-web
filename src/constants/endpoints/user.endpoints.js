@@ -8,6 +8,7 @@ export const USER_ENDPOINTS = {
   BY_ID: (id) => `${API_VERSION}/users/${id}`,
   PROFILE: `${API_VERSION}/users/profile`,
   ACTIVATE: (username) => `${API_VERSION}/admin/users/${username}/activate`,
+  LOCK: (username) => `${API_VERSION}/admin/users/${username}/lock`,
   BULK_ACTIVATE: `${API_VERSION}/admin/users/bulk/activate`,
   ADMIN_USERS: `${API_VERSION}/admin/users`,
   RESET_PASSWORD: (id) => `${API_VERSION}/admin/users/${id}/reset-password`,

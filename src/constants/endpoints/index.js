@@ -14,6 +14,7 @@ export { LEAVE_REQUEST_ENDPOINTS } from './leave-request.endpoints';
 export { SURVEY_ENDPOINTS } from './survey.endpoints';
 export { STUDENT_ENDPOINTS } from './student.endpoints';
 export { TEACHER_ENDPOINTS } from './teacher.endpoints';
+export { REPORT_ENDPOINTS } from './report.endpoints';
 
 // Health check
 export const HEALTH_ENDPOINT = '/health';

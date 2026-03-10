@@ -196,9 +196,12 @@ const AdminSchedulePage = () => {
   };
 
   // ========== FETCH TEACHER ROWS ==========
+  // Chỉ fetch giảng viên khi đã chọn học phần
   useEffect(() => {
-    fetchTeachers();
-  }, [teacherPage]);
+    if (selectedCourse) {
+      fetchTeachers();
+    }
+  }, [teacherPage, selectedCourse]);
 
   const fetchTeachers = async (filterParams = teacherFilters) => {
     try {
@@ -811,7 +814,11 @@ const AdminSchedulePage = () => {
                           <tr key={`${row.course_section_id}-${row.type}-${row.group_id || 'lt'}`}
                             className={`border-b hover:brightness-95 transition-colors h-9 ${courseColorMap[row.code] || 'bg-white'}`}>
                             <td className="px-2 py-1">
-                              <input type="radio" name="course" onChange={() => setSelectedCourse(row)} />
+                              <input type="radio" name="course" onChange={() => {
+                                setSelectedCourse(row);
+                                setSelectedTeacher(null);
+                                setTeacherPage(1);
+                              }} />
                             </td>
                             <td className="px-2 py-1 text-xs font-medium">{row.code}</td>
                             <td className="px-2 py-1 text-xs max-w-[200px] truncate" title={row.name}>{row.name}</td>
@@ -844,6 +851,16 @@ const AdminSchedulePage = () => {
 
               {/* ============= TABLE GIẢNG VIÊN (40%) ============= */}
               <div className="lg:col-span-2">
+              {!selectedCourse ? (
+                <div className="flex flex-col items-center justify-center h-full bg-white border rounded-xl p-8 text-center">
+                  <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  <h4 className="text-gray-500 font-semibold mb-2">Chưa chọn học phần</h4>
+                  <p className="text-gray-400 text-sm">Vui lòng chọn một học phần từ bảng bên trái để hiển thị danh sách giảng viên.</p>
+                </div>
+              ) : (
+              <>
                 {/* Filter cho giảng viên */}
                 <div className="bg-white border p-4 mb-2 rounded-t-lg">
                   <div className="flex items-center gap-2 mb-3 text-gray-800 font-semibold text-sm">
@@ -981,6 +998,8 @@ const AdminSchedulePage = () => {
                   </table>
                   <Pagination currentPage={teacherPage} totalPages={teacherPagination.totalPages} onPageChange={(page) => setTeacherPage(page)} />
                 </div>
+              </>
+              )}
               </div>
 
             </div>

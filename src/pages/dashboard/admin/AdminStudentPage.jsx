@@ -12,6 +12,7 @@ import studentService from "../../../services/student.service";
 import { exportPersonnelToExcel } from "../../../utils/excelExport";
 import userService from "../../../services/user.service";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import {
   CirclePlus,
   LockKeyhole,
@@ -30,6 +31,7 @@ import { DEPARTMENTS } from "../../../constants/departments";
 import EmptyState from "@components/layout/EmptyState";
 const AdminStudentPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   // API Data states
   const [students, setStudents] = useState([]);
