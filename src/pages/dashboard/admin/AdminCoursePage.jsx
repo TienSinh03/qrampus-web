@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
 import courseService from "../../../services/course.service";
+import reportService from "../../../services/report.service";
 import { exportCourseToExcel } from "../../../utils/excelExport";
 const AdminCoursePage = () => {
   // const { t } = useTranslation();
@@ -45,6 +46,18 @@ const AdminCoursePage = () => {
     page: 1,
     limit: 10,
     totalPages: 0
+  });
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    course_sections: {
+      total: 0,
+      this_semester: 0,
+      growth: 0,
+      active: 0,
+      active_rate: 0,
+      with_students: 0,
+      enrollment_rate: 0,
+    },
   });
 
   // Filter states
@@ -238,6 +251,31 @@ const AdminCoursePage = () => {
     }
   };
 
+  const fetchCardCourseSection = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardCourseSesction();
+      if (response?.data?.course_sections) {
+        setCardStats({
+          course_sections: {
+            total: Number(response.data.course_sections.total) || 0,
+            this_semester: Number(response.data.course_sections.this_semester) || 0,
+            growth: Number(response.data.course_sections.growth) || 0,
+            active: Number(response.data.course_sections.active) || 0,
+            active_rate: Number(response.data.course_sections.active_rate) || 0,
+            with_students: Number(response.data.course_sections.with_students) || 0,
+            enrollment_rate: Number(response.data.course_sections.enrollment_rate) || 0,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching card course section stats:", error);
+      toast.error(error.message || "Không thể tải thống kê học phần");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
   // Fetch data on mount and when page/filters change
   useEffect(() => {
     fetchCourseSections();
@@ -246,6 +284,10 @@ const AdminCoursePage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, filters]);
+
+  useEffect(() => {
+    fetchCardCourseSection();
+  }, []);
 
   // Khi selectAllPages = true và dữ liệu trang mới load xong, tự động chọn tất cả trên trang đó (trừ excluded)
   useEffect(() => {
@@ -330,6 +372,8 @@ const AdminCoursePage = () => {
 
   const isAllSelected = courses.length > 0 && selectedIds.length === courses.length;
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < courses.length;
+  const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
 
   // CỘT, BẢNG
 
@@ -344,40 +388,40 @@ const AdminCoursePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
                 title="Tổng số"
-                value="21,459"
-                percent="(+29%)"
-                positive={true}
+                value={cardLoading ? '...' : formatNumber(cardStats.course_sections.total)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.course_sections.growth)})`}
+                positive={cardStats.course_sections.growth >= 0}
                 subtitle="môn học đã tạo"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
               />
 
               <StatsCard
-                title="Tổng số môn học"
-                value="4,567"
-                percent="(+18%)"
-                positive={true}
-                subtitle="chưa có lịch"
+                title="Học phần kỳ này"
+                value={cardLoading ? '...' : formatNumber(cardStats.course_sections.this_semester)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.course_sections.growth)})`}
+                positive={cardStats.course_sections.growth >= 0}
+                subtitle="so với kỳ trước"
                 icon={<UserPlus className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
               />
 
               <StatsCard
-                title="Tổng số môn học"
-                value="19,860"
-                percent="(-14%)"
-                positive={false}
-                subtitle="đã có lịch"
+                title="Đang hoạt động"
+                value={cardLoading ? '...' : formatNumber(cardStats.course_sections.active)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.course_sections.active_rate)})`}
+                positive={cardStats.course_sections.active_rate >= 50}
+                subtitle="tỷ lệ có lịch"
                 icon={<UserCheck className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
               />
 
               <StatsCard
-                title=".........."
-                value="237"
-                percent="(+42%)"
-                positive={true}
-                subtitle="..............."
+                title="Có sinh viên đăng ký"
+                value={cardLoading ? '...' : formatNumber(cardStats.course_sections.with_students)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.course_sections.enrollment_rate)})`}
+                positive={cardStats.course_sections.enrollment_rate >= 50}
+                subtitle="tỷ lệ có đăng ký"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />

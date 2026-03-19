@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
@@ -6,6 +6,7 @@ import ModalAddSurvey from "../../../components/modal/ModalAddSurvey";
 import ModalEditSurvey from "../../../components/modal/ModalEditSurvey";
 import ModalViewSurvey from "../../../components/modal/ModalViewSurvey";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import reportService from "../../../services/report.service";
 import { toast } from "sonner";
 
 import {
@@ -33,6 +34,18 @@ const AdminSurveyPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    surveys: {
+      total: 0,
+      this_month: 0,
+      growth: 0,
+      active: 0,
+      active_rate: 0,
+      answered: 0,
+      response_rate: 0,
+    },
+  });
 
   // Modal states
   const [modalAddSurvey, setModalAddSurvey] = useState({ isOpen: false });
@@ -76,6 +89,35 @@ const AdminSurveyPage = () => {
   const closeConfirmActionModal = () => {
     setModalConfirmAction({ isOpen: false, actionType: "", surveyData: null });
   };
+
+  const fetchCardSurvey = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardSurvey();
+      if (response?.data?.surveys) {
+        setCardStats({
+          surveys: {
+            total: Number(response.data.surveys.total) || 0,
+            this_month: Number(response.data.surveys.this_month) || 0,
+            growth: Number(response.data.surveys.growth) || 0,
+            active: Number(response.data.surveys.active) || 0,
+            active_rate: Number(response.data.surveys.active_rate) || 0,
+            answered: Number(response.data.surveys.answered) || 0,
+            response_rate: Number(response.data.surveys.response_rate) || 0,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching card survey stats:", error);
+      toast.error(error.message || "Không thể tải thống kê khảo sát");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCardSurvey();
+  }, []);
 
   // Handle actions
   const handleAddSurvey = (surveyData) => {
@@ -205,6 +247,8 @@ const AdminSurveyPage = () => {
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < survey.length;
 
   const [expanded, setExpanded] = useState(false);
+  const formatNumber = (value) => new Intl.NumberFormat("vi-VN").format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
   // cột , bảng
   const [visibleCols, setVisibleCols] = useState({
     courseCode: true,
@@ -232,9 +276,9 @@ const AdminSurveyPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
                 title="Tổng"
-                value="21,459"
-                percent="(+29%)"
-                positive={true}
+                value={cardLoading ? "..." : formatNumber(cardStats.surveys.total)}
+                percent={cardLoading ? "..." : `(${formatPercent(cardStats.surveys.growth)})`}
+                positive={cardStats.surveys.growth >= 0}
                 subtitle="Khảo sát đã tạo"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
@@ -242,9 +286,9 @@ const AdminSurveyPage = () => {
 
               <StatsCard
                 title="Học phần đã tạo"
-                value="4567"
-                percent="(+18%)"
-                positive={true}
+                value={cardLoading ? "..." : formatNumber(cardStats.surveys.this_month)}
+                percent={cardLoading ? "..." : `(${formatPercent(cardStats.surveys.growth)})`}
+                positive={cardStats.surveys.growth >= 0}
                 subtitle="kỳ này"
                 icon={<UserPlus className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
@@ -252,20 +296,20 @@ const AdminSurveyPage = () => {
 
               <StatsCard
                 title="Đang mở"
-                value="19,860"
-                percent="(-14%)"
-                positive={false}
+                value={cardLoading ? "..." : formatNumber(cardStats.surveys.active)}
+                percent={cardLoading ? "..." : `(${formatPercent(cardStats.surveys.active_rate)})`}
+                positive={cardStats.surveys.active_rate >= 50}
                 subtitle="số học phần"
                 icon={<UserCheck className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
               />
 
               <StatsCard
-                title="Đã khóa"
-                value="237"
-                percent="(+42%)"
-                positive={true}
-                subtitle="số học phần"
+                title="Đã phản hồi"
+                value={cardLoading ? "..." : formatNumber(cardStats.surveys.answered)}
+                percent={cardLoading ? "..." : `(${formatPercent(cardStats.surveys.response_rate)})`}
+                positive={cardStats.surveys.response_rate >= 50}
+                subtitle="tỷ lệ phản hồi"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />

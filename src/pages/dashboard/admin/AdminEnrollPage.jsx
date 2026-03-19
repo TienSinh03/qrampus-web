@@ -8,6 +8,7 @@ import ModalAddEnroll from "../../../components/modal/ModalAddEnroll";
 import ModalEditEnroll from "../../../components/modal/ModalEditEnroll";
 import ModalViewEnroll from "../../../components/modal/ModalViewEnroll";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import reportService from "../../../services/report.service";
 import {
   CirclePlus,
   Trash2,
@@ -33,6 +34,18 @@ const AdminEnrollPage = () => {
   const [openMenu, setOpenMenu] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    enrollments: {
+      total: 0,
+      this_semester: 0,
+      growth: 0,
+      active: 0,
+      active_rate: 0,
+      unique_students_this_semester: 0,
+      student_coverage_rate: 0,
+    },
+  });
 
   // Modal states
   const [modalAddEnroll, setModalAddEnroll] = useState({ isOpen: false });
@@ -85,6 +98,35 @@ const AdminEnrollPage = () => {
 
     return () => document.removeEventListener("click", handleClick);
   }, [openMenu]);
+
+  const fetchCardEnrollment = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardEnrollment();
+      if (response?.data?.enrollments) {
+        setCardStats({
+          enrollments: {
+            total: Number(response.data.enrollments.total) || 0,
+            this_semester: Number(response.data.enrollments.this_semester) || 0,
+            growth: Number(response.data.enrollments.growth) || 0,
+            active: Number(response.data.enrollments.active) || 0,
+            active_rate: Number(response.data.enrollments.active_rate) || 0,
+            unique_students_this_semester: Number(response.data.enrollments.unique_students_this_semester) || 0,
+            student_coverage_rate: Number(response.data.enrollments.student_coverage_rate) || 0,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching card enrollment stats:", error);
+      toast.error(error.message || "Không thể tải thống kê đăng ký");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCardEnrollment();
+  }, []);
 
   const totalPages = 5;
 
@@ -183,6 +225,9 @@ const AdminEnrollPage = () => {
 
   });
 
+  const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
+
 
   return (
 
@@ -195,9 +240,9 @@ const AdminEnrollPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
                 title="Tổng số"
-                value="21,459"
-                percent="(+29%)"
-                positive={true}
+                value={cardLoading ? '...' : formatNumber(cardStats.enrollments.total)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.enrollments.growth)})`}
+                positive={cardStats.enrollments.growth >= 0}
                 subtitle="sinh viên đã tham gia"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
@@ -205,9 +250,9 @@ const AdminEnrollPage = () => {
 
               <StatsCard
                 title="Tổng số"
-                value="4,567"
-                percent="(+18%)"
-                positive={true}
+                value={cardLoading ? '...' : formatNumber(cardStats.enrollments.this_semester)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.enrollments.growth)})`}
+                positive={cardStats.enrollments.growth >= 0}
                 subtitle="học phần"
                 icon={<UserPlus className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
@@ -215,20 +260,20 @@ const AdminEnrollPage = () => {
 
               <StatsCard
                 title="Tổng số lịch"
-                value="19,860"
-                percent="(-14%)"
-                positive={false}
+                value={cardLoading ? '...' : formatNumber(cardStats.enrollments.active)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.enrollments.active_rate)})`}
+                positive={cardStats.enrollments.active_rate >= 50}
                 subtitle="Sinh viên hôm nay "
                 icon={<UserCheck className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
               />
 
               <StatsCard
-                title=".........."
-                value="237"
-                percent="(+42%)"
-                positive={true}
-                subtitle="..............."
+                title="Độ phủ sinh viên"
+                value={cardLoading ? '...' : formatNumber(cardStats.enrollments.unique_students_this_semester)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.enrollments.student_coverage_rate)})`}
+                positive={cardStats.enrollments.student_coverage_rate >= 50}
+                subtitle="trong kỳ này"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />

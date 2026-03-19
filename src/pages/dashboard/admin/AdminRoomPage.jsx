@@ -11,6 +11,7 @@ import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
 import ModalExportRoomExcel from "../../../components/modal/ModalExportRoomExcel";
 import ModalBulkUploadRoom from "../../../components/modal/ModalBulkUploadRoom";
 import roomService from "../../../services/room.service";
+import reportService from "../../../services/report.service";
 import { exportRoomsToExcel } from "../../../utils/excelExport";
 import {
   CirclePlus,
@@ -20,9 +21,9 @@ import {
   Eye,
   PencilLine,
   Users,
+  UserPlus,
   UserCheck,
   UserX,
-  UserPlus,
   X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX, FileSearchIcon,
   ArrowDownToLine,
   File, Settings,
@@ -52,6 +53,20 @@ const AdminRoomPage = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingRoomDetail, setLoadingRoomDetail] = useState(false);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    rooms: {
+      total: 0,
+      used_today: 0,
+      today_usage_rate: 0,
+      active: 0,
+      active_rate: 0,
+      used: 0,
+      usage_rate: 0,
+    },
+  });
+  const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -269,6 +284,35 @@ const AdminRoomPage = () => {
     fetchRooms();
   }, [currentPage, itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const fetchCardRoom = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardRoom();
+      if (response?.data?.rooms) {
+        setCardStats({
+          rooms: {
+            total: Number(response.data.rooms.total) || 0,
+            used_today: Number(response.data.rooms.used_today) || 0,
+            today_usage_rate: Number(response.data.rooms.today_usage_rate) || 0,
+            active: Number(response.data.rooms.active) || 0,
+            active_rate: Number(response.data.rooms.active_rate) || 0,
+            used: Number(response.data.rooms.used) || 0,
+            usage_rate: Number(response.data.rooms.usage_rate) || 0,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching room cards:", error);
+      toast.error(error.message || "Không thể tải thống kê phòng học");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCardRoom();
+  }, []);
+
   // Reset selection when changing pages (unless select all pages is active)
   useEffect(() => {
     if (!selectAllPages) {
@@ -483,8 +527,8 @@ const AdminRoomPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
                 title="Tổng số"
-                value="21,459"
-                percent="(+29%)"
+                value={cardLoading ? '...' : formatNumber(cardStats.rooms.total)}
+                percent="(+0.0%)"
                 positive={true}
                 subtitle="phòng đã tạo"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
@@ -492,31 +536,31 @@ const AdminRoomPage = () => {
               />
 
               <StatsCard
-                title="Tổng số"
-                value="4,567"
-                percent="(+18%)"
-                positive={true}
-                subtitle="phòng học hôm nay"
+                title="Phòng hôm nay"
+                value={cardLoading ? '...' : formatNumber(cardStats.rooms.used_today)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.rooms.today_usage_rate)})`}
+                positive={cardStats.rooms.today_usage_rate >= 50}
+                subtitle="đang được sử dụng"
                 icon={<UserPlus className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
               />
 
               <StatsCard
-                title="Tổng số"
-                value="19,860"
-                percent="(-14%)"
-                positive={false}
-                subtitle="phòng trống"
+                title="Phòng active"
+                value={cardLoading ? '...' : formatNumber(cardStats.rooms.active)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.rooms.active_rate)})`}
+                positive={cardStats.rooms.active_rate >= 50}
+                subtitle="tỷ lệ hoạt động"
                 icon={<UserCheck className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
               />
 
               <StatsCard
-                title="Tổng số"
-                value="237"
-                percent="(+42%)"
-                positive={true}
-                subtitle="phòng thiếu vị trí"
+                title="Phòng có sử dụng"
+                value={cardLoading ? '...' : formatNumber(cardStats.rooms.used)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.rooms.usage_rate)})`}
+                positive={cardStats.rooms.usage_rate >= 50}
+                subtitle="đã từng được dùng"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />

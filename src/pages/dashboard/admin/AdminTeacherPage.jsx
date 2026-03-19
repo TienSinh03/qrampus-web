@@ -10,6 +10,7 @@ import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
 import ModalExportExcel from "../../../components/modal/ModalExportExcel";
 import personnelService from "../../../services/personnel.service";
 import userService from "../../../services/user.service";
+import reportService from "../../../services/report.service";
 import LoadingSpinner from "@components/layout/LoadingSpinner";
 import EmptyState from "@components/layout/EmptyState";
 import { toast } from "sonner";
@@ -43,6 +44,16 @@ const AdminTeacherPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    teachers: {
+      total: 0,
+      this_month: 0,
+      growth: 0,
+      active: 0,
+      active_rate: 0,
+    },
+  });
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -373,6 +384,29 @@ const AdminTeacherPage = () => {
     }
   };
 
+  const fetchCardPersonnel = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardpersonnel();
+      if (response?.data?.teachers) {
+        setCardStats({
+          teachers: {
+            total: Number(response.data.teachers.total) || 0,
+            this_month: Number(response.data.teachers.this_month) || 0,
+            growth: Number(response.data.teachers.growth) || 0,
+            active: Number(response.data.teachers.active) || 0,
+            active_rate: Number(response.data.teachers.active_rate) || 0,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching card personnel stats:", err);
+      toast.error(err.message || "Không thể tải thống kê giảng viên");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
   // Fetch data on mount and when filters/currentPage change
   useEffect(() => {
     fetchPersonnels();
@@ -380,6 +414,10 @@ const AdminTeacherPage = () => {
       setSelectedIds([]);
     }
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchCardPersonnel();
+  }, []);
 
   // Khi selectAllPages = true và dữ liệu trang mới load xong, tự động chọn tất cả trên trang đó (trừ excluded)
   useEffect(() => {
@@ -485,6 +523,10 @@ const AdminTeacherPage = () => {
 
   const isAllSelected = personnels.length > 0 && selectedIds.length === personnels.length;
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < personnels.length;
+  const inactiveTeachers = Math.max(cardStats.teachers.total - cardStats.teachers.active, 0);
+  const inactiveRate = Math.max(100 - cardStats.teachers.active_rate, 0);
+  const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
 
   // Get initials from name
   const getInitials = (name) => {
@@ -524,41 +566,41 @@ const AdminTeacherPage = () => {
           <div className="">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
-                title="Session"
-                value="21,459"
-                percent="(+29%)"
-                positive={true}
-                subtitle="Total User"
+                title="Tổng giảng viên"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.total)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.growth)})`}
+                positive={cardStats.teachers.growth >= 0}
+                subtitle="Toàn hệ thống"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
               />
 
               <StatsCard
-                title="Paid Users"
-                value="4,567"
-                percent="(+18%)"
-                positive={true}
-                subtitle="Last week analytics"
+                title="Giảng viên mới"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.this_month)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.growth)})`}
+                positive={cardStats.teachers.growth >= 0}
+                subtitle="Trong tháng này"
                 icon={<UserPlus className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
               />
 
               <StatsCard
-                title="Active Users"
-                value="19,860"
-                percent="(-14%)"
-                positive={false}
-                subtitle="Last week analytics"
+                title="Giảng viên hoạt động"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.active)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.active_rate)})`}
+                positive={cardStats.teachers.active_rate >= 50}
+                subtitle="Tỷ lệ active"
                 icon={<UserCheck className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
               />
 
               <StatsCard
-                title="Pending Users"
-                value="237"
-                percent="(+42%)"
-                positive={true}
-                subtitle="Last week analytics"
+                title="Giảng viên chưa active"
+                value={cardLoading ? '...' : formatNumber(inactiveTeachers)}
+                percent={cardLoading ? '...' : `(${formatPercent(inactiveRate)})`}
+                positive={false}
+                subtitle="Tỷ lệ chưa active"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />

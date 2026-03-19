@@ -7,6 +7,7 @@ import courseService from "../../../services/course.service";
 import teacherService from "../../../services/teacher.service";
 import scheduleService from "../../../services/schedule.service";
 import roomService from "../../../services/room.service";
+import reportService from "../../../services/report.service";
 import EmptyState from "../../../components/layout/EmptyState";
 import { DEPARTMENTS } from "../../../constants/departments";
 
@@ -46,6 +47,19 @@ const AdminSchedulePage = () => {
   const [rooms, setRooms] = useState([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    schedules: {
+      total: 0,
+      total_growth: 0,
+      this_semester: 0,
+      semester_growth: 0,
+      with_students: 0,
+      with_student_rate: 0,
+      without_students: 0,
+      without_student_rate: 0,
+    },
+  });
   
   // ========== COURSE TABLE STATE ==========
   const [courseRows, setCourseRows] = useState([]);
@@ -95,6 +109,36 @@ const AdminSchedulePage = () => {
   useEffect(() => {
     fetchCourseRows();
   }, [coursePage]);
+
+  const fetchCardSchedules = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardschedules();
+      if (response?.data?.schedules) {
+        setCardStats({
+          schedules: {
+            total: Number(response.data.schedules.total) || 0,
+            total_growth: Number(response.data.schedules.total_growth) || 0,
+            this_semester: Number(response.data.schedules.this_semester) || 0,
+            semester_growth: Number(response.data.schedules.semester_growth) || 0,
+            with_students: Number(response.data.schedules.with_students) || 0,
+            with_student_rate: Number(response.data.schedules.with_student_rate) || 0,
+            without_students: Number(response.data.schedules.without_students) || 0,
+            without_student_rate: Number(response.data.schedules.without_student_rate) || 0,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching card schedules stats:", error);
+      toast.error(error.message || "Không thể tải thống kê lịch dạy");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCardSchedules();
+  }, []);
 
   // Helper: Convert time format from "6h30" to "06:30:00"
   const convertTimeFormat = (time) => {
@@ -588,6 +632,8 @@ const AdminSchedulePage = () => {
   const learningForm = selectedCourse?.type === 'LT' ? 'Lý thuyết' : selectedCourse?.type === 'TH' ? 'Thực hành' : null;
   const theoryDisabled = selectedCourse?.type === 'TH' || theoryAssigned;
   const practiceDisabled = selectedCourse?.type === 'LT';
+  const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
 
 
   return (
@@ -601,9 +647,9 @@ const AdminSchedulePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
                 title="Tổng"
-                value="21,459"
-                percent="(+29%)"
-                positive={true}
+                value={cardLoading ? '...' : formatNumber(cardStats.schedules.total)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.schedules.total_growth)})`}
+                positive={cardStats.schedules.total_growth >= 0}
                 subtitle="lịch dạy đã tạo"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
@@ -611,9 +657,9 @@ const AdminSchedulePage = () => {
 
               <StatsCard
                 title="Lịch dạy"
-                value="4567"
-                percent="(+18%)"
-                positive={true}
+                value={cardLoading ? '...' : formatNumber(cardStats.schedules.this_semester)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.schedules.semester_growth)})`}
+                positive={cardStats.schedules.semester_growth >= 0}
                 subtitle="kỳ này"
                 icon={<UserPlus className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
@@ -621,9 +667,9 @@ const AdminSchedulePage = () => {
 
               <StatsCard
                 title="Tổng lịch dạy"
-                value="19,860"
-                percent="(-14%)"
-                positive={false}
+                value={cardLoading ? '...' : formatNumber(cardStats.schedules.with_students)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.schedules.with_student_rate)})`}
+                positive={cardStats.schedules.with_student_rate >= 50}
                 subtitle="tồn tại sinh viên"
                 icon={<UserCheck className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
@@ -631,9 +677,9 @@ const AdminSchedulePage = () => {
 
               <StatsCard
                 title="Tổng lịch dạy"
-                value="237"
-                percent="(+42%)"
-                positive={true}
+                value={cardLoading ? '...' : formatNumber(cardStats.schedules.without_students)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.schedules.without_student_rate)})`}
+                positive={false}
                 subtitle="chưa có sinh viên"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"

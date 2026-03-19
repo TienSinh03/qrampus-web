@@ -11,8 +11,8 @@ import ModalExportExcel from "../../../components/modal/ModalExportExcel";
 import studentService from "../../../services/student.service";
 import { exportPersonnelToExcel } from "../../../utils/excelExport";
 import userService from "../../../services/user.service";
+import reportService from "../../../services/report.service";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import {
   CirclePlus,
   LockKeyhole,
@@ -31,7 +31,6 @@ import { DEPARTMENTS } from "../../../constants/departments";
 import EmptyState from "@components/layout/EmptyState";
 const AdminStudentPage = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   // API Data states
   const [students, setStudents] = useState([]);
@@ -42,6 +41,16 @@ const AdminStudentPage = () => {
     totalPages: 0
   });
   const [loading, setLoading] = useState(false);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    students: {
+      total: 0,
+      this_month: 0,
+      growth: 0,
+      active: 0,
+      active_rate: 0,
+    },
+  });
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -135,7 +144,7 @@ const AdminStudentPage = () => {
           const allStudents = (Array.isArray(response.data) ? response.data : []).filter(s => !excludedIds.includes(s.id));
           setModalExportExcel({ isOpen: true, data: allStudents });
         }
-      } catch (error) {
+      } catch {
         toast.error("Không thể tải danh sách sinh viên để xuất.");
       }
       return;
@@ -200,7 +209,7 @@ const AdminStudentPage = () => {
 
   const handleEditStudent = async (formData) => {
     try {
-      const { student_code, status, avatar, ...rest } = formData;
+      const { student_code, status: _status, avatar: _avatar, ...rest } = formData;
       await studentService.updateStudentByAdmin(student_code, rest);
       toast.success("Đã cập nhật thông tin sinh viên thành công!");
       fetchStudents();
@@ -264,6 +273,29 @@ const AdminStudentPage = () => {
     }
   };
 
+  const fetchCardStudent = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardStudent();
+      if (response?.data?.students) {
+        setCardStats({
+          students: {
+            total: Number(response.data.students.total) || 0,
+            this_month: Number(response.data.students.this_month) || 0,
+            growth: Number(response.data.students.growth) || 0,
+            active: Number(response.data.students.active) || 0,
+            active_rate: Number(response.data.students.active_rate) || 0,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching card student stats:", err);
+      toast.error(err.message || "Không thể tải thống kê sinh viên");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
   // Fetch khi trang thay đổi
   useEffect(() => {
     fetchStudents();
@@ -271,6 +303,10 @@ const AdminStudentPage = () => {
       setSelectedIds([]);
     }
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchCardStudent();
+  }, []);
 
   // Khi selectAllPages = true và dữ liệu trang mới load xong, tự động chọn tất cả trên trang đó (trừ excluded)
   useEffect(() => {
@@ -378,6 +414,10 @@ const AdminStudentPage = () => {
 
   const isAllSelected = students.length > 0 && selectedIds.length === students.length;
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < students.length;
+  const inactiveStudents = Math.max(cardStats.students.total - cardStats.students.active, 0);
+  const inactiveRate = Math.max(100 - cardStats.students.active_rate, 0);
+  const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
 
   const [expanded, setExpanded] = useState(false);
 
@@ -391,41 +431,41 @@ const AdminStudentPage = () => {
           <div className="">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
-                title="Session"
-                value="21,459"
-                percent="(+29%)"
-                positive={true}
-                subtitle="Total User"
+                title="Tổng sinh viên"
+                value={cardLoading ? '...' : formatNumber(cardStats.students.total)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.students.growth)})`}
+                positive={cardStats.students.growth >= 0}
+                subtitle="Toàn hệ thống"
                 icon={<Users className="w-6 h-6 text-purple-600" />}
                 iconBg="bg-purple-100"
               />
 
               <StatsCard
-                title="Paid Users"
-                value="4,567"
-                percent="(+18%)"
-                positive={true}
-                subtitle="Last week analytics"
+                title="Sinh viên mới"
+                value={cardLoading ? '...' : formatNumber(cardStats.students.this_month)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.students.growth)})`}
+                positive={cardStats.students.growth >= 0}
+                subtitle="Trong tháng này"
                 icon={<UserPlus className="w-6 h-6 text-rose-600" />}
                 iconBg="bg-rose-100"
               />
 
               <StatsCard
-                title="Active Users"
-                value="19,860"
-                percent="(-14%)"
-                positive={false}
-                subtitle="Last week analytics"
+                title="Sinh viên hoạt động"
+                value={cardLoading ? '...' : formatNumber(cardStats.students.active)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.students.active_rate)})`}
+                positive={cardStats.students.active_rate >= 50}
+                subtitle="Tỷ lệ active"
                 icon={<UserCheck className="w-6 h-6 text-green-600" />}
                 iconBg="bg-green-100"
               />
 
               <StatsCard
-                title="Pending Users"
-                value="237"
-                percent="(+42%)"
-                positive={true}
-                subtitle="Last week analytics"
+                title="Sinh viên chưa active"
+                value={cardLoading ? '...' : formatNumber(inactiveStudents)}
+                percent={cardLoading ? '...' : `(${formatPercent(inactiveRate)})`}
+                positive={false}
+                subtitle="Tỷ lệ chưa active"
                 icon={<UserX className="w-6 h-6 text-yellow-600" />}
                 iconBg="bg-yellow-100"
               />
