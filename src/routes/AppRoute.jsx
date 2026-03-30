@@ -43,6 +43,11 @@ import AdminDetailSurveyPage from "../pages/dashboard/admin/AdminDetailSurveyPag
 
 // attendance 
 import AttendanceDashboardPage from "@pages/dashboard/departmentAttendance/AttendanceDashboardPage";
+import AttendanceTimesheetManagementPage from "@pages/dashboard/departmentAttendance/AttendanceTimesheetManagementPage";
+import AttendanceTeacherPage from "@pages/dashboard/departmentAttendance/AttendanceTeacherPage";
+import AttendanceSchedulePage from "@pages/dashboard/departmentAttendance/AttendanceSchedulePage";
+import AttendanceSessionQRPage from "@pages/dashboard/departmentAttendance/AttendanceSessionQRPage";
+
 
 // chung
 import { PublicRoute } from "./PublicRoute";
@@ -365,7 +370,45 @@ const router = createBrowserRouter([
             <AttendanceDashboardPage />
           </RoleRoute>
         ),
+
+      },
+      {
+        path: "attendance-timesheet",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceTimesheetManagementPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "attendance-teacher",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceTeacherPage />
+          </RoleRoute>
+         ),
+      },
+      {
+        path: "attendance-schedule",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceSchedulePage />
+          </RoleRoute>
+        ),  
+      },
+      {
+        path: "attendance-results",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceSessionQRPage />
+          </RoleRoute>
+        )
       }
+
+
+
+
+
     ],
   },
 

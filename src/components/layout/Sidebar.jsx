@@ -34,6 +34,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   // Thêm state để kiểm soát chế độ thu gọn
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [selectedSchoolYear, setSelectedSchoolYear] = useState('2025-2026');
+  const [selectedSemester, setSelectedSemester] = useState('HK2');
+
+  const schoolYearOptions = ['2023-2024', '2024-2025', '2025-2026', '2026-2027'];
+  const semesterOptions = ['HK1', 'HK2', 'Hè'];
 
   // Tự động mở rộng khi ở mobile
   useEffect(() => {
@@ -179,6 +184,33 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       roles: [ROLES.ATTENDANCE_STAFF],
       separator: true // Thêm separator trước attendance section
     },
+    {
+      icon: CalendarClock,
+      label: 'Quản lý Chấm Công',
+      path: '/dashboard/attendance-timesheet',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    {
+      icon: Calendar,
+      label: 'Danh sách giảng viên',
+      path: '/dashboard/attendance-teacher',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    //lịch dạy
+    {
+      icon: CalendarClock,
+      label: 'Danh sách lLịch dạy',
+      path: '/dashboard/attendance-schedule',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    //quản lý điểm danh
+    {
+      icon: ScanQrCode,
+      label: 'Kết quả Điểm danh',
+      path: '/dashboard/attendance-results',
+      roles: [ROLES.ATTENDANCE_STAFF]
+
+    }
   ];
 
   // Filter menu items dựa trên activeRole của user
@@ -195,6 +227,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       return item.roles.some(role => effectiveRoles.includes(role));
     });
   }, [user?.roles, activeRole, allMenuItems]);
+
+  const userRoles = user?.roles || [];
+  const isAttendanceRoleActive =
+    activeRole === ROLES.ATTENDANCE_STAFF ||
+    (!activeRole && userRoles.length === 1 && userRoles.includes(ROLES.ATTENDANCE_STAFF));
 
   const isActive = (path) => location.pathname === path;
 
@@ -316,6 +353,38 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
           {/* MENU */}
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll">
+            {!isCollapsed && isAttendanceRoleActive && (
+              <div className="mb-4 border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                  Năm học / Kỳ
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  <select
+                    value={selectedSchoolYear}
+                    onChange={(e) => setSelectedSchoolYear(e.target.value)}
+                    className="w-full  border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {schoolYearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        Năm học {year}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedSemester}
+                    onChange={(e) => setSelectedSemester(e.target.value)}
+                    className="w-full border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {semesterOptions.map((semester) => (
+                      <option key={semester} value={semester}>
+                        Kỳ {semester}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
             {menuItems.length === 0 ? (
               <div className="px-4 py-3 text-sm text-slate-500 text-center">
                 Không có menu nào khả dụng
