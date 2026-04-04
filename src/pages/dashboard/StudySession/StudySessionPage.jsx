@@ -1,27 +1,70 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import DescriptionTab from "./tabs/DescriptionTab";
 import StudentStudySession from "./tabs/StudentStudySession";
 import ScheduleStudySession from "./tabs/ScheduleStudySession";
 import QRCodeTab from "./tabs/QRCodeTab";
-import { FileImage, FileUser, Calendar, QrCode, SquareStar, ScanQrCode, X, Camera } from "lucide-react";
+import { FileImage, FileUser, Calendar, QrCode, SquareStar, ScanQrCode, X, AlertCircle } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { vi } from "date-fns/locale";
 
 const StudySessionPage = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [currentTab, setCurrentTab] = useState("description");
+    
+    // Get schedule from navigate state
+    const scheduleFromState = location.state?.schedule;
+    const [schedule, setSchedule] = useState(scheduleFromState || null);
+
+    // If no schedule in state, you might want to redirect or fetch it
+    useEffect(() => {
+        if (!scheduleFromState) {
+            console.warn('No schedule data found in navigation state');
+            // Optional: redirect back or fetch schedule by ID from URL params
+        } else {
+            setSchedule(scheduleFromState);
+        }
+    }, [scheduleFromState]);
 
     const renderTab = () => {
+        if (!schedule) {
+            return (
+                <div className="flex items-center justify-center p-8 text-gray-500">
+                    <div className="text-center">
+                        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                        <p>Không tìm thấy thông tin lịch học</p>
+                        <button 
+                            onClick={() => navigate('/dashboard/schedule')}
+                            className="mt-4 btn-blue"
+                        >
+                            Quay lại lịch học
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
         switch (currentTab) {
             case "description":
-                return <DescriptionTab />;
+                return <DescriptionTab schedule={schedule} />;
             case "student":
-                return <StudentStudySession />;
+                return <StudentStudySession schedule={schedule} />;
             case "schedule":
-                return <ScheduleStudySession />;
+                return <ScheduleStudySession schedule={schedule} />;
             case "qr":
-                return <QRCodeTab />;
+                return <QRCodeTab schedule={schedule} />;
             default:
-                return <DescriptionTab />;
+                return <DescriptionTab schedule={schedule} />;
         }
     };
+
+    // Format display data from schedule
+    const courseCode = schedule?.courseSection?.code || 'N/A';
+    const courseName = schedule?.courseSection?.name || 'Chưa có tên môn học';
+    const semester = schedule?.courseSection?.semester || 'N/A';
+    const scheduleType = schedule?.schedule_type === 'theory' ? 'Lý thuyết' : 'Thực hành';
+    const practiceGroupName = schedule?.practiceGroup?.group_name || null;
 
 
   //model tạo qR
@@ -42,26 +85,28 @@ const StudySessionPage = () => {
                     <div className="flex items-center gap-4">
                         {/* Avatar card */}
                         <div className="-mt-16 h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-indigo-100 shadow-sm">
-                            {/* Thay bằng <img src="..." /> nếu có hình thật */}
                             <div className="flex h-full w-full items-center justify-center text-5xl">
-                                🙂
+                                {schedule?.schedule_type === 'practice' ? '💻' : '📚'}
                             </div>
                         </div>
 
                         <div>
                             <h2 className="text-2xl font-semibold text-slate-900">
-                                LẬP TRÌNH THIẾT BỊ DI DỘNG
+                                {courseName}
                             </h2>
                             <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                                <h2>42345677843</h2>
+                                <span className="font-medium">{courseCode}</span>
                                 <span className="flex items-center gap-1">
-                                    <SquareStar className="w-5 h-5 " />
-                                    HK1
+                                    <SquareStar className="w-5 h-5" />
+                                    {semester}
                                 </span>
                                 <span className="flex items-center gap-1">
-                    <span>
-                      <Calendar className="w-5 h-5 " />
-                    </span> 2025 - 2026
+                                    <Calendar className="w-5 h-5" />
+                                    {schedule?.class_date && format(parseISO(schedule.class_date), 'dd/MM/yyyy', { locale: vi })}
+                                </span>
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                                    {scheduleType}
+                                    {practiceGroupName && ` - ${practiceGroupName}`}
                                 </span>
                             </div>
                         </div>

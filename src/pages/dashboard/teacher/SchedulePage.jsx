@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   CalendarDaysIcon,
   ChevronLeft,
   ChevronRight,
   Printer,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import {
   format,
@@ -14,18 +16,33 @@ import {
   subWeeks,
   startOfMonth,
   endOfMonth,
+  parseISO,
 } from "date-fns";
 import { vi } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { useTeacherSchedule } from "@contexts/TeacherScheduleContext";
 
 const SchedulePage = () => {
   const navigate = useNavigate();
+  const { 
+    schedules, 
+    loading, 
+    error, 
+    fetchSchedules, 
+    refreshSchedules,
+    getSchedulesByWeek 
+  } = useTeacherSchedule();
+
   /* ================= STATE ================= */
   const [currentWeekStart, setCurrentWeekStart] = useState(
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [monthCursor, setMonthCursor] = useState(new Date());
+
+  useEffect(() => {
+    fetchSchedules();
+  }, [fetchSchedules]);
 
   /* ================= WEEK ================= */
   const weekDates = useMemo(() => {
@@ -40,6 +57,11 @@ const SchedulePage = () => {
       date: format(date, "dd/MM/yyyy"),
     }));
   }, [currentWeekStart]);
+
+  const weekSchedules = useMemo(() => {
+    const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+    return getSchedulesByWeek(currentWeekStart, weekEnd);
+  }, [currentWeekStart, getSchedulesByWeek]);
 
   /* ================= MONTH ================= */
   const monthDays = useMemo(
@@ -63,118 +85,95 @@ const SchedulePage = () => {
   const goToCurrentWeek = () =>
     setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  /* ================= MOCK EVENT ================= */
-  const examEvent = [
-    {
-      date: "18/12/2025",
-      title: "Lập trình WWW (Java)",
-      mahocphan: "420300362101",
-      tiet: "13-16",
-      phong: "H3.1.1",
-      nhom: "1",
-      giaovien: [
-        { magiangvien: "10000001", name: "Đặng Thị Thu Hà" },
-        { magiangvien: "10000002", name: "Hà Thị Kim Thoa" }
-      ],
-      loaihoc: "3", // 1: lý thuyết (lịch học), 2: trực tuyến, 3: thi, 4: tạm ngưng
-      hinhthuchoc: "Thực hành"
-    },
-    {
-      date: "17/12/2025",
-      title: "Lập trình web",
-      mahocphan: "420300362123",
-      tiet: "4-6",
-      phong: "H3.1.1",
-      nhom: "0",
-      giaovien: [
-        { magiangvien: "10000001", name: "Đặng Thị Thu Hà" }
-      ],
-      loaihoc: "1",
-      hinhthuchoc: "Lý thuyết"
-    },
-    {
-      date: "24/12/2025",
-      title: "Lập trình web",
-      mahocphan: "420300362123",
-      tiet: "4-6",
-      phong: "H3.1.1",
-      nhom: "1",
-      giaovien: [
-        { magiangvien: "10000001", name: "Đặng Thị Thu Hà" }
-      ],
-      loaihoc: "1",
-      hinhthuchoc: "Thực hành"
-    }, {
-      "date": "20/12/2025",
-      "title": "Cấu trúc dữ liệu và Giải thuật",
-      "mahocphan": "420300365002",
-      "tiet": "1-3",
-      "phong": "A1.2",
-      "nhom": "2",
-      "giaovien": [
-        {
-          "magiangvien": "10000001",
-          "name": "Đặng Thị Thu Hà"
-        }
-      ],
-      "loaihoc": "1",
-      "hinhthuchoc": "Lý thuyết"
-    },
-    {
-      "date": "22/12/2025",
-      "title": "Cơ sở dữ liệu",
-      "mahocphan": "420300368005",
-      "tiet": "7-9",
-      "phong": "V5.2",
-      "nhom": "1",
-      "giaovien": [
-        {
-          "magiangvien": "10000001",
-          "name": "Đặng Thị Thu Hà"
-        }
-      ],
-      "loaihoc": "1",
-      "hinhthuchoc": "Lý thuyết"
-    }
-  ];
+  const handleRefresh = useCallback(() => {
+    refreshSchedules();
+  }, [refreshSchedules]);
 
   /* ================= UTILS ================= */
-  const getStartTiet = (tiet) => {
-    if (!tiet) return null;
-    return parseInt(tiet.split("-")[0], 10);
-  };
-
-  const getShiftFromTiet = (tiet) => {
-    const start = getStartTiet(tiet);
-    if (!start) return null;
-
-    if (start <= 6) return "Sáng";
-    if (start <= 12) return "Chiều";
+  /**
+   * Get shift (Sáng/Chiều/Tối) based on start_hour
+   */
+  const getShiftFromHour = (startHour) => {
+    if (!startHour) return null;
+    const hour = parseInt(startHour.split(":")[0], 10);
+    
+    if (hour < 12) return "Sáng";
+    if (hour < 18) return "Chiều";
     return "Tối";
   };
 
-  const isSameDate = (d1, d2) => d1 === d2;
-
-
-  const LOAI_HOC_STYLE = {
-    "1": {
-      bg: "bg-gray-200",
-      border: "border-gray-400"
-    },
-    "2": {
-      bg: "bg-blue-400",
-      border: "border-blue-600"
-    },
-    "3": {
-      bg: "bg-yellow-300",
-      border: "border-yellow-600"
-    },
-    "4": {
-      bg: "bg-red-500",
-      border: "border-red-700"
-    }
+  /**
+   * Format time from "HH:mm:ss" to "HH:mm"
+   */
+  const formatTime = (time) => {
+    if (!time) return "";
+    return time.substring(0, 5);
   };
+
+  /**
+   * Check if schedule date matches target date
+   */
+  const isSameDate = (scheduleDate, targetDateStr) => {
+    if (!scheduleDate) return false;
+    const scheduleFormatted = format(parseISO(scheduleDate), "dd/MM/yyyy");
+    return scheduleFormatted === targetDateStr;
+  };
+
+  /**
+   * Get status style
+   */
+  const getStatusStyle = (status, scheduleType) => {
+    if (status === 'cancelled') {
+      return { bg: "bg-red-100", border: "border-red-400", text: "text-red-700" };
+    }
+    if (status === 'completed') {
+      return { bg: "bg-green-100", border: "border-green-400", text: "text-green-700" };
+    }
+    // scheduled - default
+    if (scheduleType === 'practice') {
+      return { bg: "bg-blue-100", border: "border-blue-400", text: "text-blue-700" };
+    }
+    return { bg: "bg-gray-100", border: "border-gray-400", text: "text-gray-700" };
+  };
+
+  /**
+   * Get schedule type label
+   */
+  const getScheduleTypeLabel = (type) => {
+    return type === 'theory' ? 'Lý thuyết' : 'Thực hành';
+  };
+
   /* ================= JSX ================= */
+  // Loading state
+  if (loading && schedules.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <p className="text-gray-600">Đang tải lịch dạy...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && schedules.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={handleRefresh}
+            className="btn-blue flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-2">
       <div className="mx-auto">
@@ -250,6 +249,13 @@ const SchedulePage = () => {
             </div>
 
             {/* ACTION */}
+            <button 
+              onClick={handleRefresh}
+              disabled={loading}
+              className="btn-gray"
+            >
+              <RefreshCw className={`w-4 h-4 inline mr-1 ${loading ? 'animate-spin' : ''}`} /> Làm mới
+            </button>
             <button className="btn-gray">
               <Printer className="w-4 h-4 inline mr-1" />
               In lịch
@@ -288,91 +294,123 @@ const SchedulePage = () => {
                   <td className="py-6 px-4 font-medium">{shift}</td>
 
                   {weekDates.map((d, idx) => {
-                    const matchedEvents = examEvent.filter((ev) => {
+                    const matchedSchedules = weekSchedules.filter((schedule) => {
                       return (
-                        isSameDate(ev.date, d.date) &&
-                        getShiftFromTiet(ev.tiet) === shift
+                        isSameDate(schedule.class_date, d.date) &&
+                        getShiftFromHour(schedule.start_hour) === shift
                       );
                     });
 
                     return (
-                      <td key={idx} className="h-36 p-2 border-l">
-                        {matchedEvents.map((ev, i) => (
-                          <button key={i} className="cursor-pointer w-full flex flex-col space-y-2">
-
-                            <div
-                              className={`border-2 rounded-lg p-3 w-full ${LOAI_HOC_STYLE[ev.loaihoc]?.bg} ${LOAI_HOC_STYLE[ev.loaihoc]?.border}`}
-                            >
-                              <div className="flex flex-col space-y-1">
-                                <div className="font-bold">
-                                  <button
-                                    className="text-blue-600 hover:underline"
-                                    // onClick={() => handleCourseClick(ev.title)}
-                                    onClick={() => navigate('/dashboard/study-session')}
-
-
-                                  >
-                                    {ev.title}
-                                  </button>
-                                  <button
-                                    className="text-blue-600 hover:underline ml-2"
-                                    onClick={() => navigate('/dashboard/study-session')}
-
-                                  >
-                                    {ev.mahocphan}
-                                  </button>
-                                </div>
-
-                                {/* Event Details */}
-                                <div className="text-sm">
-                                  <div>Tiết: {ev.tiet}</div>
-                                  <div>Phòng: {ev.phong}</div>
-                                  <div>Nhóm: {ev.nhom}</div>
-                                  <div>
-                                    Giảng viên:{" "}
-                                    {ev.giaovien.map((gv, index) => (
-                                      <span key={gv.magiangvien}>
-                                        {gv.name}{index < ev.giaovien.length - 1 ? ", " : ""}
+                      <td key={idx} className="h-36 p-2 border-l align-top">
+                        <div className="flex flex-col gap-2">
+                          {matchedSchedules.map((schedule) => {
+                            const style = getStatusStyle(schedule.status, schedule.schedule_type);
+                            
+                            return (
+                              <button 
+                                key={schedule.id} 
+                                className="cursor-pointer w-full text-left"
+                                onClick={() => navigate('/dashboard/study-session', { 
+                                  state: { schedule: schedule }
+                                })}
+                              >
+                                <div
+                                  className={`border-2 rounded-lg p-3 w-full ${style.bg} ${style.border} hover:shadow-md transition-shadow`}
+                                >
+                                  <div className="flex flex-col space-y-1">
+                                    <div className="font-bold text-sm">
+                                      <span className="text-blue-600 hover:underline">
+                                        {schedule.courseSection?.name || 'N/A'}
                                       </span>
-                                    ))}
+                                    </div>
+                                    <div className="text-xs text-gray-600">
+                                      {schedule.courseSection?.code}
+                                    </div>
+
+                                    <div className="text-xs space-y-0.5 mt-1">
+                                      <div>
+                                        <span className="font-medium">Giờ:</span>{" "}
+                                        {formatTime(schedule.start_hour)} - {formatTime(schedule.end_hour)}
+                                      </div>
+                                      <div>
+                                        <span className="font-medium">Phòng:</span>{" "}
+                                        {schedule.room?.room_code || 'N/A'}
+                                      </div>
+                                      <div>
+                                        <span className="font-medium">Buổi:</span>{" "}
+                                        {schedule.session_number}
+                                      </div>
+                                      <div>
+                                        <span className="font-medium">Loại:</span>{" "}
+                                        {getScheduleTypeLabel(schedule.schedule_type)}
+                                        {schedule.practiceGroup && (
+                                          <span className="ml-1">
+                                            (Nhóm {schedule.practiceGroup.number_group})
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Status badge */}
+                                    <div className="mt-2">
+                                      <span className={`text-xs px-2 py-0.5 rounded-full ${style.text} ${style.bg} border ${style.border}`}>
+                                        {schedule.status === 'completed' ? 'Đã hoàn thành' : 
+                                         schedule.status === 'cancelled' ? 'Đã hủy' : 'Đã lên lịch'}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </td>
-
                     );
                   })}
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
 
+        {/* LEGEND */}
         <div className="flex flex-wrap items-center gap-6 text-sm p-6">
           <div className="flex items-center gap-2">
-            <span className="w-6 h-4 bg-gray-200 border rounded-sm" />
-            <span className="text-gray-700">Lịch học</span>
+            <span className="w-6 h-4 bg-gray-100 border border-gray-400 rounded-sm" />
+            <span className="text-gray-700">Lý thuyết</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="w-6 h-4 bg-blue-400 border rounded-sm" />
-            <span className="text-gray-700">Lịch học trực tuyến</span>
+            <span className="w-6 h-4 bg-blue-100 border border-blue-400 rounded-sm" />
+            <span className="text-gray-700">Thực hành</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="w-6 h-4 bg-yellow-300 border rounded-sm" />
-            <span className="text-gray-700">Lịch thi</span>
+            <span className="w-6 h-4 bg-green-100 border border-green-400 rounded-sm" />
+            <span className="text-gray-700">Đã hoàn thành</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="w-6 h-4 bg-red-500 border rounded-sm" />
-            <span className="text-gray-700">Lịch tạm ngưng</span>
+            <span className="w-6 h-4 bg-red-100 border border-red-400 rounded-sm" />
+            <span className="text-gray-700">Đã hủy</span>
           </div>
         </div>
+
+        {/* Summary info */}
+        {schedules.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mx-6 mb-6">
+            <p className="text-sm text-blue-800">
+              Tổng số buổi dạy trong tuần này: <strong>{weekSchedules.length}</strong>
+              {weekSchedules.length > 0 && (
+                <span className="ml-2">
+                  (Lý thuyết: {weekSchedules.filter(s => s.schedule_type === 'theory').length}, 
+                  Thực hành: {weekSchedules.filter(s => s.schedule_type === 'practice').length})
+                </span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

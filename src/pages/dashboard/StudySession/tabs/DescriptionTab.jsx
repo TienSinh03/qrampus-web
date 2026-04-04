@@ -1,29 +1,32 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
     SquareCheck,
     SquareUser,
     Calendar,
     BookA,
-
     CheckCircle2,
     CalendarDays,
     FileText,
-
+    MapPin,
+    Clock,
+    Users,
 } from "lucide-react";
-const DescriptionTab = () => {
+import { format, parseISO } from "date-fns";
+import { vi } from "date-fns/locale";
+
+const DescriptionTab = ({ schedule }) => {
     const activities = [
         {
             dotColor: "bg-violet-500",
             title: "Buổi học Lý thuyết 05 đã bắt đầu",
             desc: "Học phần Lập trình Thiết bị Di động - Lý thuyết (Phòng A3.05)",
-            // badge: "invoice.pdf",
             time: "12 phút trước",
         },
         {
             dotColor: "bg-emerald-500",
             title: "Hạn nộp Bài tập cá nhân 02",
             desc: "Chủ đề: Xây dựng Giao diện người dùng cơ bản",
-            sub: "Thời gian còn lại: 10 giờ 15 phút", // Mô tả chi tiết hơn về deadline
+            sub: "Thời gian còn lại: 10 giờ 15 phút",
             time: "45 phút trước (Thông báo nhắc nhở)",
         },
         {
@@ -34,91 +37,150 @@ const DescriptionTab = () => {
         },
     ];
 
-    // Dữ liệu thực tế bạn sẽ lấy từ API hoặc state
-    const attendedSessions = 12;
-    const totalSessions = 40;
+    // Calculate attendance stats from schedule data
+    const attendedSessions = schedule?.session_number || 0;
+    const totalSessions = 40; // This should come from course data
     const percentage = Math.round((attendedSessions / totalSessions) * 100);
 
-    // Chu vi vòng tròn: 2π × 72 ≈ 452
     const circumference = 2 * Math.PI * 72;
     const strokeDashoffset = circumference - (circumference * percentage) / 100;
+
+    // Format time
+    const formatTime = (time) => {
+        if (!time) return '';
+        return time.substring(0, 5);
+    };
+
+    // Get status badge
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'completed':
+                return { label: 'Đã hoàn thành', class: 'bg-green-100 text-green-700' };
+            case 'cancelled':
+                return { label: 'Đã hủy', class: 'bg-red-100 text-red-700' };
+            case 'scheduled':
+            default:
+                return { label: 'Đã lên lịch', class: 'bg-blue-100 text-blue-700' };
+        }
+    };
+
+    const statusBadge = schedule ? getStatusBadge(schedule.status) : null;
+
     return (
         <div className="grid gap-6 md:grid-cols-3">
             {/* Left column - About */}
             <div className="space-y-6 md:col-span-1">
                 <div className="rounded-b-xl bg-white p-6 shadow-sm">
                     <h2 className="mb-4 text-base font-semibold uppercase tracking-wide text-slate-800">
-                        Giảng viên giảng dạy
+                        Thông tin lịch học
                     </h2>
                     <div className="space-y-3 text-sm">
-                        <div className="flex items-start gap-3">
-                            <span className="mt-0.5 text-green-600"><SquareUser /></span>
-                            <div>
-                                <p className="text-xs font-semibold text-gray-900">
-                                    Nguyễn Văn A
-                                </p>
-                                <p className="text-gray-700">0122222</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <span className="mt-0.5 text-green-600"><SquareUser /></span>
-                            <div>
-                                <p className="text-xs font-semibold text-gray-900">
-                                    Nguyễn Văn Hoài Thanh
-                                </p>
-                                <p className="text-gray-700">0123456</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                            <span className="mt-0.5"><SquareCheck /></span>
-                            <div>
-                                <p className="text-xs font-semibold  text-gray-900">
-                                    Trạng thái khóa học
-                                </p>
-                                <p className="text-emerald-500">Active</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                            <span className="mt-0.5 text-yellow-500"><BookA /></span>
-                            <div>
-                                <p className="text-xs font-semibold  text-gray-900">
-                                    Mô tả
-                                </p>
-                                <p className="text-gray-700 text-justify">Nhập môn lập trình thiết bị di động trang bị cho người học kiến thức nền tảng về app mobile.</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start justify-between gap-8">
-                            {/* Bắt đầu học */}
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-2 text-blue-500">
-                                    <Calendar className="w-4 h-4" />
-                                    <span className="text-xs font-semibold text-gray-900">
-                                        Bắt đầu học từ
-                                    </span>
+                        {schedule?.personnel && (
+                            <div className="flex items-start gap-3">
+                                <span className="mt-0.5 text-green-600"><SquareUser /></span>
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-900">
+                                        Giảng viên
+                                    </p>
+                                    <p className="text-gray-700">{schedule?.personnel?.full_name}</p>
+                                    <p className="text-xs text-gray-500">{schedule?.personnel?.teacher_code}</p>
                                 </div>
-                                <p className="mt-1 text-gray-700 font-medium">19/8/2025</p>
                             </div>
+                        )}
 
-                            {/* Kết thúc vào */}
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-2 text-blue-500">
-                                    <Calendar className="w-4 h-4" />
-                                    <span className="text-xs font-semibold text-gray-900">
-                                        Kết thúc vào
-                                    </span>
+                        {schedule?.room && (
+                            <div className="flex items-start gap-3">
+                                <span className="mt-0.5 text-purple-600"><MapPin /></span>
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-900">
+                                        Phòng học
+                                    </p>
+                                    <p className="text-gray-700">{schedule?.room?.room_code}</p>
+                                    <p className="text-xs text-gray-500">{schedule?.room?.room_name}</p>
                                 </div>
-                                <p className="mt-1 text-gray-700 font-medium">19/12/2025</p>
                             </div>
-                        </div>
+                        )}
+
+                        {schedule && (
+                            <div className="flex items-start gap-3">
+                                <span className="mt-0.5 text-blue-600"><Clock /></span>
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-900">
+                                        Thời gian
+                                    </p>
+                                    <p className="text-gray-700">
+                                        {formatTime(schedule.start_hour)} - {formatTime(schedule.end_hour)}
+                                    </p>
+                                    <p className="text-xs text-gray-500">{schedule?.day_of_week}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {schedule && (
+                            <div className="flex items-start gap-3">
+                                <span className="mt-0.5"><SquareCheck /></span>
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-900">
+                                        Trạng thái
+                                    </p>
+                                    {statusBadge && (
+                                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${statusBadge.class}`}>
+                                            {statusBadge.label}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {schedule && (
+                            <div className="flex items-start gap-3">
+                                <span className="mt-0.5 text-yellow-500"><BookA /></span>
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-900">
+                                        Loại buổi học
+                                    </p>
+                                    <p className="text-gray-700">
+                                        {schedule?.schedule_type === 'theory' ? 'Lý thuyết' : 'Thực hành'}
+                                        {schedule?.practiceGroup && ` - Nhóm ${schedule?.practiceGroup?.number_group}`}
+                                    </p>
+                                    <p className="text-xs text-gray-500">Buổi {schedule.session_number}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {schedule?.class_date && (
+                            <div className="flex items-start justify-between gap-8">
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2 text-blue-500">
+                                        <Calendar className="w-4 h-4" />
+                                        <span className="text-xs font-semibold text-gray-900">
+                                            Ngày học
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 text-gray-700 font-medium">
+                                        {format(parseISO(schedule?.class_date), 'dd/MM/yyyy', { locale: vi })}
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2 text-blue-500">
+                                        <CalendarDays className="w-4 h-4" />
+                                        <span className="text-xs font-semibold text-gray-900">
+                                            Học kỳ
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 text-gray-700 font-medium">
+                                        {schedule?.courseSection?.semester || 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <hr className="my-5 border-slate-100" />
 
                     <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        Contacts
+                        Liên hệ
                     </h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex items-start gap-3">
@@ -127,7 +189,7 @@ const DescriptionTab = () => {
                                 <p className="text-xs font-semibold uppercase text-slate-400">
                                     Liên hệ
                                 </p>
-                                <p>(123) 456-7890</p>
+                                <p>{schedule?.personnel?.phone || 'N/A'}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -136,7 +198,7 @@ const DescriptionTab = () => {
                                 <p className="text-xs font-semibold uppercase text-slate-400">
                                     Nhắn tin
                                 </p>
-                                <p>Thầy Nguyễn Văn Hoài Thanh</p>
+                                <p>{schedule?.personnel?.name || 'N/A'}</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -145,12 +207,12 @@ const DescriptionTab = () => {
                                 <p className="text-xs font-semibold uppercase text-slate-400">
                                     Email
                                 </p>
-                                <p>nguyenvanhoaithanh@iuh.edu.vn</p>
+                                <p>{schedule?.personnel?.email || 'N/A'}</p>
                             </div>
                         </div>
                     </div>
 
-                    <hr className="my-5 border-slate-100" />
+                    {/* <hr className="my-5 border-slate-100" />
 
                     <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
                         Giảng viên chung nhóm
@@ -164,7 +226,7 @@ const DescriptionTab = () => {
                             <span>Học phần Thực hành</span>
                             <span className="text-slate-400">03 giảng viên</span>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
 

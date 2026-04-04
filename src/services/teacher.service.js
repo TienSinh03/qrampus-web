@@ -163,6 +163,24 @@ class TeacherService {
   }
 
   /**
+   * Get current teacher's schedule (authenticated teacher)
+   * @param {Object} params - Query parameters (semester, date range, etc.)
+   * @returns {Promise} Current teacher's schedules
+   */
+  async getMySchedule(params = {}) {
+    try {
+      const response = await axiosClient.get(TEACHER_ENDPOINTS.ME_SCHEDULE, { params });
+      return {
+        success: response.success || true,
+        data: response.data?.schedules || [],
+        message: response.message || ''
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Search teachers by keyword
    * @param {string} keyword - Search keyword
    * @param {Object} params - Additional query parameters
