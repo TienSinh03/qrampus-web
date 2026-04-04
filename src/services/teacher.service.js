@@ -181,6 +181,28 @@ class TeacherService {
   }
 
   /**
+   * Get students in a class session
+   * @param {string} classSessionId - Class session ID
+   * @param {Object} params - Query parameters
+   * @returns {Promise} Students data with class session info
+   */
+  async getClassSessionStudents(classSessionId, params = {}) {
+    try {
+      const response = await axiosClient.get(
+        TEACHER_ENDPOINTS.CLASS_SESSION_STUDENTS(classSessionId),
+        { params }
+      );
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || ''
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Search teachers by keyword
    * @param {string} keyword - Search keyword
    * @param {Object} params - Additional query parameters

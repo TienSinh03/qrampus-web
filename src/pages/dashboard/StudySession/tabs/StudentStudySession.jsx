@@ -1,88 +1,73 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
     Edit, Eye, IdCard, Table2,
     ArrowDown, ArrowUp, FileSpreadsheet, FilterX,
-    FileSearchIcon
-
+    FileSearchIcon, Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useClassSessionStudents } from "@contexts/ClassSessionStudentsContext";
 
-
-const StudentStudySession = () => {
+const StudentStudySession = ({ schedule }) => {
     const [view, setView] = useState("table");
     const [search, setSearch] = useState("");
     const navigate = useNavigate();
+    const [expanded, setExpanded] = useState(false);
 
-    const students = [
-        {
-            id: 1,
-            avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-            full_name: "Galen Slixby",
-            email: "gslixby0@abc.net.au",
-            role: "Editor",
-            user_id: "123456",
-            status: "Inactive",
-        },
-        {
-            id: 2,
-            avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-            full_name: "Halsey Redmore",
-            email: "hredmore1@imgur.com",
-            role: "Author",
-            user_id: "125678",
-            status: "Pending",
-        },
-        {
-            id: 3,
-            avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-            full_name: "Marjory Sicely",
-            email: "msicely2@who.int",
-            role: "Maintainer",
-            user_id: "456321",
-            status: "Active",
-        },
-        {
-            id: 4,
-            avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-            full_name: "Cyrill Risby",
-            email: "crisby3@wordpress.com",
-            role: "Maintainer",
-            user_id: "456789",
-            status: "Inactive",
-        },
-        {
-            id: 5,
-            avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-            full_name: "Maggy Hurran",
-            email: "mhurran4@yahoo.co.jp",
-            role: "Subscriber",
-            user_id: "23456",
-            status: "Pending",
-        },
-    ];
+    const { students, loading, error, fetchStudents } = useClassSessionStudents();
+
+    useEffect(() => {
+        if (schedule?.id) {
+            fetchStudents(schedule.id);
+        }
+    }, [schedule?.id, fetchStudents]);
 
     // FILTER SEARCH
     const filteredStudents = useMemo(() => {
         return students.filter((s) =>
-            `${s.full_name} ${s.email} ${s.role}`
+            `${s.fullName} ${s.studentCode} ${s.email} ${s.className}`
                 .toLowerCase()
                 .includes(search.toLowerCase())
         );
-    }, [search]);
+    }, [search, students]);
 
     const StatusBadge = ({ status }) => {
         const COLORS = {
-            Active: "text-green-600 bg-green-100",
-            Inactive: "text-red-600 bg-red-100",
-            Pending: "text-yellow-600 bg-yellow-100",
+            active: "text-green-600 bg-green-100",
+            inactive: "text-red-600 bg-red-100",
+            pending: "text-yellow-600 bg-yellow-100",
+        };
+        const LABELS = {
+            active: "Đang hoạt động",
+            inactive: "Tạm ngưng",
+            pending: "Chờ xử lý",
         };
         return (
-            <span className={`px-2 py-1 rounded-md text-sm font-medium ${COLORS[status]}`}>
-                {status}
+            <span className={`px-2 py-1 rounded-md text-sm font-medium ${COLORS[status] || 'text-gray-600 bg-gray-100'}`}>
+                {LABELS[status] || status}
             </span>
         );
     };
-    const [expanded, setExpanded] = useState(false);
+    
+    if (loading) {
+        return (
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
+                    <p className="text-gray-600">Đang tải danh sách sinh viên...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+                <div className="flex flex-col items-center justify-center py-12">
+                    <p className="text-red-600">{error}</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="rounded-xl bg-white p-6 shadow-sm">
@@ -257,85 +242,127 @@ const StudentStudySession = () => {
 
             {/* TABLE VIEW */}
             {view === "table" && (
-                <table className="min-w-full table-auto border-collapse">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border-b py-3 px-4 text-left">Avatar</th>
-                            <th className="border-b py-3 px-4 text-left">MSSV</th>
-                            <th className="border-b py-3 px-4 text-left">Full Name</th>
-                            <th className="border-b py-3 px-4 text-left">Email</th>
-                            <th className="border-b py-3 px-4 text-left">Role</th>
-                            <th className="border-b py-3 px-4 text-left">Status</th>
-                            <th className="border-b py-3 px-4 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredStudents.map((student) => (
-
-                            <tr key={student.id} className="hover:bg-gray-50"
-                                onClick={() => navigate('/dashboard/results-qr-detail-user')}
-                                style={{ cursor: "pointer" }}
-                            >
-
-                                <td className="py-3 px-4">
-                                    <img
-                                        src={student.avatar_url}
-                                        alt={student.full_name}
-                                        className="w-12 h-12 rounded-full"
-                                    />
-                                </td>
-                                <td className="py-3 px-4">{student.user_id}</td>
-                                <td className="py-3 px-4">{student.full_name}</td>
-                                <td className="py-3 px-4">{student.email}</td>
-                                <td className="py-3 px-4">{student.role}</td>
-                                <td className="py-3 px-4">
-                                    <StatusBadge status={student.status} />
-                                </td>
-                                <td className="py-3 px-4 text-blue-600 underline">
-                                    <Eye className="w-5 h-5" titles="View Details" />
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full table-auto border-collapse">
+                        <thead>
+                            <tr className="bg-gray-100">
+                                <th className="border-b py-3 px-4 text-left">Avatar</th>
+                                <th className="border-b py-3 px-4 text-left">MSSV</th>
+                                <th className="border-b py-3 px-4 text-left">Họ và tên</th>
+                                <th className="border-b py-3 px-4 text-left">Lớp</th>
+                                <th className="border-b py-3 px-4 text-left">Email</th>
+                                <th className="border-b py-3 px-4 text-left">Nhóm TH</th>
+                                <th className="border-b py-3 px-4 text-left">Trạng thái</th>
+                                <th className="border-b py-3 px-4 text-left">Thao tác</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {filteredStudents.length === 0 ? (
+                                <tr>
+                                    <td colSpan="8" className="py-8 text-center text-gray-500">
+                                        {search ? "Không tìm thấy sinh viên nào" : "Chưa có sinh viên"}
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredStudents.map((student) => (
+                                    <tr 
+                                        key={student.studentId} 
+                                        className="hover:bg-gray-50"
+                                        onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                                        style={{ cursor: "pointer" }}
+                                    >
+                                        <td className="py-3 px-4">
+                                            <img
+                                                src={student.avatarUrl || '/default-avatar.png'}
+                                                alt={student.fullName}
+                                                className="w-12 h-12 rounded-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(student.fullName);
+                                                }}
+                                            />
+                                        </td>
+                                        <td className="py-3 px-4 font-medium">{student.studentCode}</td>
+                                        <td className="py-3 px-4">{student.fullName}</td>
+                                        <td className="py-3 px-4">{student.className}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-600">{student.email}</td>
+                                        <td className="py-3 px-4">
+                                            {student.practiceGroup ? (
+                                                <span className="text-sm text-gray-700">
+                                                    {student.practiceGroup.groupName || student.practiceGroup.group_name}
+                                                </span>
+                                            ) : (
+                                                <span className="text-sm text-gray-400">-</span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <StatusBadge status={student.enrollmentStatus} />
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Eye className="w-5 h-5 text-blue-600 hover:text-blue-800" title="Xem chi tiết" />
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             )}
 
             {/* CARD VIEW */}
             {view === "card" && (
-
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredStudents.length === 0 ? (
+                        <div className="col-span-full py-8 text-center text-gray-500">
+                            {search ? "Không tìm thấy sinh viên nào" : "Chưa có sinh viên"}
+                        </div>
+                    ) : (
+                        filteredStudents.map((student) => (
+                            <div 
+                                key={student.studentId} 
+                                className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition"
+                                onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                                style={{ cursor: "pointer" }}
+                            >
+                                <div className="flex items-center mb-4">
+                                    <img
+                                        src={student.avatarUrl || '/default-avatar.png'}
+                                        alt={student.fullName}
+                                        className="w-16 h-16 rounded-full mr-4 object-cover"
+                                        onError={(e) => {
+                                            e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(student.fullName);
+                                        }}
+                                    />
+                                    <div>
+                                        <h3 className="text-lg font-semibold">{student.fullName}</h3>
+                                        <p className="text-sm text-gray-500">{student.studentCode}</p>
+                                    </div>
+                                </div>
 
-                    {filteredStudents.map((student) => (
-                        <div key={student.id} className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition"
-                            onClick={() => navigate('/dashboard/results-qr-detail-user')}
-                            style={{ cursor: "pointer" }}
+                                <div className="space-y-2">
+                                    <p className="text-sm">
+                                        <span className="font-semibold">Lớp: </span>
+                                        {student.className}
+                                    </p>
 
-                        >
-                            <div className="flex items-center mb-4">
-                                <img
-                                    src={student.avatar_url}
-                                    alt={student.full_name}
-                                    className="w-16 h-16 rounded-full mr-4"
-                                />
-                                <div>
-                                    <h3 className="text-lg font-semibold">{student.full_name}</h3>
-                                    <p className="text-sm text-gray-500">{student.email}</p>
+                                    <p className="text-sm">
+                                        <span className="font-semibold">Email: </span>
+                                        <span className="text-gray-600">{student.email}</span>
+                                    </p>
+
+                                    {student.practiceGroup && (
+                                        <p className="text-sm">
+                                            <span className="font-semibold">Nhóm TH: </span>
+                                            {student.practiceGroup.groupName || student.practiceGroup.group_name}
+                                        </p>
+                                    )}
+
+                                    <div className="mt-3">
+                                        <StatusBadge status={student.enrollmentStatus} />
+                                    </div>
                                 </div>
                             </div>
-
-                            <p className="mb-2">
-                                <span className="font-semibold">#ID: </span>{student.user_id}
-                            </p>
-
-                            <p className="mb-2">
-                                <span className="font-semibold">Role: </span>{student.role}
-                            </p>
-
-                            <div className="mt-3">
-                                <StatusBadge status={student.status} />
-                            </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             )}
         </div>
