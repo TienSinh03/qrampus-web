@@ -6,12 +6,33 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useClassSessionStudents } from "@contexts/ClassSessionStudentsContext";
+import { DEPARTMENTS } from "../../../../constants/departments.js";
 
 const StudentStudySession = ({ schedule }) => {
     const [view, setView] = useState("table");
-    const [search, setSearch] = useState("");
     const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
+
+    // Filter states
+    const [filters, setFilters] = useState({
+        studentCode: "",
+        fullName: "",
+        major: "",
+        status: "",
+        email: "",
+        phone: "",
+        className: ""
+    });
+
+    const [appliedFilters, setAppliedFilters] = useState({
+        studentCode: "",
+        fullName: "",
+        major: "",
+        status: "",
+        email: "",
+        phone: "",
+        className: ""
+    });
 
     const { students, loading, error, fetchStudents } = useClassSessionStudents();
 
@@ -21,14 +42,76 @@ const StudentStudySession = ({ schedule }) => {
         }
     }, [schedule?.id, fetchStudents]);
 
-    // FILTER SEARCH
+    // Handle filter input changes
+    const handleFilterChange = (field, value) => {
+        console.log(`Updating filter: ${field} = ${value}`);
+        setFilters(prev => ({ ...prev, [field]: value }));
+    };
+
+    // Apply filters
+    const handleApplyFilters = () => {
+        setAppliedFilters({ ...filters });
+    };
+
+    const handleClearFilters = () => {
+        const emptyFilters = {
+            studentCode: "",
+            fullName: "",
+            major: "",
+            status: "",
+            email: "",
+            phone: "",
+            className: ""
+        };
+        setFilters(emptyFilters);
+        setAppliedFilters(emptyFilters);
+    };
+
     const filteredStudents = useMemo(() => {
-        return students.filter((s) =>
-            `${s.fullName} ${s.studentCode} ${s.email} ${s.className}`
-                .toLowerCase()
-                .includes(search.toLowerCase())
-        );
-    }, [search, students]);
+        let result = students;
+
+        if (appliedFilters.studentCode) {
+            result = result.filter(s => s.studentCode?.toLowerCase().includes(appliedFilters.studentCode.toLowerCase()));
+        }
+
+        if (appliedFilters.fullName) {
+            result = result.filter(s => s.fullName?.toLowerCase().includes(appliedFilters.fullName.toLowerCase()));
+        }
+
+        if (appliedFilters.department) {
+            result = result.filter(s => s.major?.toLowerCase().includes(appliedFilters.department.toLowerCase()));
+        }
+
+        if (appliedFilters.status) {
+
+            const statusMap = {
+                "Đang hoạt động": "active",
+                "Tạm ngưng": "inactive",
+                "Chờ xử lý": "pending"
+            };
+
+            const mappedStatus = statusMap[appliedFilters.status] || appliedFilters.status;
+            result = result.filter(s => s.enrollmentStatus === mappedStatus);
+        }
+
+        if (appliedFilters.email) {
+            result = result.filter(s => 
+                s.email?.toLowerCase().includes(appliedFilters.email.toLowerCase())
+            );
+        }
+
+        if (appliedFilters.phone) {
+            result = result.filter(s => 
+                s.phone?.toLowerCase().includes(appliedFilters.phone.toLowerCase())
+            );
+        }
+
+        if (appliedFilters.className) {
+            result = result.filter(s => s.className?.toLowerCase().includes(appliedFilters.className.toLowerCase()));
+        }
+
+        return result;
+    }, [students, appliedFilters]);
 
     const StatusBadge = ({ status }) => {
         const COLORS = {
@@ -71,6 +154,16 @@ const StudentStudySession = ({ schedule }) => {
 
     return (
         <div className="rounded-xl bg-white p-6 shadow-sm">
+            {/* Statistics */}
+            <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-gray-800">Danh sách sinh viên</h3>
+                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                        {filteredStudents.length} / {students.length} sinh viên
+                    </span>
+                </div>
+            </div>
+
             {/* Switch View + Search */}
 
 
@@ -111,6 +204,8 @@ const StudentStudySession = ({ schedule }) => {
                         <input
                             type="text"
                             placeholder="Ví dụ: 4203001549"
+                            value={filters.studentCode}
+                            onChange={(e) => handleFilterChange('studentCode', e.target.value)}
                             className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
@@ -120,18 +215,26 @@ const StudentStudySession = ({ schedule }) => {
                         </label>
                         <input
                             type="text"
-                            className="w-full rounded-lg border px-3 py-2"
+                            placeholder="Nhập họ tên"
+                            value={filters.fullName}
+                            onChange={(e) => handleFilterChange('fullName', e.target.value)}
+                            className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Khoa/Viện
                         </label>
-                        <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option>Khoa Công nghệ thông tin</option>
-                            <option>Khoa Điện tử - Viễn thông</option>
-                            <option>Khoa Cơ khí</option>
-                            <option>Khoa Kinh tế</option>
+                        <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={filters.department}
+                            onChange={(e) => handleFilterChange('department', e.target.value)}
+                        >
+                            <option value="">Chọn khoa/viện</option>
+                            {DEPARTMENTS.map((dept, index) => (
+                                <option key={index} value={dept}>
+                                    {dept}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -139,10 +242,15 @@ const StudentStudySession = ({ schedule }) => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Trạng thái
                         </label>
-                        <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option>Đang hoạt động</option>
-                            <option>Tạm ngưng</option>
-                            <option>Đã xóa</option>
+                        <select 
+                            value={filters.status}
+                            onChange={(e) => handleFilterChange('status', e.target.value)}
+                            className="w-full rounded-lg border px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Tất cả</option>
+                            <option value="Đang hoạt động">Đang hoạt động</option>
+                            <option value="Tạm ngưng">Tạm ngưng</option>
+                            <option value="Chờ xử lý">Chờ xử lý</option>
                         </select>
                     </div>
                     {expanded && (
@@ -150,12 +258,14 @@ const StudentStudySession = ({ schedule }) => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Mail
+                                    Email
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="Ví dụ: ...."
-                                    className="w-full rounded-lg border px-3 py-2"
+                                    placeholder="Nhập email"
+                                    value={filters.email}
+                                    onChange={(e) => handleFilterChange('email', e.target.value)}
+                                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                             <div>
@@ -164,18 +274,22 @@ const StudentStudySession = ({ schedule }) => {
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="Ví dụ: ...."
-                                    className="w-full rounded-lg border px-3 py-2"
+                                    placeholder="Nhập số điện thoại"
+                                    value={filters.phone}
+                                    onChange={(e) => handleFilterChange('phone', e.target.value)}
+                                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Ngày sinh
+                                    Lớp
                                 </label>
                                 <input
-                                    type="date"
-                                    placeholder="Ví dụ: ...."
-                                    className="w-full rounded-lg border px-3 py-2"
+                                    type="text"
+                                    placeholder="Nhập tên lớp"
+                                    value={filters.className}
+                                    onChange={(e) => handleFilterChange('className', e.target.value)}
+                                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                         </>
@@ -185,8 +299,9 @@ const StudentStudySession = ({ schedule }) => {
                 {/* Actions */}
                 <div className="mt-6 flex flex-wrap items-center justify-start md:justify-end gap-4">
                     <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
-                        {/* Xóa bộ lọc */}
+                        {/* Tìm kiếm */}
                         <button
+                            onClick={handleApplyFilters}
                             className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
                         >
                             <FileSearchIcon className="w-5 h-5" />
@@ -203,6 +318,7 @@ const StudentStudySession = ({ schedule }) => {
 
                         {/* Xóa bộ lọc */}
                         <button
+                            onClick={handleClearFilters}
                             className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
                         >
                             <FilterX className="w-5 h-5" />
@@ -259,9 +375,7 @@ const StudentStudySession = ({ schedule }) => {
                         <tbody>
                             {filteredStudents.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="py-8 text-center text-gray-500">
-                                        {search ? "Không tìm thấy sinh viên nào" : "Chưa có sinh viên"}
-                                    </td>
+                                    <td colSpan="8" className="py-8 text-center text-gray-500">Không có sinh viên nào</td>
                                 </tr>
                             ) : (
                                 filteredStudents.map((student) => (
@@ -313,7 +427,7 @@ const StudentStudySession = ({ schedule }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredStudents.length === 0 ? (
                         <div className="col-span-full py-8 text-center text-gray-500">
-                            {search ? "Không tìm thấy sinh viên nào" : "Chưa có sinh viên"}
+                           Không có sinh viên nào
                         </div>
                     ) : (
                         filteredStudents.map((student) => (
