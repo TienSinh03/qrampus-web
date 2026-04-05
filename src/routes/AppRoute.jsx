@@ -14,7 +14,6 @@ import SchedulePage from "@pages/dashboard/teacher/SchedulePage";
 import QRPage from "@pages/dashboard/teacher/QRPage";
 import StudySessionPage from "@pages/dashboard/StudySession/StudySessionPage";
 import ResultQRPage from "@pages/dashboard/ResultsQR/ResultQRPage";
-import ResultQRextendPage from "../pages/dashboard/ResultsQR/ResultQRextendPage";
 import ResultQRDetailUserPage from "../pages/dashboard/ResultsQR/ResultQRDetailUserPage";
 import ResultQRextendStudentPage from "../pages/dashboard/ResultsQR/ResultQRextendStudentPage";
 import AccountPage from "@pages/dashboard/AccountSetting/AccountPage";
@@ -150,18 +149,18 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "results-qr-extend",
-        element: (
-          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
-            <ResultQRextendPage />
-          </RoleRoute>
-        ),
-      },
-      {
         path: "results-qr-detail-user",
         element: (
           <RoleRoute requiredRoles={[ROLES.TEACHER]}>
             <ResultQRDetailUserPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "results-qr-extend-student",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ResultQRextendStudentPage />
           </RoleRoute>
         ),
       },

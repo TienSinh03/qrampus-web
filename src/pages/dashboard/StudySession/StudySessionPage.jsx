@@ -215,68 +215,6 @@ const StudySessionPage = () => {
                   </select>
                 </div>
 
-                {/* Cách thức điểm danh */}
-                <div className="bg-white rounded-xl border p-4 space-y-3">
-                  <label className="text-sm font-medium text-gray-700">
-                    Cách thức điểm danh <span className="text-red-500">*</span>
-                  </label>
-
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="h-5 w-5 rounded border-gray-300 text-purple-600
-                     focus:ring-purple-500"
-                      />
-                      <span className="text-sm text-gray-700">
-                        Thời gian quét QR
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="h-5 w-5 rounded border-gray-300 text-purple-600
-                     focus:ring-purple-500"
-                      />
-                      <span className="text-sm text-gray-700">
-                        Hình ảnh minh chứng toàn lớp
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Thu thập thông tin */}
-                <div className="bg-white rounded-xl border p-4 space-y-3">
-                  <label className="text-sm font-medium text-gray-700">
-                    Thu thập thông tin
-                  </label>
-
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="h-5 w-5 rounded border-gray-300 text-purple-600
-                     focus:ring-purple-500"
-                      />
-                      <span className="text-sm text-gray-700">
-                        Thu thập ID thiết bị
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="h-5 w-5 rounded border-gray-300 text-purple-600
-                     focus:ring-purple-500"
-                      />
-                      <span className="text-sm text-gray-700">
-                        Thu thập vị trí người dùng
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
               </div>
 
 

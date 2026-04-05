@@ -48,7 +48,7 @@ const AdminDetailSessionQRPage = () => {
 
     const [selectedImage, setSelectedImage] = useState(teacherPhotos[0]);
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-6">
             {/* ===== MAIN CONTENT ===== */}
             <div className="xl:col-span-3 bg-white rounded-b-xl shadow p-6">
                 {/* Header */}
@@ -102,7 +102,7 @@ const AdminDetailSessionQRPage = () => {
                         </div>
                     </div>
                 </div>
-
+                <h1 className="text-4xl">Hiển thị bảng danh sách đã tạo phiên của khóa học này. Cho các nút mở modal xem ảnh, xem chi tiết phiên (Mở ra phiên điểm danh hôm nay)</h1>
                 <h3>Trạng thái tạo phiên</h3>
 
                 <div className="overflow-x-auto border rounded-lg">
@@ -338,46 +338,6 @@ const AdminDetailSessionQRPage = () => {
 
             </div>
 
-            {/* ===== RIGHT ACTION PANEL ===== */}
-            <div className="bg-white rounded-b-xl shadow p-5 space-y-4 h-fit">
-                <button
-                    className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 
-                    py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md 
-                    focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200 w-full"
-                    onClick={openDrawer}
-                >
-                    <Send size={16} /> Hỗ trợ tạo QR
-                </button>
-
-                <button className="flex items-center gap-2 border border-red-500 text-red-500 px-5 
-                    py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-100 hover:shadow-md 
-                    focus:outline-none focus:ring-1 focus:ring-red-500 focus:ring-offset-1 transition-all duration-200 w-full">
-                    <Eye size={16} /> Khóa phiên QR
-                </button>
-
-                <button className="flex items-center gap-2 border border-gray-500 text-gray-500 px-5 
-                    py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:shadow-md 
-                    focus:outline-none focus:ring-1 focus:ring-gray-500 focus:ring-offset-1 transition-all duration-200 w-full">
-                    <Clock size={16} /> Lịch sử tạo QR đã qua
-                </button>
-
-                <div className="pt-4 border-t space-y-3 text-sm">
-                    <h2 className="w-full rounded px-3 py-2 text-lg font-semibold bg-gray-100">
-                        Phiên hôm nay đã tạo
-                    </h2>
-
-                    <div className="space-y-1">
-                        <div className="flex items-center justify-between p-2 border border-gray-300 rounded-lg bg-white shadow-sm">
-                            <span className="font-medium text-gray-700">Nguyễn Văn A</span>
-                            <span className="text-red-500 font-semibold bg-red-100 px-2 py-1 rounded-full border border-red-300">
-                                Thất bại 1
-                            </span>
-                        </div>
-
-                        {/* Các item khác */}
-                    </div>
-                </div>
-            </div>
 
             {isDrawerOpen && (
                 <>

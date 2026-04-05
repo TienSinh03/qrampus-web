@@ -244,7 +244,7 @@ const ResultQRPage = () => {
                 </div>
 
                 <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <span className="text-indigo-600 text-lg font-bold">📘</span>
+                  <span className="text-indigo-600 text-lg font-bold">Thêm nút mở modal image AI</span>
                 </div>
               </div>
             </div>
@@ -341,9 +341,6 @@ const ResultQRPage = () => {
                 placeholder="Search "
                 className="border p-2 rounded-lg w-3/4"
               />
-              <button onClick={() => navigate('/dashboard/results-qr-extend')} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100">
-                <ExternalLink className="w-4 h-4" />
-              </button>
 
             </div>
             <table className="w-full min-w-[800px] table-fixed border-collapse">
@@ -362,8 +359,6 @@ const ResultQRPage = () => {
               <tbody className="divide-y divide-gray-200">
                 {users.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50 transition-colors"
-                    onClick={() => navigate('/dashboard/results-qr-detail-user')}
-                    style={{ cursor: "pointer" }}
                   >
                     {/* Tên + Avatar */}
                     <td className="px-4 py-4">
@@ -402,27 +397,7 @@ const ResultQRPage = () => {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-3">
                         {/* <Trash2 className="w-5 h-5 text-red-500 hover:text-red-700 cursor-pointer transition" /> */}
-                        <Eye className="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer transition" />
-
-                        <div className="relative">
-                          {/* <MoreVertical
-                            className="w-5 h-5 text-gray-600 hover:text-gray-900 cursor-pointer transition"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenu(openMenu === u.id ? null : u.id);
-                            }}
-                          /> */}
-                          {openMenu === u.id && (
-                            <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
-                              {/* <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2">
-                                <PencilLine className="w-4 h-4" /> Edit
-                              </button>
-                              <button className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600">
-                                <LockKeyhole className="w-4 h-4" /> Lock Account
-                              </button> */}
-                            </div>
-                          )}
-                        </div>
+                        Sửa
                       </div>
                     </td>
                   </tr>
@@ -440,36 +415,6 @@ const ResultQRPage = () => {
         </div>
 
 
-      </div>
-      {/* Right Column: Biểu đồ */}
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        {/* ... giữ nguyên phần chart của bạn ... */}
-        <div className="h-64 sm:h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart layout="vertical" data={interestData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
-              <XAxis type="number" hide />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fill: "#555" }} width={100} />
-              <Tooltip cursor={{ fill: "rgba(0,0,0,0.05)" }} />
-              <Bar dataKey="value" radius={[0, 8, 8, 0]} label={{ position: "right", fill: "#333", fontWeight: 600 }}>
-                {interestData.map((entry, i) => (
-                  <Cell key={`bar-${i}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-8">
-          {interestData.map((item) => (
-            <div key={item.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-sm font-medium text-gray-700">{item.name}</span>
-              </div>
-              <span className="font-bold text-gray-800">{item.value}%</span>
-            </div>
-          ))}
-        </div>
       </div>
 
     </div>

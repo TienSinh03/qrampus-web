@@ -62,6 +62,20 @@ const ResultQRextendStudentPage = () => {
                                         fgColor="#1e293b" // màu đen đậm đẹp hơn
                                         bgColor="#ffffff"
                                     />
+
+                                    {/* Nút mở modal image AI */}
+                                    <div className="">
+                                        {/** option chọn thời gian 2,3 ,5 phút */}
+                                        <select className="bg-white text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="120">2 phút</option>
+                                            <option value="180">3 phút</option>
+                                            <option value="300" selected>5 phút</option>
+                                        </select>
+                                        <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                            Khi nhấn vào chọn thời gian và nút điểm danh sẽ tạo phiên điểm danh hiển thị QR code
+                                            Nếu tạo trên mobile thì chỉ cần hiển thị qr code và đồng hồ đếm ngược
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

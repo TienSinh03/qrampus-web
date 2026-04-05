@@ -59,6 +59,9 @@ const QRCodeTab = () => {
         nhomth: true,
         tengiangvien: true,
         nguoitao: true,
+        siso: true,
+        diemdanhthanhcong: true,
+        diemdanhthatbai: true,
     });
 
     // drawer xuất excel
@@ -219,6 +222,10 @@ const QRCodeTab = () => {
                             {visibleCols.nhomth && <th>Nhóm TH</th>}
                             {visibleCols.tengiangvien && <th>Giảng viên</th>}
                             {visibleCols.nguoitao && <th>Người tạo</th>}
+                            {visibleCols.siso && <th>Sĩ số</th>}
+                            {visibleCols.diemdanhthanhcong && <th>Điểm danh thành công</th>}
+                            {visibleCols.diemdanhthatbai && <th>Điểm danh thất bại</th>}
+                            {visibleCols.diemdanhthatbai && <th>Hành động</th>}
                         </tr>
                     </thead>
 
@@ -235,6 +242,16 @@ const QRCodeTab = () => {
                                 {visibleCols.nhomth && <td>{item.nhomTH}</td>}
                                 {visibleCols.tengiangvien && <td>{item.tenGV}</td>}
                                 {visibleCols.nguoitao && <td>{item.nguoitao}</td>}
+                                {visibleCols.siso && <td>{item.siso}</td>}
+                                {visibleCols.diemdanhthanhcong && <td>{item.diemDanhThanhCong}</td>}
+                                {visibleCols.diemdanhthatbai && <td>{item.diemDanhThatBai}</td>}
+                                {visibleCols.diemdanhthatbai && (
+                                    <td>
+                                        <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700" >
+                                            Xem chi tiết (Màn hình chi tiết hôm nay)
+                                        </button>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
