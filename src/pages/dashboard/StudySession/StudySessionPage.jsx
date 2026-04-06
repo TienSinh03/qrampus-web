@@ -4,7 +4,7 @@ import DescriptionTab from "./tabs/DescriptionTab";
 import StudentStudySession from "./tabs/StudentStudySession";
 import ScheduleStudySession from "./tabs/ScheduleStudySession";
 import QRCodeTab from "./tabs/QRCodeTab";
-import { FileImage, FileUser, Calendar, QrCode, SquareStar, ScanQrCode, X, AlertCircle } from "lucide-react";
+import { FileImage, FileUser, Calendar, QrCode, SquareStar, ScanQrCode, AlertCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -66,13 +66,6 @@ const StudySessionPage = () => {
     const scheduleType = schedule?.schedule_type === 'theory' ? 'Lý thuyết' : 'Thực hành';
     const practiceGroupName = schedule?.practiceGroup?.group_name || null;
 
-
-  //model tạo qR
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const openDrawer = () => setIsDrawerOpen(true);
-  const closeDrawer = () => setIsDrawerOpen(false);
-
-
     return (
       <div className="mx-auto">
             {/* HEADER - bạn giữ nguyên code UI ở trên của bạn */}
@@ -111,12 +104,13 @@ const StudySessionPage = () => {
                             </div>
                         </div>
                     </div>
-            <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200 w-full md:w-auto"
-              title="Tạo điểm danh, sẽ được truy cập vào tab điểm danh" onClick={openDrawer}>
-              <ScanQrCode className="w-5 h-5" />
-              <span>Tạo điểm danh</span>
-            </button>
-          </div>
+                    <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200 w-full md:w-auto"
+                    title="Tạo điểm danh, sẽ được truy cập vào tab điểm danh" onClick={() => window.open('/dashboard/results-qr-extend-student', '_blank')}>
+                        
+                    <ScanQrCode className="w-5 h-5" />
+                         <span>Tạo điểm danh</span>
+                    </button>
+                </div>
 
                 {/* Tabs */}
                 <div className="px-6 py-3 border-t border-slate-100 md:hidden">
@@ -173,70 +167,6 @@ const StudySessionPage = () => {
                     </button>
                 </div>
             </div>
-        {isDrawerOpen && (
-          <>
-            {/* Overlay */}
-            <div
-              className="fixed inset-0 bg-black/50 z-[1000]"
-              onClick={closeDrawer}
-            />
-
-            {/* Drawer */}
-            <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md bg-white shadow-2xl flex flex-col">
-              {/* ================= HEADER ================= */}
-              <div className="flex items-center justify-between px-6 py-5 border-b bg-blue-300">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  Tạo điểm danh mới
-                </h3>
-
-                <button
-                  onClick={closeDrawer}
-                  className="p-2 rounded-full text-gray-600 hover:text-gray-800 hover:bg-lime-300 transition-all duration-300 hover:rotate-90"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* ================= BODY (SCROLL) ================= */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-6">
-
-                {/* Thời gian điểm danh */}
-                <div className="bg-white rounded-xl border p-4 space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Thời gian điểm danh
-                  </label>
-                  <select
-                    className="w-full rounded-lg border px-4 py-2 text-sm
-                 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option>2 phút</option>
-                    <option>4 phút</option>
-                    <option>5 phút</option>
-                  </select>
-                </div>
-
-              </div>
-
-
-              {/* ================= FOOTER ================= */}
-              <div className=" sticky bottom-0 flex justify-end gap-4 px-6 py-4 border-t bg-white/90 backdrop-blur">
-                <button
-                  onClick={closeDrawer}
-                  className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
-                >
-                  Hủy
-                </button>
-
-                <button
-                  className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md"
-                >
-                  Tạo điểm danh
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
             {/* --- CONTENT --- */}
             <div>{renderTab()}</div>
 

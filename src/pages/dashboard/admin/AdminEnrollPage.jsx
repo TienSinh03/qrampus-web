@@ -9,6 +9,7 @@ import ModalEditEnroll from "../../../components/modal/ModalEditEnroll";
 import ModalViewEnroll from "../../../components/modal/ModalViewEnroll";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
 import reportService from "../../../services/report.service";
+import studentEnrollmentService from "../../../services/student.enrollment.service";
 import {
   CirclePlus,
   Trash2,
@@ -30,6 +31,26 @@ const AdminEnrollPage = () => {
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [listLoading, setListLoading] = useState(false);
+  const [enrollments, setEnrollments] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+  const initialFilters = {
+    semester_group: "",
+    school_year: "",
+    student_code: "",
+    full_name: "",
+    course_section_code: "",
+    course_name: "",
+    teacher_code: "",
+    teacher_name: "",
+    status: "",
+  };
+  const [filters, setFilters] = useState(initialFilters);
   const [openUpload, setOpenUpload] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
   const [expanded, setExpanded] = useState(false);
@@ -128,70 +149,60 @@ const AdminEnrollPage = () => {
     fetchCardEnrollment();
   }, []);
 
-  const totalPages = 5;
+  const fetchEnrollments = async (page = currentPage) => {
+    try {
+      setListLoading(true);
+      const params = {
+        page,
+        limit: pagination.limit,
+        ...filters,
+      };
 
+      Object.keys(params).forEach((key) => {
+        if (params[key] === "" || params[key] === null || params[key] === undefined) {
+          delete params[key];
+        }
+      });
 
-
-
-  const DANH_SACH_DANG_KY = [
-    {
-      id: 1,
-      maSinhVien: "21010611",
-      hoTen: "Nguyễn Văn A",
-      maHocPhan: "421234567890",
-      monHoc: "Cấu trúc dữ liệu và Giải thuật",
-      ky: 1,
-      namHoc: "2024-2025",
-      khoa: "Công nghệ thông tin",
-      nhomThucHanh: "Nhóm 03",
-      hinhThucHoc: "Lý thuyết",
-      ngayDangKy: "15/08/2024",
-      lichHoc: "Thứ 2 8:00 - 10:00",
-      trangThai: "Thành công"
-    },
-    {
-      id: 2,
-      maSinhVien: "21010612",
-      hoTen: "Trần Thị B",
-      maHocPhan: "421234567891",
-      monHoc: "Toán cao cấp A1",
-      ky: 1,
-      namHoc: "2024-2025",
-      khoa: "Khoa học cơ bản",
-      nhomThucHanh: "Không có",
-      hinhThucHoc: "Kết hợp",
-      ngayDangKy: "16/08/2024",
-      lichHoc: "Thứ 2 8:00 - 10:00, Thứ 4 13:00 - 15:00",
-      trangThai: "Chờ duyệt"
-    },
-    {
-      id: 3,
-      maSinhVien: "21010613",
-      hoTen: "Lê Hoàng C",
-      maHocPhan: "421234567892",
-      monHoc: "Tiếng Anh chuyên ngành",
-      ky: 2,
-      namHoc: "2023-2024",
-      khoa: "Ngoại ngữ",
-      nhomThucHanh: "Nhóm 01",
-      hinhThucHoc: "Thực hành",
-      ngayDangKy: "10/01/2024",      
-      lichHoc: "Thứ 2 8:00 - 10:00, Thứ 4 13:00 - 15:00",
-
-      trangThai: "Đã hủy"
+      const response = await studentEnrollmentService.getAllEnrollments(params);
+      setEnrollments(response?.data || []);
+      setPagination((prev) => ({
+        ...prev,
+        ...(response?.meta || {}),
+      }));
+      setSelectedIds([]);
+    } catch (error) {
+      console.error("Error fetching enrollments:", error);
+      toast.error(error.message || "Không thể tải danh sách đăng ký học phần");
+    } finally {
+      setListLoading(false);
     }
-  ];
+  };
 
-  const pillStyle = {
-    "Thành công": "bg-green-100 text-green-600",
-    "Chờ duyệt": "bg-yellow-100 text-yellow-600",
-    "Đã hủy": "bg-gray-200 text-gray-600",
+  useEffect(() => {
+    fetchEnrollments(currentPage);
+  }, [currentPage]);
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    fetchEnrollments(1);
+  };
+
+  const handleClearFilters = () => {
+    setFilters(initialFilters);
+    setCurrentPage(1);
+    fetchEnrollments(1);
+  };
+
+  const statusClass = {
+    active: "bg-green-100 text-green-600",
+    dropped: "bg-gray-200 text-gray-600",
   };
 
   // Checkbox handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(DANH_SACH_DANG_KY.map(item => item.id));
+      setSelectedIds(enrollments.map((item) => item.enrollmentId));
     } else {
       setSelectedIds([]);
     }
@@ -205,8 +216,8 @@ const AdminEnrollPage = () => {
     }
   };
 
-  const isAllSelected = DANH_SACH_DANG_KY.length > 0 && selectedIds.length === DANH_SACH_DANG_KY.length;
-  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < DANH_SACH_DANG_KY.length;
+  const isAllSelected = enrollments.length > 0 && selectedIds.length === enrollments.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < enrollments.length;
 
   // CỘT, BẢNG
   // cột , bảng
@@ -221,6 +232,7 @@ const AdminEnrollPage = () => {
     nhomThucHanh: true,
     hinhThucHoc: true,
     ngayDangKy: true,
+    lichHoc: true,
     trangThai: true,
 
   });
@@ -313,10 +325,15 @@ const AdminEnrollPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Kỳ học
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Kỳ 1</option>
-                    <option>Kỳ 2</option>
-                    <option>Kỳ 3</option>
+                  <select
+                    value={filters.semester_group}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, semester_group: e.target.value }))}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="1">Kỳ 1</option>
+                    <option value="2">Kỳ 2</option>
+                    <option value="3">Kỳ 3</option>
                   </select>
                 </div>
                 <div>
@@ -326,6 +343,8 @@ const AdminEnrollPage = () => {
                   <input
                     type="text"
                     placeholder="Ví dụ: ...."
+                    value={filters.school_year}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, school_year: e.target.value }))}
                     className="w-full rounded-lg border px-3 py-2"
                   />
                 </div>
@@ -338,20 +357,23 @@ const AdminEnrollPage = () => {
                   <input
                     type="text"
                     placeholder="Ví dụ: 4203001549"
+                    value={filters.student_code}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, student_code: e.target.value }))}
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Khoa/Viện
+                    Mã giảng viên
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Khoa Công nghệ thông tin</option>
-                    <option>Khoa Điện tử - Viễn thông</option>
-                    <option>Khoa Cơ khí</option>
-                    <option>Khoa Kinh tế</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={filters.teacher_code}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, teacher_code: e.target.value }))}
+                    placeholder="Ví dụ: GV001"
+                    className="w-full rounded-lg border px-3 py-2"
+                  />
                 </div>
 
 
@@ -361,10 +383,14 @@ const AdminEnrollPage = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Trạng thái
                       </label>
-                      <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>Đang hoạt động</option>
-                        <option>Tạm ngưng</option>
-                        <option>Đã xóa</option>
+                      <select
+                        value={filters.status}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
+                        className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Tất cả</option>
+                        <option value="active">Đang hoạt động</option>
+                        <option value="dropped">Đã hủy</option>
                       </select>
                     </div>
                     <div>
@@ -373,6 +399,8 @@ const AdminEnrollPage = () => {
                       </label>
                       <input
                         type="text"
+                        value={filters.full_name}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, full_name: e.target.value }))}
                         className="w-full rounded-lg border px-3 py-2"
                       />
                     </div>
@@ -383,6 +411,8 @@ const AdminEnrollPage = () => {
                       <input
                         type="text"
                         placeholder="Ví dụ: ...."
+                        value={filters.course_section_code}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, course_section_code: e.target.value }))}
                         className="w-full rounded-lg border px-3 py-2"
                       />
                     </div>
@@ -393,16 +423,20 @@ const AdminEnrollPage = () => {
                       <input
                         type="text"
                         placeholder="Ví dụ: ...."
+                        value={filters.course_name}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, course_name: e.target.value }))}
                         className="w-full rounded-lg border px-3 py-2"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ngày đăng ký
+                        Họ tên giảng viên
                       </label>
                       <input
-                        type="date"
-                        placeholder="Ví dụ: ...."
+                        type="text"
+                        value={filters.teacher_name}
+                        onChange={(e) => setFilters((prev) => ({ ...prev, teacher_name: e.target.value }))}
+                        placeholder="Ví dụ: Nguyễn Văn A"
                         className="w-full rounded-lg border px-3 py-2"
                       />
                     </div>
@@ -439,6 +473,7 @@ const AdminEnrollPage = () => {
                   </button>
 
                   <button
+                    onClick={handleSearch}
                     className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
                   >
                     <FileSearchIcon className="w-5 h-5" />
@@ -455,6 +490,7 @@ const AdminEnrollPage = () => {
                     <File className="w-5 h-5" />
                   </button>
                   <button
+                    onClick={handleClearFilters}
                     className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
                     title="Xóa bộ lọc, truy vấn bộ lọc khác"
                   >
@@ -654,76 +690,79 @@ const AdminEnrollPage = () => {
 
                 {/* ================== BODY ================== */}
                 <tbody>
-                  {DANH_SACH_DANG_KY.map((u) => (
+                  {enrollments.map((u) => {
+                    const semesterText = u?.courseSection?.semester || "";
+                    const [namHoc = "", ky = ""] = semesterText.split("-");
+                    return (
                     <tr
-                      key={u.id}
+                      key={u.enrollmentId}
                       className={`border-b hover:bg-slate-50 transition-colors h-12 ${
-                        selectedIds.includes(u.id) ? 'bg-blue-50' : ''
+                        selectedIds.includes(u.enrollmentId) ? 'bg-blue-50' : ''
                       }`}
                     >
                       {/* Checkbox */}
                       <td className="px-4 py-2">
                         <input 
                           type="checkbox" 
-                          checked={selectedIds.includes(u.id)}
-                          onChange={() => handleSelectOne(u.id)}
+                          checked={selectedIds.includes(u.enrollmentId)}
+                          onChange={() => handleSelectOne(u.enrollmentId)}
                           className="cursor-pointer"
                         />
                       </td>
 
                       {visibleCols.maSinhVien && (
                         <td className="px-4 py-2">
-                          {u.maSinhVien}
+                          {u?.student?.studentCode || u?.student?.student_code || "-"}
                         </td>
                       )}
                       {visibleCols.hoTen && (
                         <td className="px-4 py-2">
-                          {u.hoTen}
+                          {u?.student?.fullName}
                         </td>
                       )}
                       {visibleCols.maHocPhan && (
                         <td className="px-4 py-2">
-                          {u.maHocPhan}
+                          {u?.courseSection?.code}
                         </td>
                       )}
                       {visibleCols.monHoc && (
                         <td className="px-4 py-2">
-                          {u.monHoc}
+                          {u?.courseSection?.name}
                         </td>
                       )}
                       {visibleCols.ky && (
                         <td className="px-4 py-2">
-                          {u.ky}
+                          {ky || "-"}
                         </td>
                       )}
                       {visibleCols.namHoc && (
                         <td className="px-4 py-2">
-                          {u.namHoc}
+                          {namHoc || "-"}
                         </td>
                       )}
                       {visibleCols.khoa && (
                         <td className="px-4 py-2">
-                          {u.khoa}
+                          {u?.student?.major || "-"}
                         </td>
                       )}
                       {visibleCols.nhomThucHanh && (
                         <td className="px-4 py-2 text-center">
-                          {u.nhomThucHanh}
+                          {u?.practiceGroup?.groupName || "Không có"}
                         </td>
                       )}
                       {visibleCols.hinhThucHoc && (
                         <td className="px-4 py-2">
-                          {u.hinhThucHoc}
+                          {u?.practiceGroup ? "Thực hành" : "Lý thuyết"}
                         </td>
                       )}
                       {visibleCols.ngayDangKy && (
                         <td className="px-4 py-2">
-                          {u.ngayDangKy}
+                          {u?.enrolledAt ? new Date(u.enrolledAt).toLocaleDateString("vi-VN") : "-"}
                         </td>
                       )}
                       {visibleCols.lichHoc && (
                         <td className="px-4 py-2">
-                          {u.lichHoc} 
+                          {u?.teacher?.fullName || u?.teacher?.full_name || "-"}
                         </td>
 
                       )}
@@ -731,14 +770,10 @@ const AdminEnrollPage = () => {
                         <td className="px-4 py-2 text-center">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              u.trangThai === "Thành công"
-                                ? pillStyle.Active  
-                                : u.trangThai === "Chờ duyệt"
-                                  ? pillStyle.Pending
-                                  : pillStyle.Inactive
+                              statusClass[u.enrollmentStatus] || "bg-gray-100 text-gray-600"
                             }`} 
                           >
-                            {u.trangThai}
+                            {u.enrollmentStatus === "active" ? "Đang hoạt động" : "Đã hủy"}
                           </span>
                         </td>
                       )}
@@ -752,10 +787,10 @@ const AdminEnrollPage = () => {
                             onClick={() => openConfirmActionModal(
                               "delete",
                               "Xác nhận xóa đăng ký",
-                              `Bạn có chắc chắn muốn xóa đăng ký môn ${u.monHoc} của sinh viên ${u.hoTen}? Hành động này không thể hoàn tác.`,
+                              `Bạn có chắc chắn muốn xóa đăng ký môn ${u?.courseSection?.name} của sinh viên ${u?.student?.fullName}? Hành động này không thể hoàn tác.`,
                               "Xóa đăng ký",
                               () => {
-                                console.log("Delete enroll", u.id);
+                                console.log("Delete enroll", u.enrollmentId);
                                 toast.success("Đã xóa đăng ký thành công");
                               }
                             )}
@@ -796,10 +831,10 @@ const AdminEnrollPage = () => {
                                     openConfirmActionModal(
                                       "lock",
                                       "Xác nhận hủy đăng ký",
-                                      `Bạn có chắc chắn muốn hủy đăng ký môn ${u.monHoc} của sinh viên ${u.hoTen}?`,
+                                      `Bạn có chắc chắn muốn hủy đăng ký môn ${u?.courseSection?.name} của sinh viên ${u?.student?.fullName}?`,
                                       "Hủy đăng ký",
                                       () => {
-                                        console.log("Cancel enroll", u.id);
+                                        console.log("Cancel enroll", u.enrollmentId);
                                         toast.success("Đã hủy đăng ký thành công");
                                       }
                                     );
@@ -814,16 +849,21 @@ const AdminEnrollPage = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
             </div>
+
+            {listLoading && (
+              <p className="text-sm text-slate-500 mb-4">Đang tải danh sách đăng ký...</p>
+            )}
 
 
             {/* PAGINATION */}
             <Pagination
               currentPage={currentPage}
-              totalPages={totalPages}
+              totalPages={pagination.totalPages || 1}
               onPageChange={(page) => setCurrentPage(page)}
             />
 

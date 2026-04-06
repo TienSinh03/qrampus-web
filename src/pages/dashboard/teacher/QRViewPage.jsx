@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Calendar, Bell, Clock, User, SquareStar, Check,
     ChevronUp,
@@ -115,6 +115,7 @@ const users = [
     }
 ];
 const ITEMS_PER_PAGE = 5;
+const SESSION_DURATION_SECONDS = 5 * 60;
 
 
 export default function QRViewPage() {
@@ -122,6 +123,15 @@ export default function QRViewPage() {
     const [page, setPage] = useState(0);
     const [selected, setSelected] = useState([]);
     const [sort, setSort] = useState({ key: "", dir: "asc" });
+    const [remainingSeconds, setRemainingSeconds] = useState(SESSION_DURATION_SECONDS);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setRemainingSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
 
     // Sắp xếp
     const sortedUsers = [...users].sort((a, b) => {
@@ -159,6 +169,16 @@ export default function QRViewPage() {
                 "bg-gray-100 text-gray-800";
     };
 
+    const formatCountdown = (seconds) => {
+        const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
+        const secs = String(seconds % 60).padStart(2, "0");
+        return `${mins}:${secs}`;
+    };
+
+    const elapsedSeconds = SESSION_DURATION_SECONDS - remainingSeconds;
+    const progressPercent = (remainingSeconds / SESSION_DURATION_SECONDS) * 100;
+    const progressColorClass = remainingSeconds < 60 ? "bg-red-500" : "bg-emerald-500";
+
 
 
     return (
@@ -191,9 +211,30 @@ export default function QRViewPage() {
             <div className="grid gap-6 md:grid-cols-2 mt-6">
                 {/* Left: Meeting schedule */}
 
-                <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-2 shadow-lg ring-1 ring-gray-200">
-                    <div className="bg-gray-50 p-3 rounded-2xl">
-                        Để thời gian chạy 
+                <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-5 shadow-lg ring-1 ring-gray-200">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-4 ring-1 ring-gray-100">
+                        <div className="text-sm font-medium text-gray-600">
+                            Thời gian đã chạy
+                        </div>
+
+                        <div className="mt-2 text-center text-5xl font-extrabold tracking-wider text-indigo-600 tabular-nums">
+                            {formatCountdown(elapsedSeconds)}
+                        </div>
+
+                        <div className="mt-1 text-xs text-gray-500">
+                            Còn lại: {formatCountdown(remainingSeconds)}
+                        </div>
+
+                        <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-gray-200">
+                            <div
+                                className={`h-full rounded-full transition-all duration-500 ${progressColorClass}`}
+                                style={{ width: `${progressPercent}%` }}
+                            />
+                        </div>
+
+                        <p className="mt-2 text-xs text-gray-500">
+                            {remainingSeconds < 60 ? "Còn dưới 1 phút, vui lòng quét QR ngay" : "Buổi điểm danh đang diễn ra"}
+                        </p>
                     </div>
 
                     <div className="mt-6 text-center">

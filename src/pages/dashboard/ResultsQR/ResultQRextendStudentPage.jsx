@@ -1,153 +1,214 @@
 import React, { useState, useEffect } from 'react';
+import { Users, BookOpen, Layers, Play, Square, Timer, UserCheck, Maximize2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
-const ResultQRextendStudentPage = () => {
-    const examEvent = {
-        mahocphan: "420300362101",
-        title: "Lập trình WWW (Java)",
-        tiet: "13-16",
-        giaovien: [
-            { magiangvien: "10000001", name: "Đặng Thị Thu Hà" },
-            { magiangvien: "10000002", name: "Hà Thị Kim Thoa" }
-        ],
-        ngaytao: "2023-12-18",
+const FinalAttendancePage = () => {
+    const classInfo = {
+        maHocPhan: "420300362101",
+        tenMonHoc: "Lập trình WWW (Java)",
+        tietHoc: "13-16",
+        giangVien: "Đặng Thị Thu Hà",
+        siSo: 85,
+        hinhThuc: "Thực hành",
+        nhom: "Nhóm 02",
+        phongHoc: "H7.1.2"
     };
 
-    const [qrSize, setQrSize] = useState(580);
-    const [timeLeft, setTimeLeft] = useState(300); // 5 phút
+    const [isStarted, setIsStarted] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(0);
+    const [duration, setDuration] = useState(300);
+    const [sessionId, setSessionId] = useState(null);
 
-    // Đếm ngược
+    // 👉 responsive screen
+    const [screen, setScreen] = useState({
+        w: window.innerWidth,
+        h: window.innerHeight
+    });
+
     useEffect(() => {
-        if (timeLeft <= 0) return;
+        const resize = () => {
+            setScreen({
+                w: window.innerWidth,
+                h: window.innerHeight
+            });
+        };
+        window.addEventListener("resize", resize);
+        return () => window.removeEventListener("resize", resize);
+    }, []);
 
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => prev - 1);
-        }, 1000);
+    const progress = isStarted ? (timeLeft / duration) * 100 : 0;
 
+    useEffect(() => {
+        let timer;
+        if (isStarted && timeLeft > 0) {
+            timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+        } else if (timeLeft === 0 && isStarted) {
+            setIsStarted(false);
+        }
         return () => clearInterval(timer);
-    }, [timeLeft]);
+    }, [isStarted, timeLeft]);
 
-    const formatTime = (seconds) => {
-        const minutes = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    const formatTime = (s) => {
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return `${m}:${sec < 10 ? '0' : ''}${sec}`;
     };
 
-    const handleSliderChange = (e) => {
-        setQrSize(e.target.value);
+    const handleStart = () => {
+        const id = `${classInfo.maHocPhan}-${Date.now()}`;
+        setSessionId(id);
+        setTimeLeft(duration);
+        setIsStarted(true);
     };
+
+    // 👉 QR size chuẩn responsive
+    const qrSize = Math.min(
+        screen.w * 0.85,
+        screen.h * 0.6,
+        600
+    );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-            <div className="mx-auto">
-                {/* Main Card */}
-                <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden border border-white/50">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white py-8">
-                        <h1 className="text-xl font-bold text-center">   {examEvent.title} • Tiết {examEvent.tiet}</h1>
+        <div className="text-slate-700 min-h-screen">
 
+            {!isStarted ? (
+                /* ================= SETUP ================= */
+                <div className="mx-auto space-y-8">
+
+                    {/* CLASS INFO */}
+                    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                        <div className="p-6 border-b bg-slate-50">
+                            <h1 className="text-2xl font-semibold">
+                                {classInfo.tenMonHoc}
+                            </h1>
+                            <p className="text-sm text-slate-400 mt-1">
+                                {classInfo.maHocPhan} • Tiết {classInfo.tietHoc}
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 divide-x">
+                            {[
+                                { icon: Users, label: "Sĩ số", value: `${classInfo.siSo} SV` },
+                                { icon: BookOpen, label: "Hình thức", value: classInfo.hinhThuc },
+                                { icon: Layers, label: "Nhóm", value: classInfo.nhom },
+                                { icon: UserCheck, label: "Giảng viên", value: classInfo.giangVien },
+                            ].map((item, i) => (
+                                <div key={i} className="p-5">
+                                    <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                                        <item.icon size={14} />
+                                        {item.label}
+                                    </div>
+                                    <p className="font-medium truncate">{item.value}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="p-10">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
-                            {/* QR Code + Countdown bên trái (chiếm 2/3) */}
-                            <div className="lg:col-span-2 flex flex-col items-center">
-                                {/* QR Code */}
-                                <div className="bg-white rounded-2xl shadow-xl border-4 border-indigo-100">
-                                    <QRCodeSVG
-                                        value="https://your-link-or-data-here.com"
-                                        size={qrSize}
-                                        level="H"
-                                        includeMargin={true}
-                                        fgColor="#1e293b" // màu đen đậm đẹp hơn
-                                        bgColor="#ffffff"
-                                    />
+                    {/* CONTROL */}
+                    <div className="max-w-md mx-auto text-center space-y-8 py-10">
 
-                                    {/* Nút mở modal image AI */}
-                                    <div className="">
-                                        {/** option chọn thời gian 2,3 ,5 phút */}
-                                        <select className="bg-white text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                            <option value="120">2 phút</option>
-                                            <option value="180">3 phút</option>
-                                            <option value="300" selected>5 phút</option>
-                                        </select>
-                                        <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                            Khi nhấn vào chọn thời gian và nút điểm danh sẽ tạo phiên điểm danh hiển thị QR code
-                                            Nếu tạo trên mobile thì chỉ cần hiển thị qr code và đồng hồ đếm ngược
-                                        </button>
-                                    </div>
-                                </div>
+                        <div>
+                            <h2 className="text-lg font-semibold mb-4">
+                                Thời gian điểm danh
+                            </h2>
+
+                            <div className="grid grid-cols-3 gap-3">
+                                {[120, 180, 300].map((t) => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setDuration(t)}
+                                        className={`
+                                            py-3 rounded-xl border transition
+                                            ${duration === t
+                                                ? 'bg-emerald-500 text-white border-emerald-500'
+                                                : 'bg-white hover:bg-slate-50'}
+                                        `}
+                                    >
+                                        {t / 60} phút
+                                    </button>
+                                ))}
                             </div>
+                        </div>
 
-                            {/* Thông tin lớp học bên phải */}
-                            <div className="bg-gradient-to-b from-indigo-50 to-purple-50 rounded-2xl p-8 shadow-lg border border-indigo-100">
-                                <h2 className="text-2xl font-bold text-indigo-800 mb-6 text-center">
-                                    Thông tin lớp học
-                                </h2>
+                        <button
+                            onClick={handleStart}
+                            className="w-full py-4 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition flex items-center justify-center gap-2"
+                        >
+                            <Play size={18} />
+                            Bắt đầu điểm danh
+                        </button>
 
-                                <div className="space-y-5 text-gray-700">
-                                    <div>
-                                        <span className="font-semibold text-indigo-700">Mã học phần:</span>
-                                        <p className="text-lg font-medium">{examEvent.mahocphan}</p>
-                                    </div>
-                                    <div>
-                                        <span className="font-semibold text-indigo-700">Tên học phần:</span>
-                                        <p className="text-lg font-medium">{examEvent.title}</p>
-                                    </div>
-                                    <div>
-                                        <span className="font-semibold text-indigo-700">Ngày tạo:</span>
-                                        <p className="text-lg font-medium">{examEvent.ngaytao}</p>
-                                    </div>
+                    </div>
+                </div>
+            ) : (
+                /* ================= RUNNING ================= */
+                <div className="fixed inset-0 bg-white z-50 flex flex-col">
 
-                                    <div>
-                                        <span className="font-semibold text-indigo-700 block mb-2">Giảng viên:</span>
-                                        {examEvent.giaovien.map((gv, index) => (
-                                            <div key={index} className="bg-white/70 rounded-lg p-3 mb-2 shadow">
-                                                <p className="font-medium">{gv.name}</p>
-                                                <p className="text-sm text-gray-600">MGV: {gv.magiangvien}</p>
-                                            </div>
-                                        ))}
-                                    </div>
+                    {/* TOP BAR */}
+                    <div className="flex justify-between items-center px-4 py-3 border-b">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+                                <Maximize2 size={18} className="text-emerald-500" />
+                            </div>
+                            <div className="text-sm">
+                                <p className="font-medium line-clamp-1">{classInfo.tenMonHoc}</p>
+                                <p className="text-slate-400 text-xs">{classInfo.nhom}</p>
+                            </div>
+                        </div>
 
-                                    {/* Slider điều chỉnh kích thước QR */}
-                                    <div className="mt-10 w-full max-w-md">
-                                        <label className="block text-center text-gray-700 font-medium mb-3">
-                                            Điều chỉnh kích thước QR
-                                        </label>
-                                        <input
-                                            type="range"
-                                            min="400"
-                                            max="800"
-                                            step="20"
-                                            value={qrSize}
-                                            onChange={handleSliderChange}
-                                            className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                                        />
-                                        <p className="text-center text-gray-600 mt-2 font-medium">{qrSize}px</p>
-                                    </div>
-                                    {/* Đồng hồ đếm ngược ngay dưới QR, nổi bật */}
-                                    <div className="mt-8 flex flex-col items-center">
-                                        <p className="text-gray-600 font-medium mb-3 text-lg">Thời gian còn lại để quét</p>
-                                        <div
-                                            className={`text-6xl font-bold tracking-wider ${timeLeft <= 60 ? 'text-red-600' : timeLeft <= 120 ? 'text-orange-500' : 'text-emerald-600'
-                                                } drop-shadow-lg`}
-                                        >
-                                            {formatTime(timeLeft)}
-                                        </div>
-                                        {timeLeft <= 60 && (
-                                            <p className="mt-4 text-red-600 font-semibold animate-pulse text-xl">
-                                                Sắp hết thời gian!
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
+                        <div className="text-right">
+                            <p className="text-xs text-slate-400">Thời gian</p>
+                            <div className={`text-2xl font-semibold ${timeLeft < 60 ? 'text-red-500' : ''}`}>
+                                {formatTime(timeLeft)}
                             </div>
                         </div>
                     </div>
+
+                    {/* CENTER */}
+                    <div className="flex-1 flex flex-col items-center justify-center px-4">
+
+                        {/* QR */}
+                        <div className="bg-white p-4 rounded-2xl border shadow-sm">
+                            <QRCodeSVG
+                                value={sessionId}
+                                size={qrSize}
+                                level="H"
+                            />
+                        </div>
+
+                        {/* TEXT */}
+                        <p className="text-sm text-slate-400 mt-4 text-center">
+                            Quét mã để điểm danh
+                        </p>
+
+                        {/* PROGRESS */}
+                        <div className="w-full max-w-md mt-4">
+                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full transition-all duration-1000 ${
+                                        timeLeft < 60 ? 'bg-red-500' : 'bg-emerald-500'
+                                    }`}
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* STOP */}
+                    <div className="pb-6 pt-2 flex justify-center">
+                        <button
+                            onClick={() => setIsStarted(false)}
+                            className="text-sm text-slate-400 hover:text-red-500 flex items-center gap-2"
+                        >
+                            <Square size={14} />
+                            Dừng phiên
+                        </button>
+                    </div>
+
                 </div>
-            </div>
+            )}
         </div>
     );
 };
 
-export default ResultQRextendStudentPage;
+export default FinalAttendancePage;

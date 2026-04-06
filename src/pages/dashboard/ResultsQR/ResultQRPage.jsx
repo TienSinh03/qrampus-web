@@ -1,425 +1,495 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import Pagination from "../../../components/common/Pagination";
 import {
   PieChart,
   Pie,
   Cell,
   ResponsiveContainer,
   Tooltip,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
 } from "recharts";
 import { useNavigate } from 'react-router-dom';
-
 import {
-  CirclePlus, Trash2, LockKeyhole, CloudUpload, Eye, MoreVertical,
-  PencilLine, Users, UserCheck, UserX, UserPlus, SquareStar, SquareCheck,
-  SquareUser,
-  Calendar,
-  CalendarClock,
-  ExternalLink,
-  AlarmClockCheck,
-  CircleCheckBig,
-  GalleryThumbnails,
-  Delete,
-  ArrowDownToLine,
+  Users, UserCheck, UserX, UserPlus, MapPin, Monitor, 
+  Clock, Calendar, Edit3, Search, Info, ArrowDown, ArrowUp, FilterX, FileSpreadsheet, FileSearchIcon
 } from "lucide-react";
 
 const ResultQRPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expanded, setExpanded] = useState(false);
+  const [filters, setFilters] = useState({
+    studentId: "",
+    fullName: "",
+    status: "all",
+    deviceCheck: "all",
+    locationCheck: "all",
+    dob: "",
+  });
 
-  // Pie chart data (time distribution)
-  const pieData = [
-    { name: "A", value: 40 },
-    { name: "B", value: 30 },
-    { name: "C", value: 25 },
-    { name: "D", value: 20 },
-    { name: "E", value: 15 },
-  ];
-
-  const pieColors = ["#22c55e", "#4ade80", "#86efac", "#bbf7d0", "#9be878"];
-  const totalHours = pieData.reduce((sum, item) => sum + item.value, 0);
-
-  // Bar chart data (topic interest)
-  const interestData = [
-    { name: "UI Design", value: 35, color: "#a855f7" },
-    { name: "UX Design", value: 20, color: "#3b82f6" },
-    { name: "Music", value: 14, color: "#65a30d" },
-    { name: "Animation", value: 12, color: "#6b7280" },
-    { name: "React", value: 10, color: "#dc2626" },
-    { name: "SEO", value: 9, color: "#f59e0b" },
-  ];
-  const [openMenu, setOpenMenu] = useState(null);
-  const users = [
-    {
-      id: 1,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-      full_name: "Galen Slixby",
-      email: "gslixby0@abc.net.au",
-      role: "Editor",
-      user_id: "123456",
-      status: "Inactive",
-    },
-    {
-      id: 2,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-      full_name: "Halsey Redmore",
-      email: "hredmore1@imgur.com",
-      role: "Author",
-      user_id: "125678",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-      full_name: "Marjory Sicely",
-      email: "msicely2@who.int",
-      role: "Maintainer",
-      user_id: "456321",
-      status: "Active",
-    },
-    {
-      id: 4,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-      full_name: "Cyrill Risby",
-      email: "crisby3@wordpress.com",
-      role: "Maintainer",
-      user_id: "456789",
-      status: "Inactive",
-    },
-    {
-      id: 5,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      full_name: "Maggy Hurran",
-      email: "mhurran4@yahoo.co.jp",
-      role: "Subscriber",
-      user_id: "23456",
-      status: "Pending",
-    }, {
-      id: 6,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      full_name: "Maggy Hurran",
-      email: "mhurran4@yahoo.co.jp",
-      role: "Subscriber",
-      user_id: "23456",
-      status: "Pending",
-    }, {
-      id: 7,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      full_name: "Maggy Hurran",
-      email: "mhurran4@yahoo.co.jp",
-      role: "Subscriber",
-      user_id: "23456",
-      status: "Pending",
-    }, {
-      id: 8,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      full_name: "Maggy Hurran",
-      email: "mhurran4@yahoo.co.jp",
-      role: "Subscriber",
-      user_id: "23456",
-      status: "Pending",
-    }, {
-      id: 9,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      full_name: "Maggy Hurran",
-      email: "mhurran4@yahoo.co.jp",
-      role: "Subscriber",
-      user_id: "23456",
-      status: "Pending",
-    },
-    {
-      id: 10,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      full_name: "Maggy Hurran",
-      email: "mhurran4@yahoo.co.jp",
-      role: "Subscriber",
-      user_id: "23456",
-      status: "Pending",
-    },
-    {
-      id: 11,
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      full_name: "Maggy Hurran",
-      email: "mhurran4@yahoo.co.jp",
-      role: "Subscriber",
-      user_id: "23456",
-      status: "Pending",
-    },
-  ];
-  const pillStyle = {
-    Active: "bg-green-100 text-green-600",
-    Pending: "bg-yellow-100 text-yellow-600",
-    Inactive: "bg-gray-200 text-gray-600",
+  // 1. Dữ liệu học phần & Người tạo
+  const courseInfo = {
+    id: "HP421234",
+    name: "Lập trình thiết bị di động",
+    type: "TH - Nhóm 1",
+    creator: "Nguyễn Văn A",
+    creatorID: "GV123456",
+    createdAt: "12/12/2025"
   };
+
+  // 2. Thông tin chung về phiên điểm danh
+  const sessionStats = {
+    startTime: "09:00 AM",
+    endTime: "09:05 AM",
+    date: "12/12/2025",
+    qrTotal: 150, // Số lượng QR đã tạo
+    totalStudents: 50, // Sĩ số
+    success: 42,
+    absent: 5,
+    excused: 3
+  };
+
+  // 3. Dữ liệu biểu đồ thống kê
+  const pieData = [
+    { name: "Thành công", value: sessionStats.success, color: "#22c55e" },
+    { name: "Vắng", value: sessionStats.absent, color: "#ef4444" },
+    { name: "Phép", value: sessionStats.excused, color: "#3b82f6" },
+  ];
+
+  // 4. Danh sách sinh viên chi tiết
+  const [attendanceList] = useState([
+    {
+      id: "21010611",
+      name: "Trần Minh Tiến",
+      dob: "15/05/2003",
+      qrGenerated: "09:00:05",
+      scanTime: "09:02:15",
+      deviceID: "IPHONE-15-X1",
+      deviceMatch: true,
+      location: "Phòng C102 (HCMAF)",
+      locationMatch: true,
+      status: "Thành công",
+      avatar: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png"
+    },
+    {
+      id: "21010612",
+      name: "Lê Văn B",
+      dob: "22/11/2003",
+      qrGenerated: "09:01:20",
+      scanTime: "09:03:00",
+      deviceID: "SAMSUNG-S23-U",
+      deviceMatch: false,
+      location: "Quận 12 (Cách 5km)",
+      locationMatch: false,
+      status: "Vắng",
+      avatar: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png"
+    },
+    {
+      id: "21010613",
+      name: "Nguyễn Thị C",
+      dob: "01/02/2004",
+      qrGenerated: "09:00:10",
+      scanTime: "09:04:01",
+      deviceID: "XIAOMI-14-PRO",
+      deviceMatch: true,
+      location: "Phòng C102 (HCMAF)",
+      locationMatch: true,
+      status: "Có phép",
+      avatar: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png"
+    },
+    {
+      id: "21010614",
+      name: "Phạm Văn D",
+      dob: "12/09/2003",
+      qrGenerated: "09:00:15",
+      scanTime: "09:02:40",
+      deviceID: "IPHONE-13",
+      deviceMatch: true,
+      location: "Phòng C102 (HCMAF)",
+      locationMatch: true,
+      status: "Thành công",
+      avatar: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png"
+    },
+    {
+      id: "21010615",
+      name: "Trần Thị E",
+      dob: "30/12/2003",
+      qrGenerated: "09:00:20",
+      scanTime: "09:05:00",
+      deviceID: "OPPO-RENO",
+      deviceMatch: false,
+      location: "Bên ngoài khuôn viên",
+      locationMatch: false,
+      status: "Vắng",
+      avatar: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png"
+    },
+    {
+      id: "21010616",
+      name: "Lý Văn F",
+      dob: "07/07/2003",
+      qrGenerated: "09:00:30",
+      scanTime: "09:03:12",
+      deviceID: "PIXEL-8",
+      deviceMatch: true,
+      location: "Phòng C102 (HCMAF)",
+      locationMatch: true,
+      status: "Thành công",
+      avatar: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/6.png"
+    }
+  ]);
+
+  const ITEMS_PER_PAGE = 5;
+
+  const filteredAttendanceList = attendanceList.filter((st) => {
+    const studentIdKeyword = filters.studentId.trim().toLowerCase();
+    const fullNameKeyword = filters.fullName.trim().toLowerCase();
+    const matchStudentId = !studentIdKeyword || st.id.toLowerCase().includes(studentIdKeyword);
+    const matchFullName = !fullNameKeyword || st.name.toLowerCase().includes(fullNameKeyword);
+
+    const matchStatus = filters.status === "all" || st.status === filters.status;
+    const matchDevice =
+      filters.deviceCheck === "all" ||
+      (filters.deviceCheck === "match" && st.deviceMatch) ||
+      (filters.deviceCheck === "mismatch" && !st.deviceMatch);
+    const matchLocation =
+      filters.locationCheck === "all" ||
+      (filters.locationCheck === "match" && st.locationMatch) ||
+      (filters.locationCheck === "mismatch" && !st.locationMatch);
+    const matchDob = !filters.dob || st.dob === filters.dob;
+
+    return matchStudentId && matchFullName && matchStatus && matchDevice && matchLocation && matchDob;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredAttendanceList.length / ITEMS_PER_PAGE));
+  const currentPageData = filteredAttendanceList.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleResetFilters = () => {
+    setFilters({ studentId: "", fullName: "", status: "all", deviceCheck: "all", locationCheck: "all", dob: "" });
+    setCurrentPage(1);
+  };
+
   return (
-    <div className="min-h-screen space-y-8 lg:space-y-6 overflow-x-hidden">
-      {/* TOP SECTION: Header + Stats + Pie Chart */}
+    <div className="min-h-screen space-y-6 bg-slate-50">
+      {/* TOP SECTION */}
       <div className="grid gap-6 lg:grid-cols-12">
-        {/* LEFT – 40% */}
-        <div className="lg:col-span-5 sm:col-span-12 rounded-2xl bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-6">
-            <h2 className="text-2xl sm:text-3xl font-bold">
-              Kết quả điểm danh, <span className="text-purple-700">hôm nay!!!</span>
-            </h2>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
-
-              {/* Card 1 */}
-              <div className="flex items-center gap-4 p-4 bg-purple-50 border border-purple-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
-                <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl text-purple-600">C</span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Hours Spent</p>
-                  <p className="text-2xl font-bold text-purple-600">34h</p>
-                </div>
+        
+        {/* LEFT – THỐNG KÊ SỐ LƯỢNG (40%) */}
+        <div className="lg:col-span-5 rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+          <h2 className="text-2xl font-black text-slate-800 mb-6 uppercase tracking-tight">
+            KẾT QUẢ ĐIỂM DANH <span className="text-indigo-600">HÔM NAY or NGÀY 12/12/2025</span>
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+              <div className="flex items-center gap-3 mb-1">
+                <Users className="w-5 h-5 text-indigo-600" />
+                <span className="text-xs font-bold text-slate-500 uppercase">Sĩ số HP</span>
               </div>
-
-              {/* Card 2 */}
-              <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
-                <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl text-blue-600">L</span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Test Results</p>
-                  <p className="text-2xl font-bold text-blue-600">82%</p>
-                </div>
+              <p className="text-2xl font-black text-indigo-700">{sessionStats.totalStudents}</p>
+            </div>
+            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+              <div className="flex items-center gap-3 mb-1">
+                <UserCheck className="w-5 h-5 text-emerald-600" />
+                <span className="text-xs font-bold text-slate-500 uppercase">Thành công</span>
               </div>
-
-              {/* Card 3 */}
-              <div className="flex items-center gap-4 p-4 bg-yellow-50 border border-yellow-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
-                <div className="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl text-yellow-600">S</span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Courses Completed</p>
-                  <p className="text-2xl font-bold text-yellow-600">14</p>
-                </div>
+              <p className="text-2xl font-black text-emerald-700">{sessionStats.success}</p>
+            </div>
+            <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100">
+              <div className="flex items-center gap-3 mb-1">
+                <UserX className="w-5 h-5 text-rose-600" />
+                <span className="text-xs font-bold text-slate-500 uppercase">Vắng mặt</span>
               </div>
-
-              {/* Card 4 */}
-              <div className="flex items-center gap-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm hover:shadow-md transition-all">
-                <div className="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl text-emerald-600">✓</span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Attendance Rate</p>
-                  <p className="text-2xl font-bold text-emerald-600">96%</p>
-                </div>
+              <p className="text-2xl font-black text-rose-700">{sessionStats.absent}</p>
+            </div>
+            <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+              <div className="flex items-center gap-3 mb-1">
+                <Info className="w-5 h-5 text-blue-600" />
+                <span className="text-xs font-bold text-slate-500 uppercase">Có phép</span>
               </div>
-
+              <p className="text-2xl font-black text-blue-700">{sessionStats.excused}</p>
             </div>
           </div>
         </div>
 
-        {/* MIDDLE – 30% */}
-        <div className="lg:col-span-3 sm:col-span-12 rounded-2xl bg-white p-6 shadow-sm space-y-4">
-          {/* Payment Cards */}
-          <div className="flex flex-col gap-4">
-
-            {/* Card 1 – Học phần */}
-            <div className="group bg-gradient-to-r from-indigo-50 to-purple-50 
-                            border border-indigo-100 shadow-sm hover:shadow-md
-                            transition-all duration-300 rounded-2xl p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-500 font-medium mb-1">
-                    Mã học phần
-                  </p>
-                  <p className="text-xl font-semibold text-slate-800 mb-3">
-                    123 123 123 123
-                  </p>
-
-                  <p className="text-lg font-semibold text-slate-800">
-                    Lập trình thiết bị di động
-                  </p>
-                  <p className="text-sm text-purple-600 font-medium mt-1">
-                    Loại học: TH – N1
-                  </p>
-                </div>
-
-                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <span className="text-indigo-600 text-lg font-bold">Thêm nút mở modal image AI</span>
-                </div>
-              </div>
+        {/* MIDDLE – THÔNG TIN HỌC PHẦN (30%) */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-lg shadow-indigo-200">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Học phần</p>
+            <h3 className="text-lg font-black leading-tight mb-4">{courseInfo.name}</h3>
+            <div className="space-y-2 border-t border-white/20 pt-4">
+              <p className="text-xs font-bold">Mã: {courseInfo.id}</p>
+              <p className="text-xs font-bold px-2 py-1 bg-white/20 rounded-lg w-fit">{courseInfo.type}</p>
             </div>
+          </div>
+          
+          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-xl">👤</div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase">Người tạo</p>
+              <p className="text-sm font-black text-slate-800">{courseInfo.creator}</p>
+              <p className="text-[10px] font-bold text-slate-500">{courseInfo.creatorID}</p>
+            </div>
+          </div>
+        </div>
 
-            {/* Card 2 – Sinh viên */}
-            <div className="group bg-gradient-to-r from-emerald-50 to-teal-50
-                            border border-emerald-100 shadow-sm hover:shadow-md
-                            transition-all duration-300 rounded-2xl p-5">
-              <div className="flex items-center gap-4">
-
-                {/* Icon */}
-                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <span className="text-emerald-600 text-xl font-bold">👤</span>
-                </div>
-
-                {/* Info */}
-                <div>
-                  <p className="text-lg font-semibold text-slate-800">
-                    Nguyễn Văn A
-                  </p>
-                  <p className="text-sm text-gray-500">MÃ GV: 123456</p>
-                  <p className="text-sm text-gray-500">Ngày tạo: 12/12/2025</p>
-                </div>
-              </div>
+        {/* RIGHT – THỜI GIAN & PIE CHART (30%) */}
+        <div className="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+          <div className="grid grid-cols-2 gap-4 mb-6 border-b pb-4 border-slate-50">
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase">Bắt đầu</p>
+              <p className="text-lg font-black text-indigo-600">{sessionStats.startTime}</p>
+            </div>
+            <div className="text-center border-l">
+              <p className="text-[10px] font-black text-slate-400 uppercase">Kết thúc</p>
+              <p className="text-lg font-black text-rose-600">{sessionStats.endTime}</p>
+            </div>
+            <div className="col-span-2 text-center pt-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Số QR đã tạo</p>
+              <span className="px-4 py-1 bg-amber-100 text-amber-700 rounded-full text-lg font-black">
+                {sessionStats.qrTotal}
+              </span>
             </div>
           </div>
 
-        </div>
-
-        {/* RIGHT – 30% */}
-        <div className="lg:col-span-4 sm:col-span-12 rounded-2xl bg-white p-2 shadow-sm">
-          <div className="flex flex-col items-center justify-center gap-2">
-            {/* Time info */}
-            <div className="grid grid-cols-2 gap-4 text-center">
-              {/* Thời gian tạo QR */}
-              <div>
-                <p className="font-semibold text-gray-700">Thời gian tạo QR</p>
-                <p className="text-3xl font-bold mt-2 text-purple-600">9:00AM</p>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-700">Thời gian kết thúc</p>
-                <p className="text-3xl font-bold mt-2 text-purple-600">9:05AM</p>
-              </div>
-              <div className="col-span-2 flex justify-center mt-1">
-                <span className="inline-block px-4 py-1 bg-green-100 text-green-600 text-sm rounded-full font-medium">
-                  <p className="text-3xl font-bold text-red-600">12/12/2025</p>
-                </span>
-              </div>
-
-            </div>
-
-            {/* Pie chart */}
-            <div className="w-44 h-44 lg:w-48 lg:h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    innerRadius="60%"
-                    outerRadius="90%"
-                    paddingAngle={3}
-                  >
-                    {pieData.map((entry, i) => (
-                      <Cell key={`cell-${i}`} fill={pieColors[i]} />
-                    ))}
-                  </Pie>
-
-                  <text
-                    x="50%"
-                    y="50%"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    className="text-2xl font-bold fill-gray-700"
-                  >
-                    {totalHours}h
-                  </text>
-
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pieData} dataKey="value" innerRadius="60%" outerRadius="90%" paddingAngle={5}>
+                  {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column: Bảng người dùng - CHIẾM 2 CỘT TRÊN MÀN LỚN */}
-        <div className="lg:col-span-3 bg-white rounded-xl shadow overflow-hidden">
-          <div className="overflow-auto max-h-[600px] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-            {/* Bắt buộc có min-w để scroll ngang */}
-            <div className="flex justify-between mb-6 p-2">
+      {/* BOTTOM SECTION: DANH SÁCH CHI TIẾT */}
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white border-b p-6">
+          <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+            </svg>
+            <span>Bộ lọc</span>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="flex items-center text-blue-600 hover:text-blue-800 ml-auto"
+            >
+              {expanded ? (
+                <>
+                  <ArrowUp size={16} className="mr-1" />
+                  Thu gọn
+                </>
+              ) : (
+                <>
+                  <ArrowDown size={16} className="mr-1" />
+                  Mở rộng
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">MSSV</label>
               <input
                 type="text"
-                placeholder="Search "
-                className="border p-2 rounded-lg w-3/4"
+                value={filters.studentId}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, studentId: e.target.value }));
+                  setCurrentPage(1);
+                }}
+                placeholder="Nhập MSSV"
+                className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-
             </div>
-            <table className="w-full min-w-[800px] table-fixed border-collapse">
-              {/* HEADER CỐ ĐỊNH */}
-              <thead className="bg-slate-100 sticky top-0 z-10 shadow-sm">
-                <tr >
-                  <th className="w-64 px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('users.name')}</th>
-                  <th className="w-72 px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('users.email')}</th>
-                  <th className="w-32 px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('users.role')}</th>
-                  <th className="w-40 px-4 py-3 text-left text-sm font-semibold text-gray-700">ID</th>
-                  <th className="w-32 px-4 py-3 text-center text-sm font-semibold text-gray-700">{t('users.status')}</th>
-                  <th className="w-40 px-4 py-3 text-center text-sm font-semibold text-gray-700">{t('users.actions')}</th>
-                </tr>
-              </thead>
 
-              <tbody className="divide-y divide-gray-200">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors"
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên</label>
+              <input
+                type="text"
+                value={filters.fullName}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, fullName: e.target.value }));
+                  setCurrentPage(1);
+                }}
+                placeholder="Nhập họ tên"
+                className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+              <select
+                value={filters.status}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, status: e.target.value }));
+                  setCurrentPage(1);
+                }}
+                className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Tất cả</option>
+                <option value="Thành công">Thành công</option>
+                <option value="Vắng">Vắng</option>
+                <option value="Có phép">Có phép</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Kiểm tra thiết bị</label>
+              <select
+                value={filters.deviceCheck}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, deviceCheck: e.target.value }));
+                  setCurrentPage(1);
+                }}
+                className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Tất cả</option>
+                <option value="match">Khớp</option>
+                <option value="mismatch">Không khớp</option>
+              </select>
+            </div>
+
+
+            {expanded && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Kiểm tra vị trí</label>
+                  <select
+                    value={filters.locationCheck}
+                    onChange={(e) => {
+                      setFilters((prev) => ({ ...prev, locationCheck: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    {/* Tên + Avatar */}
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={u.avatar_url || "/default-avatar.png"}
-                          alt={u.full_name}
-                          className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                        />
-                        <div className="truncate">
-                          <div className="font-medium text-gray-900 truncate">{u.full_name}</div>
-                          <div className="text-sm text-gray-500 truncate">@{u.email.split("@")[0]}</div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Email */}
-                    <td className="px-4 py-4 text-sm text-gray-700 truncate">{u.email}</td>
-
-                    {/* Role */}
-                    <td className="px-4 py-4">
-                      <span className="text-sm font-medium text-gray-600">{u.role}</span>
-                    </td>
-
-                    {/* ID */}
-                    <td className="px-4 py-4 text-sm text-gray-500 font-mono">{u.user_id}</td>
-
-                    {/* Status */}
-                    <td className="px-4 py-4 text-center">
-                      <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${pillStyle[u.status] || 'bg-gray-100 text-gray-700'}`}>
-                        {u.status}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-center gap-3">
-                        {/* <Trash2 className="w-5 h-5 text-red-500 hover:text-red-700 cursor-pointer transition" /> */}
-                        Sửa
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    <option value="all">Tất cả</option>
+                    <option value="match">Khớp</option>
+                    <option value="mismatch">Không khớp</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
+                  <input
+                    type="text"
+                    value={filters.dob}
+                    onChange={(e) => {
+                      setFilters((prev) => ({ ...prev, dob: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    placeholder="dd/mm/yyyy"
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Optional: Thông báo khi không có dữ liệu */}
-          {users.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              Không có người dùng nào
-            </div>
-          )}
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <button
+              className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
+              onClick={() => setCurrentPage(1)}
+              title="Tìm kiếm"
+            >
+              <FileSearchIcon className="w-5 h-5" />
+            </button>
+            <button
+              className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 transition-all duration-200"
+              onClick={() => console.log("Export Excel", filteredAttendanceList)}
+              title="Tải file excel"
+            >
+              <FileSpreadsheet className="w-5 h-5" />
+            </button>
+            <button
+              className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+              onClick={handleResetFilters}
+              title="Xóa bộ lọc"
+            >
+              <FilterX className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-6 py-4">MSSV</th>
+                <th className="px-6 py-4">Họ tên</th>
+                <th className="px-6 py-4">Ngày sinh</th>
+                <th className="px-6 py-4">Thời gian tạo QR</th>
+                <th className="px-6 py-4">Thời gian quét</th>
+                <th className="px-6 py-4">ID Thiết bị</th>
+                <th className="px-6 py-4">Vị trí ghi nhận</th>
+                <th className="px-6 py-4 text-center">Hành động</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {currentPageData.map((st) => (
+                <tr key={st.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-black text-indigo-600">{st.id}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-black text-slate-800">{st.name}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-xs font-black text-slate-700">
+                      <Calendar className="w-3 h-3" /> {st.dob}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                      <Calendar className="w-3 h-3" /> {st.qrGenerated}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-xs font-black text-slate-700">
+                      <Clock className="w-3 h-3" /> {st.scanTime}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className={`flex items-center gap-2 text-xs font-black p-2 rounded-lg border w-fit ${st.deviceMatch ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                      <Monitor className="w-3.5 h-3.5" /> {st.deviceID}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className={`flex items-center gap-2 text-xs font-bold ${st.locationMatch ? 'text-slate-600' : 'text-rose-600'}`}>
+                      <MapPin className={`w-3.5 h-3.5 ${st.locationMatch ? 'text-indigo-400' : 'text-rose-500'}`} />
+                      {st.location}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-center">
+                      <button className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-colors">
+                        <Edit3 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
       </div>
-
     </div>
-
-
   );
 };
 

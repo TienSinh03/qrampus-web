@@ -12,17 +12,21 @@ import {
   AlarmClockCheck,
   CircleCheckBig,
   GalleryThumbnails,
+  MapPin,
   Delete,
   View,
 } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { QRCodeSVG } from "qrcode.react";
 
 
 const QRPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   // const { t } = useTranslation();
+  const schedule = location.state?.schedule;
+  const practiceGroupName = schedule?.practiceGroup?.group_name;
   const meetings = [
     // Thành công (<= 20 giây)
     {
@@ -242,6 +246,24 @@ const QRPage = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  const getDisplayTag = (tag) => (tag === "Thành công" ? "Thành công" : "Vắng");
+  const getDisplayTagColor = (tag) =>
+    tag === "Thành công"
+      ? "bg-violet-100 text-violet-600"
+      : "bg-red-100 text-red-600";
+
+  const successCount = meetings.filter((m) => m.tag === "Thành công").length;
+  const absentCount = meetings.filter((m) => m.tag !== "Thành công").length;
+  const strangeDeviceCount = meetings.filter((m) => m.tag === "Vượt mức").length;
+  const classSize = schedule?.courseSection?.total_students ?? 50;
+  const qrCreatedCount = 1;
+  const attendedSessionCount = 12;
+  const capturedImageCount = meetings.length;
+  const isSessionEnded = schedule?.attendanceSession?.status === "ended";
+  const locationStatsCount = successCount;
+  const attendanceProgress = classSize > 0 ? Math.round((successCount / classSize) * 100) : 0;
+
   return (
     <div className="space-y-6">
 
@@ -250,41 +272,41 @@ const QRPage = () => {
 
         <StatsCard
           title="SĨ SỐ"
-          value="21,459"
-          percent="(+29%)"
+          value={classSize.toLocaleString("vi-VN")}
+          percent="(Học phần)"
           positive={true}
-          subtitle="Số SV học phần"
+          subtitle="Tổng số sinh viên học phần"
           icon={<Users className="w-6 h-6 text-purple-600" />}
           iconBg="bg-purple-100"
         />
 
         <StatsCard
-          title="SỐ LƯỢNG ĐANG SỬ LÝ"
-          value="4,567"
-          percent="(+18%)"
+          title="SỐ QR ĐÃ TẠO"
+          value={qrCreatedCount.toLocaleString("vi-VN")}
+          percent="(Hiện tại)"
           positive={true}
-          subtitle="Số SV đang xử lý"
+          subtitle="Mã QR đã tạo cho buổi học"
           icon={<UserPlus className="w-6 h-6 text-rose-600" />}
           iconBg="bg-rose-100"
         />
 
         <StatsCard
-          title="SỐ LƯỢNG ĐANG HOẠT ĐỘNG"
-          value="19,860"
-          percent="(-14%)"
-          positive={false}
-          subtitle="Số SV đang hoạt động"
-          icon={<UserCheck className="w-6 h-6 text-green-600" />}
+          title="SỐ BUỔI ĐÃ ĐIỂM DANH"
+          value={attendedSessionCount.toLocaleString("vi-VN")}
+          percent="(Học kỳ)"
+          positive={true}
+          subtitle="Tổng buổi đã thực hiện điểm danh"
+          icon={<CalendarClock className="w-6 h-6 text-green-600" />}
           iconBg="bg-green-100"
         />
 
         <StatsCard
-          title="SỐ LƯỢNG CHƯA THỰC HIỆN"
-          value="237"
-          percent="(+42%)"
+          title="SỐ HÌNH ẢNH ĐÃ CHỤP"
+          value={capturedImageCount.toLocaleString("vi-VN")}
+          percent="(Cập nhật)"
           positive={true}
-          subtitle="Số SV chưa thực hiện"
-          icon={<UserX className="w-6 h-6 text-yellow-600" />}
+          subtitle="Ảnh điểm danh đã ghi nhận"
+          icon={<GalleryThumbnails className="w-6 h-6 text-yellow-600" />}
           iconBg="bg-yellow-100"
         />
 
@@ -297,7 +319,7 @@ const QRPage = () => {
             <p className="text-sm text-slate-500 capitalize">{date}</p>
             <a
               onClick={() => window.open('/dashboard/results-qr-extend-student', '_blank')}
-              className="mt-2 inline-flex items-center justify-center h-10 px-4 py-3 rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md"
+              className="mt-2 inline-flex items-center justify-center h-10 px-4 py-3 rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md porter cursor-pointer"
             >
               <View className="w-5 h-5" />
               <span className="ml-2 text-sm font-medium">Màn hình điểm danh dành cho sinh viên</span>
@@ -309,18 +331,77 @@ const QRPage = () => {
 
           {/* QR CODE */}
           <div className="flex flex-col items-center justify-center pt-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <QRCodeSVG
-                value="https://your-link-or-data-here.com"
-                size={180}
-                level="H"
-                includeMargin={true}
-              />
+            {isSessionEnded ? (
+              <div className="w-full max-w-sm rounded-2xl border border-red-200/80 bg-gradient-to-br from-red-50 via-rose-50 to-white p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                    <UserX className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-red-700">Phiên đã kết thúc</p>
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-600">
+                        Phiên đã kết thúc
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-red-600">
+                      QR không còn hiệu lực. Vui lòng tạo phiên điểm danh mới.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full max-w-sm rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-green-50 to-white p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                      <CircleCheckBig className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-700">Phiên đang diễn ra</p>
+                      <p className="text-xs text-emerald-600">QR đang hoạt động cho sinh viên quét</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    LIVE
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-3 w-full max-w-sm rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center justify-between text-xs text-slate-600">
+                <span>Tiến độ điểm danh</span>
+                <span className="font-semibold text-emerald-600">{attendanceProgress}%</span>
+              </div>
+              <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  style={{ width: `${attendanceProgress}%` }}
+                />
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="rounded-lg bg-white p-2">
+                  <p className="text-slate-400">Đã quét</p>
+                  <p className="font-semibold text-emerald-600">{successCount}</p>
+                </div>
+                <div className="rounded-lg bg-white p-2">
+                  <p className="text-slate-400">Vắng</p>
+                  <p className="font-semibold text-red-600">{absentCount}</p>
+                </div>
+                <div className="rounded-lg bg-white p-2">
+                  <p className="text-slate-400">Thiết bị lạ</p>
+                  <p className="font-semibold text-amber-600">{strangeDeviceCount}</p>
+                </div>
+              </div>
             </div>
 
-            <p className="mt-3 text-sm text-slate-500">
-              Quét QR để xem thông tin học phần
-            </p>
+            {/* thời lượng điểm danh */}
+            <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
+              <AlarmClockCheck className="w-5 h-5" />
+              <span>Thời lượng điểm danh: 30 phút</span>
+            </div>
 
             <button
               onClick={() => navigate('/dashboard/qrcode-fullscreen')}
@@ -354,14 +435,11 @@ const QRPage = () => {
               </div>
               <div>
                 <h2 className="text-base font-semibold text-slate-800">
-                  <a onClick={() => navigate('/dashboard/study-session')} className="hover:underline" style={{ cursor: "pointer" }}>
-                    42345677843
-                  </a>
-
-                  <button onClick={() => navigate('/dashboard/study-session')} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100">
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
+                  Mã học phần: 421234567788
                 </h2>
+                <p className="mt-1 inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
+                  Nhóm thực hành: {practiceGroupName}
+                </p>
                 <p className="mt-1 line-clamp-2 text-xs text-slate-500">
                   Học phần học về các kỹ thuật lập trình web nâng cao sử dụng
                   các framework phổ biến hiện nay.
@@ -428,22 +506,16 @@ const QRPage = () => {
               Điểm danh hôm nay
             </h2>
             {/* mở ra danh sách KQ hôm đó */}
-            <button onClick={() => navigate('/dashboard/results-qr')} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100">
-              <ExternalLink className="w-4 h-4" />
+            <button onClick={() => navigate('/dashboard/results-qr')} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"   title="Xem danh sách điểm danh hôm nay">
+              <View className="w-4 h-4" />
             </button>
           </div>
           <div className="mb-4 flex gap-2 text-xs font-medium">
             <button className="rounded-full bg-violet-400 px-3 py-1 text-white shadow-sm">
               Thành công
             </button>
-            <button className="rounded-full bg-yellow-400 px-3 py-1 text-slate-600 hover:bg-slate-200">
-              Cho phép
-            </button>
-            <button className="rounded-full bg-red-400 px-3 py-1 text-white hover:bg-slate-200">
-              Vượt mức
-            </button>
-            <button className="rounded-full bg-gray-100 px-3 py-1 text-slate-600 hover:bg-slate-200">
-              Không
+            <button className="rounded-full bg-red-400 px-3 py-1 text-white hover:bg-red-500">
+              Vắng
             </button>
           </div>
 
@@ -476,9 +548,9 @@ const QRPage = () => {
                 </div>
 
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${m.tagColor}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${getDisplayTagColor(m.tag)}`}
                 >
-                  {m.tag}
+                  {getDisplayTag(m.tag)}
                 </span>
               </div>
             ))}
@@ -486,6 +558,42 @@ const QRPage = () => {
         </div>
 
 
+      </div>
+
+      <div className=" bg-white shadow-sm">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-emerald-700">SV điểm danh thành công</p>
+              <CircleCheckBig className="h-5 w-5 text-emerald-600" />
+            </div>
+            <p className="mt-3 text-2xl font-bold text-emerald-700">{successCount}</p>
+          </div>
+
+          <div className="rounded-xl border border-red-100 bg-red-50/70 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-red-700">SV vắng</p>
+              <UserX className="h-5 w-5 text-red-600" />
+            </div>
+            <p className="mt-3 text-2xl font-bold text-red-700">{absentCount}</p>
+          </div>
+
+          <div className="rounded-xl border border-amber-100 bg-amber-50/70 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-amber-700">Thiết bị lạ</p>
+              <LockKeyhole className="h-5 w-5 text-amber-600" />
+            </div>
+            <p className="mt-3 text-2xl font-bold text-amber-700">{strangeDeviceCount}</p>
+          </div>
+
+          <div className="rounded-xl border border-sky-100 bg-sky-50/70 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-sky-700">Thống kê vị trí</p>
+              <MapPin className="h-5 w-5 text-sky-600" />
+            </div>
+            <p className="mt-3 text-2xl font-bold text-sky-700">{locationStatsCount}</p>
+          </div>
+        </div>
       </div>
 
     </div>
