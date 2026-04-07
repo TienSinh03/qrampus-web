@@ -10,9 +10,38 @@ class StudentEnrollmentService {
     }
   }
 
+  async createStudentEnrollmentByAdmin(payload) {
+    try {
+      const response = await axiosClient.post('/api/v1/student-enrollments', payload);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async bulkCreateStudentEnrollments(enrollments = []) {
+    try {
+      const response = await axiosClient.post('/api/v1/student-enrollments/bulk', {
+        enrollments,
+      });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async updateEnrollmentStatus(payload) {
+    try {
+      const response = await axiosClient.patch('/api/v1/student-enrollments/status', payload);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   handleError(error) {
     if (error.response) {
-      const message = error.response.data?.message || 'Da xay ra loi tu server';
+      const message = error.response.data?.message || 'Đã xảy ra lỗi từ server';
       const apiError = new Error(message);
       apiError.status = error.response.status;
       apiError.data = error.response.data;
@@ -20,10 +49,10 @@ class StudentEnrollmentService {
     }
 
     if (error.request) {
-      return new Error('Khong the ket noi den server. Vui long kiem tra ket noi mang.');
+      return new Error('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
     }
 
-    return new Error(error.message || 'Da xay ra loi khong xac dinh');
+    return new Error(error.message || 'Đã xảy ra lỗi không xác định');
   }
 }
 

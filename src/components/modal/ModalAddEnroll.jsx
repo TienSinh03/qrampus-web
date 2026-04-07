@@ -1,49 +1,140 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
+import { toast } from "sonner";
+import courseService from "../../services/course.service";
+import studentEnrollmentService from "../../services/student.enrollment.service";
 
 const ModalAddEnroll = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
-    studentId: "",
-    studentName: "",
-    courseCode: "",
-    courseName: "",
-    semester: "",
-    academicYear: "",
-    department: "",
-    practicalGroup: "",
-    learningForm: "Lý thuyết",
-    schedule: "",
-    enrollDate: "",
+    student_code: "",
+    course_section_code: "",
+    learning_mode_value: "",
   });
+  const [loadingModes, setLoadingModes] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [learningModes, setLearningModes] = useState([]);
+  const [courseInfo, setCourseInfo] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
-    // Validate and submit logic
-    if (onSubmit) {
-      onSubmit(formData);
-    }
-    handleReset();
-    onClose();
+  const resetState = () => {
+    setFormData({
+      student_code: "",
+      course_section_code: "",
+      learning_mode_value: "",
+    });
+    setLearningModes([]);
+    setCourseInfo(null);
+    setLoadingModes(false);
+    setSubmitting(false);
   };
 
-  const handleReset = () => {
-    setFormData({
-      studentId: "",
-      studentName: "",
-      courseCode: "",
-      courseName: "",
-      semester: "",
-      academicYear: "",
-      department: "",
-      practicalGroup: "",
-      learningForm: "Lý thuyết",
-      schedule: "",
-      enrollDate: "",
-    });
+  useEffect(() => {
+    if (!isOpen) {
+      resetState();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const code = formData.course_section_code.trim();
+    if (!isOpen || !code) {
+      setLearningModes([]);
+      setCourseInfo(null);
+      setFormData((prev) => ({ ...prev, learning_mode_value: "" }));
+      return;
+    }
+
+    let active = true;
+    const timer = setTimeout(async () => {
+      try {
+        setLoadingModes(true);
+        const response = await courseService.getLearningModesByCourseSectionCode(code);
+        if (!active) return;
+
+        const data = response?.data || response;
+        const modes = data?.learning_modes || [];
+
+        setCourseInfo(data);
+        setLearningModes(modes);
+        setFormData((prev) => ({
+          ...prev,
+          learning_mode_value: modes.length > 0
+            ? (modes[0].type === "LT" ? "LT" : `TH-${modes[0].number_group}`)
+            : "",
+        }));
+      } catch (error) {
+        if (!active) return;
+        setLearningModes([]);
+        setCourseInfo(null);
+        setFormData((prev) => ({ ...prev, learning_mode_value: "" }));
+        toast.error(error.message || "Không thể tải hình thức học theo mã học phần");
+      } finally {
+        if (active) setLoadingModes(false);
+      }
+    }, 500);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [formData.course_section_code, isOpen]);
+
+  const selectedLearningMode = useMemo(() => {
+    if (!formData.learning_mode_value) return null;
+    if (formData.learning_mode_value === "LT") {
+      return learningModes.find((m) => m.type === "LT") || null;
+    }
+
+    if (formData.learning_mode_value.startsWith("TH-")) {
+      const number = Number(formData.learning_mode_value.replace("TH-", ""));
+      return learningModes.find((m) => m.type === "TH" && Number(m.number_group) === number) || null;
+    }
+
+    return null;
+  }, [formData.learning_mode_value, learningModes]);
+
+  const handleSubmit = async () => {
+    const studentCode = formData.student_code.trim();
+    const courseSectionCode = formData.course_section_code.trim();
+
+    if (!studentCode || !courseSectionCode) {
+      toast.error("Vui lòng nhập mã sinh viên và mã môn học");
+      return;
+    }
+
+    if (loadingModes || !selectedLearningMode) {
+      toast.error("Vui lòng chọn hình thức học hợp lệ");
+      return;
+    }
+
+    const payload = {
+      student_code: studentCode,
+      course_section_code: courseSectionCode,
+      practice_group_number:
+        selectedLearningMode.type === "TH"
+          ? Number(selectedLearningMode.number_group)
+          : null,
+    };
+
+    try {
+      setSubmitting(true);
+      const response = await studentEnrollmentService.createStudentEnrollmentByAdmin(payload);
+      toast.success(response?.message || "Thêm đăng ký môn học thành công");
+
+      if (onSubmit) {
+        onSubmit(response?.data || payload);
+      }
+
+      resetState();
+      onClose();
+    } catch (error) {
+      toast.error(error.message || "Không thể thêm đăng ký môn học");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -82,167 +173,65 @@ const ModalAddEnroll = ({ isOpen, onClose, onSubmit }) => {
               </label>
               <input
                 type="text"
-                name="studentId"
-                value={formData.studentId}
+                name="student_code"
+                value={formData.student_code}
                 onChange={handleChange}
-                placeholder="Ví dụ: 21010611"
+                placeholder="Ví dụ: 21210008"
                 className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Họ và tên sinh viên <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="studentName"
-                value={formData.studentName}
-                onChange={handleChange}
-                placeholder="Ví dụ: Nguyễn Văn A"
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Mã học phần <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                name="courseCode"
-                value={formData.courseCode}
+                name="course_section_code"
+                value={formData.course_section_code}
                 onChange={handleChange}
-                placeholder="Ví dụ: 421234567890"
+                placeholder="Ví dụ: 312574340"
                 className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Nhập mã học phần để tự động tải Lý thuyết/Thực hành nhóm.
+              </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên môn học <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="courseName"
-                value={formData.courseName}
-                onChange={handleChange}
-                placeholder="Ví dụ: Cấu trúc dữ liệu và Giải thuật"
-                className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Năm học <span className="text-red-500">*</span>
-              </label>
-              <select 
-                name="academicYear"
-                value={formData.academicYear}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                <option value="">-- Chọn năm học --</option>
-                <option value="2022-2023">2022-2023</option>
-                <option value="2023-2024">2023-2024</option>
-                <option value="2024-2025">2024-2025</option>
-                <option value="2025-2026">2025-2026</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Học kỳ <span className="text-red-500">*</span>
-              </label>
-              <select 
-                name="semester"
-                value={formData.semester}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                <option value="">-- Chọn học kỳ --</option>
-                <option value="1">Kỳ 1</option>
-                <option value="2">Kỳ 2</option>
-                <option value="3">Kỳ 3</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Khoa/Viện <span className="text-red-500">*</span>
-              </label>
-              <select 
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                <option value="">-- Chọn khoa/viện --</option>
-                <option value="Công nghệ thông tin">Khoa Công nghệ thông tin</option>
-                <option value="Điện tử - Viễn thông">Khoa Điện tử - Viễn thông</option>
-                <option value="Cơ khí">Khoa Cơ khí</option>
-                <option value="Kinh tế">Khoa Kinh tế</option>
-                <option value="Khoa học cơ bản">Khoa Khoa học cơ bản</option>
-                <option value="Ngoại ngữ">Khoa Ngoại ngữ</option>
-              </select>
-            </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Hình thức học <span className="text-red-500">*</span>
               </label>
-              <select 
-                name="learningForm"
-                value={formData.learningForm}
+              <select
+                name="learning_mode_value"
+                value={formData.learning_mode_value}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                disabled={loadingModes || learningModes.length === 0}
               >
-                <option value="Lý thuyết">Lý thuyết</option>
-                <option value="Thực hành">Thực hành</option>
-                <option value="Kết hợp">Kết hợp</option>
+                {loadingModes && <option value="">Đang tải hình thức học...</option>}
+                {!loadingModes && learningModes.length === 0 && (
+                  <option value="">Chưa có dữ liệu hình thức học</option>
+                )}
+                {!loadingModes && learningModes.map((mode) => {
+                  const value = mode.type === "LT" ? "LT" : `TH-${mode.number_group}`;
+                  return (
+                    <option key={value} value={value}>
+                      {mode.label}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nhóm thực hành
-              </label>
-              <input
-                type="text"
-                name="practicalGroup"
-                value={formData.practicalGroup}
-                onChange={handleChange}
-                placeholder="Ví dụ: Nhóm 03"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Lịch học
-              </label>
-              <input
-                type="text"
-                name="schedule"
-                value={formData.schedule}
-                onChange={handleChange}
-                placeholder="Ví dụ: Thứ 2 8:00 - 10:00"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ngày đăng ký <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="enrollDate"
-                value={formData.enrollDate}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
+            {courseInfo && (
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm text-gray-700">
+                <p><span className="font-medium">Môn học:</span> {courseInfo.course_section_name}</p>
+                <p><span className="font-medium">Mã học phần:</span> {courseInfo.course_section_code}</p>
+                <p><span className="font-medium">Kỳ:</span> {courseInfo.semester}</p>
+                <p><span className="font-medium">Số nhóm thực hành:</span> {courseInfo.practice_sessions}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -250,15 +239,17 @@ const ModalAddEnroll = ({ isOpen, onClose, onSubmit }) => {
         <div className="absolute bottom-0 left-0 right-0 flex justify-end gap-4 px-6 py-5 border-t border-gray-200 bg-white">
           <button
             onClick={onClose}
+            disabled={submitting}
             className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
           >
             Hủy
           </button>
           <button 
             onClick={handleSubmit}
+            disabled={submitting || loadingModes}
             className="px-6 py-2 border border-teal-600 text-teal-600 rounded-lg hover:bg-teal-50"
           >
-            Thêm đăng ký
+            {submitting ? "Đang thêm..." : "Thêm đăng ký"}
           </button>
         </div>
       </div>

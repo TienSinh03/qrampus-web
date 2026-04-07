@@ -9,4 +9,5 @@ export const COURSE_ENDPOINTS = {
   SECTIONS: `${API_VERSION}/course-sections`,
   SECTIONS_ROWS: `${API_VERSION}/course-sections/rows`,
   SECTION_BY_ID: (id) => `${API_VERSION}/course-sections/${id}`,
+  LEARNING_MODES: `${API_VERSION}/course-sections/learning-modes`,
 };

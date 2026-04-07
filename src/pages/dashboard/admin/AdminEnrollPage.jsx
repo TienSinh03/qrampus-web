@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
-import ModalUpload from "../../../components/common/ModalUpload";
+import ModalBulkUploadEnrollment from "../../../components/modal/ModalBulkUploadEnrollment";
 import ModalAddEnroll from "../../../components/modal/ModalAddEnroll";
 import ModalEditEnroll from "../../../components/modal/ModalEditEnroll";
 import ModalViewEnroll from "../../../components/modal/ModalViewEnroll";
@@ -192,6 +192,73 @@ const AdminEnrollPage = () => {
     setFilters(initialFilters);
     setCurrentPage(1);
     fetchEnrollments(1);
+  };
+
+  const handleUpdateEnrollmentStatus = async (enrollment, status = "dropped") => {
+    const studentId = enrollment?.student?.id || enrollment?.studentId || enrollment?.student_id;
+    const courseSectionId =
+      enrollment?.courseSection?.id || enrollment?.courseSectionId || enrollment?.course_section_id;
+    const practiceGroupId =
+      enrollment?.practiceGroup?.id || enrollment?.practiceGroupId || enrollment?.practice_group_id || null;
+
+    if (!["dropped", "active"].includes(status)) {
+      toast.error("Trạng thái không hợp lệ");
+      return;
+    }
+
+    if (!studentId || !courseSectionId) {
+      toast.error("Thiếu dữ liệu để cập nhật trạng thái đăng ký");
+      return;
+    }
+
+    try {
+      await studentEnrollmentService.updateEnrollmentStatus({
+        student_ids: [studentId],
+        status,
+        course_section_id: courseSectionId,
+        practice_group_id: practiceGroupId,
+      });
+
+      toast.success(
+        status === "dropped"
+          ? "Đã hủy đăng ký thành công"
+          : "Đã kích hoạt lại đăng ký thành công"
+      );
+      fetchEnrollments(currentPage);
+      fetchCardEnrollment();
+    } catch (error) {
+      console.error("Error updating enrollment status:", error);
+      toast.error(error.message || "Không thể cập nhật trạng thái đăng ký");
+    }
+  };
+
+  const handleBulkUploadEnrollments = async (enrollmentsList) => {
+    try {
+      const response = await studentEnrollmentService.bulkCreateStudentEnrollments(enrollmentsList);
+      const summary = response?.data || {};
+      const successCount = Number(summary.success || 0);
+      const failedCount = Number(summary.failed || 0);
+
+      if (failedCount > 0) {
+        toast.warning(`Đã thêm ${successCount} đăng ký thành công. ${failedCount} bản ghi lỗi.`);
+      } else if (successCount > 0) {
+        toast.success(`Đã thêm ${successCount} đăng ký học phần thành công!`);
+        setTimeout(() => {
+          setOpenUpload(false);
+        }, 1500);
+      }
+
+      if (successCount > 0) {
+        fetchEnrollments(currentPage);
+        fetchCardEnrollment();
+      }
+
+      return response;
+    } catch (error) {
+      console.error("Error bulk creating enrollments:", error);
+      toast.error(error.message || "Không thể tải lên danh sách đăng ký học phần");
+      return error;
+    }
   };
 
   const statusClass = {
@@ -390,7 +457,7 @@ const AdminEnrollPage = () => {
                       >
                         <option value="">Tất cả</option>
                         <option value="active">Đang hoạt động</option>
-                        <option value="dropped">Đã hủy</option>
+                        <option value="dropped">Môn học đã hủy</option>
                       </select>
                     </div>
                     <div>
@@ -773,7 +840,7 @@ const AdminEnrollPage = () => {
                               statusClass[u.enrollmentStatus] || "bg-gray-100 text-gray-600"
                             }`} 
                           >
-                            {u.enrollmentStatus === "active" ? "Đang hoạt động" : "Đã hủy"}
+                            {u.enrollmentStatus === "active" ? "Đang hoạt động" : "Môn học đã hủy"}
                           </span>
                         </td>
                       )}
@@ -784,68 +851,22 @@ const AdminEnrollPage = () => {
                         <div className="flex justify-center gap-3">
                           <Trash2 
                             className="w-5 h-5 text-red-500 cursor-pointer hover:text-red-700" 
-                            onClick={() => openConfirmActionModal(
-                              "delete",
-                              "Xác nhận xóa đăng ký",
-                              `Bạn có chắc chắn muốn xóa đăng ký môn ${u?.courseSection?.name} của sinh viên ${u?.student?.fullName}? Hành động này không thể hoàn tác.`,
-                              "Xóa đăng ký",
-                              () => {
-                                console.log("Delete enroll", u.enrollmentId);
-                                toast.success("Đã xóa đăng ký thành công");
-                              }
-                            )}
-                          />
-                          <Eye 
-                            className="w-5 h-5 text-blue-500 cursor-pointer hover:text-blue-700" 
-                            onClick={() => openViewEnrollModal(u)}
-                          />
+                            onClick={() => {
+                              const currentStatus = u?.enrollmentStatus || u?.status;
+                              const nextStatus = currentStatus === "dropped" ? "active" : "dropped";
+                              const isDropAction = nextStatus === "dropped";
 
-                          {/* More Menu */}
-                          <div className="relative">
-                            <MoreVertical
-                              className="w-5 h-5 cursor-pointer hover:text-slate-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenu(openMenu === u.id ? null : u.id);
-                              }}
-                            />
-
-                            {openMenu === u.id && (
-                              <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-lg z-20">
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-t-lg transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenMenu(null);
-                                    openEditEnrollModal(u);
-                                  }}
-                                >
-                                  <PencilLine className="w-4 h-4 mr-2" />
-                                  Sửa
-                                </button>
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-b-lg transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenMenu(null);
-                                    openConfirmActionModal(
-                                      "lock",
-                                      "Xác nhận hủy đăng ký",
-                                      `Bạn có chắc chắn muốn hủy đăng ký môn ${u?.courseSection?.name} của sinh viên ${u?.student?.fullName}?`,
-                                      "Hủy đăng ký",
-                                      () => {
-                                        console.log("Cancel enroll", u.enrollmentId);
-                                        toast.success("Đã hủy đăng ký thành công");
-                                      }
-                                    );
-                                  }}
-                                >
-                                  <LockKeyhole className="w-4 h-4 mr-2" />
-                                  Hủy
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                              openConfirmActionModal(
+                                isDropAction ? "delete" : "activate",
+                                isDropAction ? "Xác nhận hủy đăng ký" : "Xác nhận kích hoạt lại đăng ký",
+                                isDropAction
+                                  ? `Bạn có chắc chắn muốn hủy đăng ký môn ${u?.courseSection?.name} của sinh viên ${u?.student?.fullName}? Hành động này không thể hoàn tác.`
+                                  : `Bạn có chắc chắn muốn kích hoạt lại đăng ký môn ${u?.courseSection?.name} của sinh viên ${u?.student?.fullName}?`,
+                                isDropAction ? "Hủy đăng ký" : "Kích hoạt lại",
+                                () => handleUpdateEnrollmentStatus(u, nextStatus)
+                              );
+                            }}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -868,15 +889,19 @@ const AdminEnrollPage = () => {
             />
 
             {/* MODAL UPLOAD */}
-            <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
+            <ModalBulkUploadEnrollment
+              open={openUpload}
+              onClose={() => setOpenUpload(false)}
+              onUpload={handleBulkUploadEnrollments}
+            />
 
             {/* MODALS */}
             <ModalAddEnroll 
               isOpen={modalAddEnroll.isOpen}
               onClose={closeAddEnrollModal}
-              onSubmit={(formData) => {
-                console.log("Add enrollment", formData);
-                toast.success("Đã thêm đăng ký thành công");
+              onSubmit={() => {
+                fetchEnrollments(currentPage);
+                fetchCardEnrollment();
               }}
             />
 

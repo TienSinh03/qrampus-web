@@ -221,6 +221,22 @@ class CourseService {
   }
 
   /**
+   * Get learning modes (LT + TH groups) by course section code
+   * @param {string} courseSectionCode
+   * @returns {Promise}
+   */
+  async getLearningModesByCourseSectionCode(courseSectionCode) {
+    try {
+      const response = await axiosClient.get(COURSE_ENDPOINTS.LEARNING_MODES, {
+        params: { course_section_code: courseSectionCode }
+      });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Get course sections by semester
    * @param {string} semester - Semester (e.g. "2024-1")
    * @returns {Promise} List of course sections
