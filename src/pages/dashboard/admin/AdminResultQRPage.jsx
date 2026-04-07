@@ -13,9 +13,9 @@ import {
   Users, UserCheck, UserX, UserPlus, MapPin, Monitor, 
   Clock, Calendar, Edit3, Search, Info, ArrowDown, ArrowUp, FilterX, FileSpreadsheet, FileSearchIcon
 } from "lucide-react";
-import TeacherPhotosModal from "../admin/components/TeacherPhotosModal";
+import TeacherPhotosModal from "./components/TeacherPhotosModal";
 
-const ResultQRPage = () => {
+const AdminResultQRPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
@@ -558,4 +558,4 @@ const ResultQRPage = () => {
   );
 };
 
-export default ResultQRPage;
+export default AdminResultQRPage;

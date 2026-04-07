@@ -39,6 +39,7 @@ import AdminCoursePage from "@pages/dashboard/admin/AdminCoursePage";
 import AdminEnrollPage from "@pages/dashboard/admin/AdminEnrollPage";
 import AdminRoomPage from "../pages/dashboard/admin/AdminRoomPage";
 import AdminDetailSurveyPage from "../pages/dashboard/admin/AdminDetailSurveyPage";
+import AdminResultQRPage from "../pages/dashboard/admin/AdminResultQRPage";
 
 // attendance 
 import AttendanceDashboardPage from "@pages/dashboard/departmentAttendance/AttendanceDashboardPage";
@@ -343,6 +344,14 @@ const router = createBrowserRouter([
         element: (
           <RoleRoute requiredRoles={[ROLES.ADMIN]}>
             <AdminDetailSurveyPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/results-qr",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}> 
+            <AdminResultQRPage />
           </RoleRoute>
         ),
       },
