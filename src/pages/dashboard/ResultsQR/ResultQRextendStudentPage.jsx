@@ -1,25 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { Users, BookOpen, Layers, Play, Square, Timer, UserCheck, Maximize2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Users, BookOpen, Layers, Play, Square, Timer, UserCheck, Maximize2, AlertCircle, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { format, parseISO } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { useAttendance } from '@contexts/AttendanceContext';
 
 const FinalAttendancePage = () => {
-    const classInfo = {
-        maHocPhan: "420300362101",
-        tenMonHoc: "Lập trình WWW (Java)",
-        tietHoc: "13-16",
-        giangVien: "Đặng Thị Thu Hà",
-        siSo: 85,
-        hinhThuc: "Thực hành",
-        nhom: "Nhóm 02",
-        phongHoc: "H7.1.2"
-    };
+    const [schedule, setSchedule] = useState(null);
+    const [loadError, setLoadError] = useState(false);
+
+    const {
+        activeSession,
+        currentQR,
+        createSession,
+        closeSession,
+        getNextQR,
+        checkActiveSession,
+        createLoading,
+        closeLoading,
+        setActiveSession
+    } = useAttendance();
 
     const [isStarted, setIsStarted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
-    const [duration, setDuration] = useState(300);
-    const [sessionId, setSessionId] = useState(null);
+    const [duration, setDuration] = useState(5); 
+    const [qrTimeLeft, setQrTimeLeft] = useState(0);
+    const QR_INTERVAL = 10; 
 
-    // 👉 responsive screen
+    const isRefreshingQR = useRef(false);
+
+    // backup: load schedule and check for active session on mount
+    useEffect(() => {
+        const loadAndResumeSession = async () => {
+            try {
+                const savedSchedule = sessionStorage.getItem('attendanceSchedule');
+                if (savedSchedule) {
+                    const parsedSchedule = JSON.parse(savedSchedule);
+                    setSchedule(parsedSchedule);
+                    
+                    const activeSessionData = checkActiveSession(parsedSchedule.id);
+                    
+                    if (activeSessionData) {
+
+                        setActiveSession(activeSessionData);
+
+                        const now = new Date();
+                        const expiresAt = new Date(activeSessionData.expires_at);
+                        const remainingSeconds = Math.max(0, Math.floor((expiresAt - now) / 1000));
+                        
+                        if (remainingSeconds > 0) {
+
+                            const sessionDurationMinutes = activeSessionData.session_duration_minutes;
+                            setDuration(sessionDurationMinutes);
+                        
+                            console.log('Fetching current QR for session:', activeSessionData.id);
+                            await getNextQR(activeSessionData.id);
+                            
+                            setTimeLeft(remainingSeconds);
+                            setQrTimeLeft(QR_INTERVAL);
+                            setIsStarted(true);
+                        } else {
+                            console.log('Active session has expired');
+                        }
+                    }
+                } else {
+                    setLoadError(true);
+                }
+            } catch (error) {
+                console.error('Error loading schedule/session:', error);
+                setLoadError(true);
+            }
+        };
+
+        loadAndResumeSession();
+    }, [checkActiveSession, getNextQR, setActiveSession]);
+
+    const classInfo = schedule ? {
+        maHocPhan: schedule.courseSection?.code || "N/A",
+        tenMonHoc: schedule.courseSection?.name || "N/A",
+        tietHoc: `${schedule.start_hour?.substring(0, 5) || ''} - ${schedule.end_hour?.substring(0, 5) || ''}`,
+        giangVien: schedule.personnel?.full_name || "N/A",
+        siSo: schedule.courseSection?.max_students || 0,
+        hinhThuc: schedule.schedule_type === 'theory' ? 'Lý thuyết' : 'Thực hành',
+        nhom: schedule.practiceGroup?.group_name || schedule.practiceGroup?.groupName || "",
+        phongHoc: schedule.room?.room_name || schedule.room?.roomName || "N/A",
+        classDate: schedule.class_date || schedule.classDate,
+        sessionNumber: schedule.session_number || schedule.sessionNumber,
+        classSessionId: schedule.id
+    } : null;
+
     const [screen, setScreen] = useState({
         w: window.innerWidth,
         h: window.innerHeight
@@ -36,17 +105,76 @@ const FinalAttendancePage = () => {
         return () => window.removeEventListener("resize", resize);
     }, []);
 
-    const progress = isStarted ? (timeLeft / duration) * 100 : 0;
+    const progress = isStarted && activeSession 
+        ? (timeLeft / (duration * 60)) * 100 
+        : 0;
 
+    // Xử lý qr tiếp theo khi hết hạn 
+    const handleGetNextQR = useCallback(async () => {
+        if (!activeSession || isRefreshingQR.current) {
+            return;
+        }
+        
+        isRefreshingQR.current = true;
+
+        try {
+            await getNextQR(activeSession.id);
+        } catch (error) {
+            console.error('Error refreshing QR:', error);
+        } finally {
+            isRefreshingQR.current = false;
+        }
+
+    }, [activeSession, getNextQR]);
+
+    // Xử lý kết thúc phiên điểm danh
+    const handleSessionEnd = useCallback(async () => {
+        if (activeSession) {
+            await closeSession(activeSession.id);
+        }
+        setIsStarted(false);
+        setTimeLeft(0);
+        setQrTimeLeft(0);
+    }, [activeSession, closeSession]);
+
+    // tính thời gian còn lại của phiên
     useEffect(() => {
         let timer;
-        if (isStarted && timeLeft > 0) {
-            timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-        } else if (timeLeft === 0 && isStarted) {
-            setIsStarted(false);
+        if (isStarted && timeLeft > 0 && activeSession) {
+
+            timer = setInterval(() => {
+                setTimeLeft(prev => {
+
+                    if (prev <= 1) {
+                        setTimeout(() => handleSessionEnd(), 0);
+                        return 0;
+                    }
+
+                    return prev - 1;
+                });
+            }, 1000);
         }
         return () => clearInterval(timer);
-    }, [isStarted, timeLeft]);
+    }, [isStarted, timeLeft, activeSession, handleSessionEnd]);
+
+    // tính thời gian còn lại của QR và tự động refresh khi hết hạn
+    useEffect(() => {
+        let timer;
+        if (isStarted && qrTimeLeft > 0 && activeSession) {
+            timer = setInterval(() => {
+                setQrTimeLeft(prev => {
+
+                    if (prev <= 1) {
+                        setTimeout(() => handleGetNextQR(), 0);
+                        return QR_INTERVAL;
+                    }
+
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [isStarted, qrTimeLeft, activeSession, handleGetNextQR]);
 
     const formatTime = (s) => {
         const m = Math.floor(s / 60);
@@ -54,19 +182,73 @@ const FinalAttendancePage = () => {
         return `${m}:${sec < 10 ? '0' : ''}${sec}`;
     };
 
-    const handleStart = () => {
-        const id = `${classInfo.maHocPhan}-${Date.now()}`;
-        setSessionId(id);
-        setTimeLeft(duration);
-        setIsStarted(true);
+    // Xử lý bắt đầu phiên điểm danh
+    const handleStart = async () => {
+        if (!classInfo?.classSessionId) {
+            console.error('Missing class session ID');
+            return;
+        }
+
+        const result = await createSession(
+            classInfo.classSessionId,
+            duration, 
+            QR_INTERVAL 
+        );
+
+        if (result) {
+            setTimeLeft(duration * 60); 
+            setQrTimeLeft(QR_INTERVAL);
+            setIsStarted(true);
+        }
     };
 
-    // 👉 QR size chuẩn responsive
+    const handleStop = async () => {
+        if (activeSession) {
+            const confirmed = window.confirm('Bạn có chắc muốn dừng phiên điểm danh?');
+            if (confirmed) {
+                await handleSessionEnd();
+            }
+        } else {
+            setIsStarted(false);
+        }
+    };
+
     const qrSize = Math.min(
         screen.w * 0.85,
         screen.h * 0.6,
         600
     );
+
+    // load lỗi
+    if (loadError || !schedule) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md text-center">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                        Không tìm thấy thông tin lịch học
+                    </h2>
+                    <p className="text-gray-600 mb-6">
+                        Vui lòng quay lại trang lịch học và chọn buổi học để tạo điểm danh.
+                    </p>
+                    <button
+                        onClick={() => window.close()}
+                        className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                    >
+                        Đóng trang này
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!classInfo) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-gray-500">Đang tải...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="text-slate-700 min-h-screen">
@@ -113,18 +295,20 @@ const FinalAttendancePage = () => {
                             </h2>
 
                             <div className="grid grid-cols-3 gap-3">
-                                {[120, 180, 300].map((t) => (
+                                {[2, 3, 5].map((t) => (
                                     <button
                                         key={t}
                                         onClick={() => setDuration(t)}
+                                        disabled={createLoading}
                                         className={`
                                             py-3 rounded-xl border transition
                                             ${duration === t
                                                 ? 'bg-emerald-500 text-white border-emerald-500'
                                                 : 'bg-white hover:bg-slate-50'}
+                                            ${createLoading ? 'opacity-50 cursor-not-allowed' : ''}
                                         `}
                                     >
-                                        {t / 60} phút
+                                        {t} phút
                                     </button>
                                 ))}
                             </div>
@@ -132,10 +316,20 @@ const FinalAttendancePage = () => {
 
                         <button
                             onClick={handleStart}
-                            className="w-full py-4 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition flex items-center justify-center gap-2"
+                            disabled={createLoading}
+                            className="w-full py-4 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Play size={18} />
-                            Bắt đầu điểm danh
+                            {createLoading ? (
+                                <>
+                                    <Loader2 size={18} className="animate-spin" />
+                                    Đang tạo phiên...
+                                </>
+                            ) : (
+                                <>
+                                    <Play size={18} />
+                                    Bắt đầu điểm danh
+                                </>
+                            )}
                         </button>
 
                     </div>
@@ -169,17 +363,38 @@ const FinalAttendancePage = () => {
 
                         {/* QR */}
                         <div className="bg-white p-4 rounded-2xl border shadow-sm">
-                            <QRCodeSVG
-                                value={sessionId}
-                                size={qrSize}
-                                level="H"
-                            />
+                            {currentQR ? (
+                                <QRCodeSVG
+                                    value={JSON.stringify({
+                                        qr_token: currentQR.qr_token,
+                                        attendance_session_id: activeSession?.id,
+                                        qr_instance_id: currentQR.id,
+                                        course_section_id: schedule?.course_section_id,
+                                    })}
+                                    size={qrSize}
+                                    level="H"
+                                />
+                            ) : (
+                                <div 
+                                    className="flex items-center justify-center"
+                                    style={{ width: qrSize, height: qrSize }}
+                                >
+                                    <Loader2 className="animate-spin text-gray-400" size={48} />
+                                </div>
+                            )}
                         </div>
 
                         {/* TEXT */}
-                        <p className="text-sm text-slate-400 mt-4 text-center">
-                            Quét mã để điểm danh
-                        </p>
+                        <div className="text-center mt-4 space-y-2">
+                            <p className="text-sm text-slate-400">
+                                Quét mã để điểm danh
+                            </p>
+                            {currentQR && (
+                                <p className="text-xs text-slate-300">
+                                    Mã QR sẽ làm mới sau: {qrTimeLeft}s
+                                </p>
+                            )}
+                        </div>
 
                         {/* PROGRESS */}
                         <div className="w-full max-w-md mt-4">
@@ -197,11 +412,21 @@ const FinalAttendancePage = () => {
                     {/* STOP */}
                     <div className="pb-6 pt-2 flex justify-center">
                         <button
-                            onClick={() => setIsStarted(false)}
-                            className="text-sm text-slate-400 hover:text-red-500 flex items-center gap-2"
+                            onClick={handleStop}
+                            disabled={closeLoading}
+                            className="text-sm text-slate-400 hover:text-red-500 flex items-center gap-2 disabled:opacity-50"
                         >
-                            <Square size={14} />
-                            Dừng phiên
+                            {closeLoading ? (
+                                <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Đang đóng...
+                                </>
+                            ) : (
+                                <>
+                                    <Square size={14} />
+                                    Dừng phiên
+                                </>
+                            )}
                         </button>
                     </div>
 

@@ -4,18 +4,22 @@ import DescriptionTab from "./tabs/DescriptionTab";
 import StudentStudySession from "./tabs/StudentStudySession";
 import ScheduleStudySession from "./tabs/ScheduleStudySession";
 import QRCodeTab from "./tabs/QRCodeTab";
-import { FileImage, FileUser, Calendar, QrCode, SquareStar, ScanQrCode, AlertCircle } from "lucide-react";
+import { FileImage, FileUser, Calendar, QrCode, SquareStar, ScanQrCode, AlertCircle, Activity } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useAttendance } from "@contexts/AttendanceContext";
 
 const StudySessionPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [currentTab, setCurrentTab] = useState("description");
+    const { checkActiveSession } = useAttendance();
     
     // Get schedule from navigate state
     const scheduleFromState = location.state?.schedule;
     const [schedule, setSchedule] = useState(scheduleFromState || null);
+    const [hasActiveSession, setHasActiveSession] = useState(schedule?.has_active_session || false);
+    const [checkingSession, setCheckingSession] = useState(false);
 
     // If no schedule in state, you might want to redirect or fetch it
     useEffect(() => {
@@ -26,6 +30,36 @@ const StudySessionPage = () => {
             setSchedule(scheduleFromState);
         }
     }, [scheduleFromState]);
+
+    // Kiểm tra active session khi load page hoặc khi schedule thay đổi
+    useEffect(() => {
+        if (!schedule?.id) return;
+        
+        setCheckingSession(true);
+        try {
+            const activeSessionData = checkActiveSession(schedule.id);
+            setHasActiveSession(!!activeSessionData);
+        } catch (error) {
+            console.error('Error checking active session:', error);
+            setHasActiveSession(false);
+        } finally {
+            setCheckingSession(false);
+        }
+    }, [schedule?.id, checkActiveSession]);
+
+    // Lắng nghe realtime khi GV tạo/đóng phiên điểm danh để cập nhật UI ngay lập tức
+    const handleAttendanceClick = () => {
+        // Lưu schedule vào sessionStorage
+        sessionStorage.setItem('attendanceSchedule', JSON.stringify(schedule));
+        
+        if (hasActiveSession) {
+            // Nếu có active session, mở tab với session đang chạy
+            window.open('/dashboard/results-qr-extend-student', '_blank');
+        } else {
+            // Nếu chưa có, mở tab để tạo mới
+            window.open('/dashboard/results-qr-extend-student', '_blank');
+        }
+    };
 
     const renderTab = () => {
         if (!schedule) {
@@ -104,11 +138,32 @@ const StudySessionPage = () => {
                             </div>
                         </div>
                     </div>
-                    <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50  focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200 w-full md:w-auto"
-                    title="Tạo điểm danh, sẽ được truy cập vào tab điểm danh" onClick={() => window.open('/dashboard/results-qr-extend-student', '_blank')}>
-                        
-                    <ScanQrCode className="w-5 h-5" />
-                         <span>Tạo điểm danh</span>
+                    <button 
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-2 transition-all duration-200 w-full md:w-auto ${
+                            hasActiveSession 
+                                ? 'border border-orange-500 text-orange-500 hover:bg-orange-50 focus:ring-orange-500'
+                                : 'border border-teal-500 text-teal-500 hover:bg-teal-50 focus:ring-teal-500'
+                        }`}
+                        title={hasActiveSession ? "Xem phiên điểm danh đang hoạt động" : "Tạo điểm danh mới"} 
+                        onClick={handleAttendanceClick}
+                        disabled={checkingSession}
+                    >
+                        {checkingSession ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                <span>Đang kiểm tra...</span>
+                            </>
+                        ) : hasActiveSession ? (
+                            <>
+                                <Activity className="w-5 h-5 animate-pulse" />
+                                <span>Phiên đang hoạt động</span>
+                            </>
+                        ) : (
+                            <>
+                                <ScanQrCode className="w-5 h-5" />
+                                <span>Tạo điểm danh</span>
+                            </>
+                        )}
                     </button>
                 </div>
 
