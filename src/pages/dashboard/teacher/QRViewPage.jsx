@@ -1,46 +1,23 @@
-import React, { useEffect, useState } from "react";
-import {
-    Calendar, Bell, Clock, User, SquareStar, Check,
-    ChevronUp,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    MoreVertical,
-
-} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { SquareStar } from "lucide-react";
 import { useAttendance } from "@contexts/AttendanceContext";
-const steps = [
-    { MSSV: "21010611", HOTEN: "Nguyễn Văn A", completed: true },
-    { MSSV: "21010612", HOTEN: "Trần Thị B", completed: true },
-    { MSSV: "21010613", HOTEN: "Lê Văn C", completed: true },
-    { MSSV: "21010614", HOTEN: "Phạm Thị D", completed: true },
-    { MSSV: "21010615", HOTEN: "Hoàng Văn E", completed: true },
-    { MSSV: "21010616", HOTEN: "Đặng Thị F", completed: true },
-    { MSSV: "21010617", HOTEN: "Bùi Văn G", completed: true },
-    { MSSV: "21010618", HOTEN: "Vũ Thị H", completed: true },
-    { MSSV: "21010619", HOTEN: "Ngô Văn I", completed: true },
-    { MSSV: "21010620", HOTEN: "Dương Thị K", completed: true },
-    { MSSV: "21010613", HOTEN: "Lê Văn C", completed: true },
-    { MSSV: "21010614", HOTEN: "Phạm Thị D", completed: true },
-    { MSSV: "21010615", HOTEN: "Hoàng Văn E", completed: true },
-    { MSSV: "21010616", HOTEN: "Đặng Thị F", completed: true },
-    { MSSV: "21010617", HOTEN: "Bùi Văn G", completed: true },
-    { MSSV: "21010618", HOTEN: "Vũ Thị H", completed: false },
-    { MSSV: "21010619", HOTEN: "Ngô Văn I", completed: false },
-    { MSSV: "21010620", HOTEN: "Dương Thị K", completed: false },
-];
+
 export default function QRViewPage() {
-    const { getSessionTiming } = useAttendance();
+    const { getSessionTiming, getStats } = useAttendance();
 
     const [clockTick, setClockTick] = useState(0);
+    const [scanStats, setScanStats] = useState(null);
+    const [scanStatsSessionId, setScanStatsSessionId] = useState(null);
+    const [lastCompletedStats, setLastCompletedStats] = useState(null);
+    const [statsError, setStatsError] = useState(null);
 
     const [savedSchedule] = useState(() => {
         try {
-            const rawSchedule = sessionStorage.getItem('attendanceSchedule');
+            const rawSchedule = sessionStorage.getItem("attendanceSchedule");
             if (!rawSchedule) return null;
             return JSON.parse(rawSchedule);
         } catch (error) {
-            console.error('Error loading class session for QR view:', error);
+            console.error("Error loading class session for QR view:", error);
             return null;
         }
     });
@@ -56,16 +33,15 @@ export default function QRViewPage() {
     }, []);
 
     const sessionTiming = getSessionTiming(classSessionId, clockTick);
-
     const activeSession = sessionTiming?.session || null;
     const sessionClassInfo = activeSession?.classInfo || {};
 
-    const displayCourseName = sessionClassInfo?.course_name || savedSchedule?.courseSection?.name || "Chưa có môn học";
-    const displayCourseCode = sessionClassInfo?.course_code || savedSchedule?.courseSection?.code || "N/A";
+    const displayCourseName = sessionClassInfo.course_name || savedSchedule?.courseSection?.name || "Chưa có môn học";
+    const displayCourseCode = sessionClassInfo.course_code || savedSchedule?.courseSection?.code || "N/A";
     const displaySemester = savedSchedule?.courseSection?.semester || "N/A";
     const displayPracticeGroup = savedSchedule?.practiceGroup?.group_name || savedSchedule?.practiceGroup?.groupName || "";
     const displayRoomName =  savedSchedule?.room?.room_name || "N/A";
-    const displayTeacherName = sessionClassInfo?.teacher_name || savedSchedule?.personnel?.full_name || "N/A";
+    const displayTeacherName = savedSchedule?.personnel?.full_name || "N/A";
     const displayDate = sessionClassInfo?.class_date || savedSchedule?.class_date || savedSchedule?.classDate || null;
     const displayStartHour = sessionClassInfo?.start_hour || savedSchedule?.start_hour || "";
     const displayEndHour = sessionClassInfo?.end_hour || savedSchedule?.end_hour || "";
@@ -99,6 +75,26 @@ export default function QRViewPage() {
         });
     };
 
+    const formatCountdown = (seconds) => {
+        const safeSeconds = Math.max(0, Number(seconds) || 0);
+        const mins = String(Math.floor(safeSeconds / 60)).padStart(2, "0");
+        const secs = String(safeSeconds % 60).padStart(2, "0");
+        return `${mins}:${secs}`;
+    };
+
+    const formatScanTime = (scanTime) => {
+        if (!scanTime) return "--:--";
+
+        const date = new Date(scanTime);
+        if (Number.isNaN(date.getTime())) return "--:--";
+
+        return date.toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        });
+    };
+
     const courseInitials = getCourseInitials(displayCourseName);
     const timeRangeLabel = displayStartHour && displayEndHour
         ? `${formatHour(displayStartHour)} - ${formatHour(displayEndHour)}`
@@ -106,19 +102,85 @@ export default function QRViewPage() {
     const dateLabel = formatDateLabel(displayDate);
     const scheduleLabel = dateLabel ? `${timeRangeLabel}, ${dateLabel}` : timeRangeLabel;
 
-    const formatCountdown = (seconds) => {
-        const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
-        const secs = String(seconds % 60).padStart(2, "0");
-        return `${mins}:${secs}`;
-    };
-
     const hasActiveSession = Boolean(sessionTiming?.session);
     const elapsedSeconds = sessionTiming?.elapsedSeconds ?? 0; // Thời gian đã trôi qua kể từ khi QR được tạo
     const remainingSeconds = sessionTiming?.remainingSeconds ?? 0; // Thời gian còn lại trước khi QR hết hạn
     const progressPercent = sessionTiming?.progressPercent ?? 0;
     const progressColorClass = remainingSeconds < 60 ? "bg-red-500" : "bg-emerald-500";
 
+    // Cập nhật sinh viên quét
+    useEffect(() => {
+        if (!activeSession?.id) {
+            return;
+        }
 
+        let isMounted = true;
+
+        const fetchSessionStats = async () => {
+            try {
+                const data = await getStats(activeSession.id);
+                if (!isMounted) return;
+
+                if (data) {
+                    setScanStats(data);
+                    setScanStatsSessionId(activeSession.id);
+                    setLastCompletedStats(data);
+                    setStatsError(null);
+                }
+            } catch (error) {
+                if (!isMounted) return;
+                setStatsError(error?.message || "Không thể cập nhật danh sách điểm danh");
+            }
+        };
+
+        fetchSessionStats();
+
+        const interval = setInterval(fetchSessionStats, 3000);
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                fetchSessionStats();
+            }
+        };
+
+        // pull-to-refresh ngày khi quay lại tab
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [activeSession?.id, getStats]);
+
+    let effectiveScanStats = lastCompletedStats || scanStats;
+
+    if (activeSession?.id) {
+        effectiveScanStats = scanStatsSessionId === activeSession.id ? scanStats : null;
+    }
+
+    const effectiveStatsError = hasActiveSession ? statsError : null;
+
+    const attendedStudents = [...(effectiveScanStats?.attendances || [])].sort(
+        (a, b) => new Date(b.scan_time) - new Date(a.scan_time)
+    );
+
+    const attendedCount = Number(effectiveScanStats?.stats?.attended ?? attendedStudents.length ?? 0);
+    const totalStudents = Number(
+        effectiveScanStats?.stats?.total
+        ?? savedSchedule?.courseSection?.max_students
+        ?? 0
+    );
+    const unscannedCount = Math.max(0, totalStudents - attendedCount);
+    const timelineProgressPercent = totalStudents > 0 ? (attendedCount / totalStudents) * 100 : 0;
+
+    const unscannedPlaceholders = useMemo(() => {
+        const maxRows = Math.min(unscannedCount, 30);
+        return Array.from({ length: maxRows }, (_, index) => ({
+            id: `unscanned-${index + 1}`,
+            label: `Sinh viên chưa quét #${index + 1}`,
+        }));
+    }, [unscannedCount]);
 
     return (
         <div className="">
@@ -220,29 +282,30 @@ export default function QRViewPage() {
                                         <div
                                             className="w-full bg-yellow-300 transition-all duration-700 ease-out"
                                             style={{
-                                                height: `${(steps.filter(s => s.completed).length - 1) / (steps.length - 1) * 100}%`,
+                                                height: `${timelineProgressPercent}%`,
                                             }}
                                         />
                                     </div>
 
-                                    {/* Danh sách items */}
-                                    {steps.map((step, index) => (
-                                        <div key={index} className="relative flex items-start mb-4 last:mb-0">
+                                    {attendedStudents.map((item) => (
+                                        <div key={item.id} className="relative flex items-start mb-4 last:mb-0">
                                             <div className="absolute left-[-34px] top-1 flex items-center justify-center">
-                                                <div
-                                                    className={`w-4 h-4 rounded-full border-2 shadow-md transition-all 
-                                                    ${step.completed ? 'bg-yellow-400' : 'bg-gray-300'}`}
-                                                />
+                                                <div className="w-4 h-4 rounded-full border-2 shadow-md transition-all bg-yellow-400" />
                                             </div>
 
-                                            <div className={step.completed ? '' : 'opacity-50'}>
-                                                <h3 className={`font-medium text-gray-900 ${!step.completed && 'text-gray-500'}`}>
-                                                    {step.MSSV}
+                                            <div>
+                                                <h3 className="font-medium text-gray-900">
+                                                    {item.student?.student_code || "N/A"}
                                                 </h3>
-                                                <p className="mt-0.5 text-sm text-gray-600">{step.HOTEN}</p>
+                                                <p className="mt-0.5 text-sm text-gray-600">{item.student?.full_name || "Không rõ tên"}</p>
+                                                <p className="mt-0.5 text-xs text-gray-400">Quét lúc: {formatScanTime(item.scan_time)}</p>
                                             </div>
                                         </div>
                                     ))}
+
+                                    {attendedStudents.length === 0 && (
+                                        <p className="text-sm text-gray-400 py-2">Chưa có sinh viên nào quét QR</p>
+                                    )}
                                 </div>
 
                             </div>
@@ -265,29 +328,30 @@ export default function QRViewPage() {
                                         <div
                                             className="w-full bg-sky-600 transition-all duration-700 ease-out"
                                             style={{
-                                                height: `${(steps.filter(s => s.completed).length - 1) / (steps.length - 1) * 100}%`,
+                                                height: `${Math.max(0, 100 - timelineProgressPercent)}%`,
                                             }}
                                         />
                                     </div>
 
-                                    {/* Danh sách items */}
-                                    {steps.map((step, index) => (
-                                        <div key={index} className="relative flex items-start mb-4 last:mb-0">
+                                    {unscannedPlaceholders.map((item) => (
+                                        <div key={item.id} className="relative flex items-start mb-4 last:mb-0">
                                             <div className="absolute left-[-34px] top-1 flex items-center justify-center">
-                                                <div
-                                                    className={`w-4 h-4 rounded-full border-4 shadow-md transition-all 
-                                                    ${step.completed ? 'bg-sky-600' : 'bg-gray-300'}`}
-                                                />
+                                                <div className="w-4 h-4 rounded-full border-4 shadow-md transition-all bg-gray-300" />
                                             </div>
 
-                                            <div className={step.completed ? '' : 'opacity-50'}>
-                                                <h3 className={`font-medium text-gray-900 ${!step.completed && 'text-gray-500'}`}>
-                                                    {step.MSSV}
-                                                </h3>
-                                                <p className="mt-0.5 text-sm text-gray-600">{step.HOTEN}</p>
+                                            <div className="opacity-70">
+                                                <h3 className="font-medium text-gray-500">{item.label}</h3>
                                             </div>
                                         </div>
                                     ))}
+
+                                    {unscannedCount > unscannedPlaceholders.length && (
+                                        <p className="text-xs text-gray-400">...và {unscannedCount - unscannedPlaceholders.length} sinh viên khác</p>
+                                    )}
+
+                                    {unscannedCount === 0 && (
+                                        <p className="text-sm text-emerald-500 py-2">Tất cả sinh viên đã quét QR</p>
+                                    )}
                                 </div>
 
                             </div>
@@ -300,7 +364,7 @@ export default function QRViewPage() {
                         <div className="flex items-center gap-3">
                             <div className="w-4 h-4 rounded-full bg-yellow-500 shadow glow-yellow"></div>
                             <span className="text-sm font-medium text-gray-700">
-                                Sinh viên đã điểm danh thành công vào hệ thống hôm nay
+                                Đã quét: {attendedCount}/{totalStudents || attendedCount} sinh viên
                             </span>
                         </div>
 
@@ -311,16 +375,16 @@ export default function QRViewPage() {
                                 <div className="absolute inset-0 rounded-full bg-sky-400 animate-ping"></div>
                             </div>
                             <span className="text-sm font-medium text-gray-700">
-                                Sinh viên chưa điểm danh
+                                Chưa quét: {unscannedCount} sinh viên
                             </span>
                         </div>
                     </div>
+
+                    {effectiveStatsError && (
+                        <p className="mt-4 text-xs text-red-500">{effectiveStatsError}</p>
+                    )}
                 </div>
-
             </div>
-
-            
-
         </div>
     );
 }

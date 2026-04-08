@@ -204,6 +204,29 @@ export const AttendanceProvider = ({ children }) => {
   }, []);
 
   
+  /**
+   * Lấy thống kê phiên điểm danh
+   */
+  const getStats = useCallback(async (sessionId) => {
+    setStatsLoading(true);
+    try {
+      const response = await AttendanceService.getSessionStats(sessionId);
+
+      if (response.success) {
+        setSessionStats(response.data);
+        return response.data;
+      } else {
+        console.error('Get stats failed:', response.message);
+        return null;
+      }
+    } catch (error) {
+      console.error('Get stats error:', error);
+      return null;
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
 
   /**
    * Clear active session
@@ -237,6 +260,9 @@ export const AttendanceProvider = ({ children }) => {
     return null;
   }, [activeSessions, getValidSession]);
 
+  /**
+   * Hàm lấy thông tin thời gian còn lại của phiên điểm danh, cũng như phần trăm đã trôi qua để hiển thị tiến trình
+   */
   const getSessionTiming = useCallback((classSessionId = null, _clockTick = 0) => {
     void _clockTick;
 
@@ -347,6 +373,7 @@ export const AttendanceProvider = ({ children }) => {
     createSession,
     closeSession,
     getNextQR,
+    getStats,
     clearSession,
     checkActiveSession,
     getSessionTiming,

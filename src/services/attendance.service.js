@@ -49,6 +49,19 @@ class AttendanceService {
   }
 
   /**
+   * Lấy thống kê phiên điểm danh
+   * @param {string} sessionId - Attendance session ID
+   * @returns {Promise} Session statistics
+   */
+  async getSessionStats(sessionId) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SESSION_STATS(sessionId));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+  /**
    * Handle API errors
    * @param {Error} error - Axios error
    * @returns {Error} Formatted error
