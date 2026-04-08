@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Users, BookOpen, Layers, Play, Square, Timer, UserCheck, Maximize2, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Users, BookOpen, Layers, Play, Square, UserCheck, Maximize2, AlertCircle, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { format, parseISO } from 'date-fns';
-import { vi } from 'date-fns/locale';
 import { useAttendance } from '@contexts/AttendanceContext';
 
 const FinalAttendancePage = () => {
@@ -22,12 +20,12 @@ const FinalAttendancePage = () => {
     } = useAttendance();
 
     const [isStarted, setIsStarted] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(0);
+    const [sessionClockTick, setSessionClockTick] = useState(0);
     const [duration, setDuration] = useState(5); 
-    const [qrTimeLeft, setQrTimeLeft] = useState(0);
     const QR_INTERVAL = 10; 
 
     const isRefreshingQR = useRef(false);
+    const isEndingSession = useRef(false);
 
     // backup: load schedule and check for active session on mount
     useEffect(() => {
@@ -55,9 +53,7 @@ const FinalAttendancePage = () => {
                         
                             console.log('Fetching current QR for session:', activeSessionData.id);
                             await getNextQR(activeSessionData.id);
-                            
-                            setTimeLeft(remainingSeconds);
-                            setQrTimeLeft(QR_INTERVAL);
+
                             setIsStarted(true);
                         } else {
                             console.log('Active session has expired');
@@ -105,8 +101,51 @@ const FinalAttendancePage = () => {
         return () => window.removeEventListener("resize", resize);
     }, []);
 
-    const progress = isStarted && activeSession 
-        ? (timeLeft / (duration * 60)) * 100 
+    useEffect(() => {
+        if (!isStarted) return;
+
+        const timer = setInterval(() => {
+            setSessionClockTick((prev) => prev + 1);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isStarted]);
+
+    const totalDurationSeconds = useMemo(() => {
+        if (activeSession?.session_duration_minutes) {
+            return Number(activeSession.session_duration_minutes) * 60;
+        }
+        return duration * 60;
+    }, [activeSession?.session_duration_minutes, duration]);
+
+    const timeLeft = useMemo(() => {
+        void sessionClockTick;
+
+        if (!isStarted) return 0;
+
+        if (!activeSession?.expires_at) {
+            return totalDurationSeconds;
+        }
+
+        const expiresAtMs = new Date(activeSession.expires_at).getTime();
+        if (Number.isNaN(expiresAtMs)) return 0;
+
+        return Math.max(0, Math.floor((expiresAtMs - Date.now()) / 1000));
+    }, [isStarted, activeSession?.expires_at, totalDurationSeconds, sessionClockTick]);
+
+    const qrTimeLeft = useMemo(() => {
+        void sessionClockTick;
+
+        if (!isStarted || !currentQR?.expires_at) return 0;
+
+        const qrExpiresAtMs = new Date(currentQR.expires_at).getTime();
+        if (Number.isNaN(qrExpiresAtMs)) return QR_INTERVAL;
+
+        return Math.max(0, Math.floor((qrExpiresAtMs - Date.now()) / 1000));
+    }, [isStarted, currentQR?.expires_at, QR_INTERVAL, sessionClockTick]);
+
+    const progress = isStarted && totalDurationSeconds > 0
+        ? (timeLeft / totalDurationSeconds) * 100
         : 0;
 
     // Xử lý qr tiếp theo khi hết hạn 
@@ -133,48 +172,28 @@ const FinalAttendancePage = () => {
             await closeSession(activeSession.id);
         }
         setIsStarted(false);
-        setTimeLeft(0);
-        setQrTimeLeft(0);
     }, [activeSession, closeSession]);
 
-    // tính thời gian còn lại của phiên
+    // đồng bộ kết thúc phiên theo expires_at
     useEffect(() => {
-        let timer;
-        if (isStarted && timeLeft > 0 && activeSession) {
-
-            timer = setInterval(() => {
-                setTimeLeft(prev => {
-
-                    if (prev <= 1) {
-                        setTimeout(() => handleSessionEnd(), 0);
-                        return 0;
-                    }
-
-                    return prev - 1;
-                });
-            }, 1000);
+        if (!isStarted || !activeSession || timeLeft > 0 || isEndingSession.current) {
+            return;
         }
-        return () => clearInterval(timer);
+
+        isEndingSession.current = true;
+        handleSessionEnd().finally(() => {
+            isEndingSession.current = false;
+        });
     }, [isStarted, timeLeft, activeSession, handleSessionEnd]);
 
-    // tính thời gian còn lại của QR và tự động refresh khi hết hạn
+    // tự động refresh QR theo expires_at thực tế
     useEffect(() => {
-        let timer;
-        if (isStarted && qrTimeLeft > 0 && activeSession) {
-            timer = setInterval(() => {
-                setQrTimeLeft(prev => {
-
-                    if (prev <= 1) {
-                        setTimeout(() => handleGetNextQR(), 0);
-                        return QR_INTERVAL;
-                    }
-
-                    return prev - 1;
-                });
-            }, 1000);
+        if (!isStarted || !activeSession || !currentQR || qrTimeLeft > 0) {
+            return;
         }
-        return () => clearInterval(timer);
-    }, [isStarted, qrTimeLeft, activeSession, handleGetNextQR]);
+
+        handleGetNextQR();
+    }, [isStarted, qrTimeLeft, activeSession, currentQR, currentQR?.id, handleGetNextQR]);
 
     const formatTime = (s) => {
         const m = Math.floor(s / 60);
@@ -196,8 +215,6 @@ const FinalAttendancePage = () => {
         );
 
         if (result) {
-            setTimeLeft(duration * 60); 
-            setQrTimeLeft(QR_INTERVAL);
             setIsStarted(true);
         }
     };
