@@ -96,6 +96,34 @@ class StudentService {
   }
 
   /**
+   * Upload/replace student avatar by Admin
+   * PUT /api/v1/students/:code/avatar
+   * @param {string} studentCode - Student code
+   * @param {File} avatarFile - Image file
+   * @returns {Promise}
+   */
+  async uploadStudentAvatarByAdmin(studentCode, avatarFile) {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
+      const response = await axiosClient.put(
+        STUDENT_ENDPOINTS.AVATAR_BY_CODE(studentCode),
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Bulk create students from Excel upload
    * POST /api/v1/students/bulk
    * @param {Array} studentsList - Array of student objects

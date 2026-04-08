@@ -145,6 +145,33 @@ class PersonnelService {
   }
 
   /**
+   * Upload/replace personnel avatar by Admin
+   * @param {string} teacherCode - Mã nhân sự
+   * @param {File} avatarFile - Image file
+   * @returns {Promise} Updated avatar data
+   */
+  async uploadPersonnelAvatarByAdmin(teacherCode, avatarFile) {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
+      const response = await axiosClient.put(
+        PERSONNEL_ENDPOINTS.UPDATE_AVATAR_BY_ADMIN(teacherCode),
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Handle API errors
    * @param {Error} error - Error object from axios
    * @returns {Error} Formatted error

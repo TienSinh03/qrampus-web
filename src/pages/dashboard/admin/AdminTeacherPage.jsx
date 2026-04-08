@@ -285,7 +285,6 @@ const AdminTeacherPage = () => {
         dob: formData.dateOfBirth || null,
         department: formData.department,
         office_hours: formData.officeHours || null,
-        avatar_url: formData.avatarUrl || null,
         roles: formData.roles // Send roles array
       };
 
@@ -303,6 +302,13 @@ const AdminTeacherPage = () => {
         formData.teacherId,
         updateData
       );
+
+      if (formData.avatarFile) {
+        await personnelService.uploadPersonnelAvatarByAdmin(
+          formData.teacherId,
+          formData.avatarFile
+        );
+      }
       
       if (response.success) {
         toast.success("Đã cập nhật thông tin nhân sự thành công!");

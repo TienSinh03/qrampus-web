@@ -3,11 +3,13 @@ import { Upload, X, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import personnelService from "@services/personnel.service";
+import userService from "@services/user.service";
 import ProfileSkeleton from "@components/layout/ProfileSkeleton";
 import LoadingSpinner from "@components/layout/LoadingSpinner";
 
 const AccountPage = () => {
   const [avatar, setAvatar] = useState(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -132,6 +134,7 @@ const AccountPage = () => {
         office_hours: profile.office_hours || "",
       });
     }
+    setAvatar(profile?.avatar_url || null);
     setErrors({});
     setIsEditing(false);
   };
@@ -140,10 +143,32 @@ const AccountPage = () => {
     setIsEditing(true);
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file && file.size <= 800 * 1024) {
-      setAvatar(URL.createObjectURL(file));
+      const previewUrl = URL.createObjectURL(file);
+      setAvatar(previewUrl);
+
+      try {
+        setAvatarUploading(true);
+        const avatarResponse = await userService.uploadMyAvatar(file);
+
+        if (avatarResponse?.success && avatarResponse?.data?.avatar_url) {
+          setProfile((prev) => prev ? { ...prev, avatar_url: avatarResponse.data.avatar_url } : prev);
+          setAvatar(avatarResponse.data.avatar_url);
+          toast.success("Cập nhật avatar thành công!");
+        } else {
+          throw new Error("Không thể cập nhật avatar");
+        }
+      } catch (err) {
+        console.error('Error uploading avatar:', err);
+        setAvatar(profile?.avatar_url || null);
+        toast.error(err.message || "Không thể upload avatar. Vui lòng thử lại.");
+      } finally {
+        URL.revokeObjectURL(previewUrl);
+        setAvatarUploading(false);
+        e.target.value = "";
+      }
     } else {
       alert("File quá lớn! Tối đa 800KB");
     }
@@ -193,9 +218,11 @@ const AccountPage = () => {
                   className="w-28 h-28 rounded-full object-cover border"
                   alt="Avatar"
                 />
-                {avatar && avatar !== profile.avatar_url && (
+                {avatar && avatar !== profile.avatar_url && !avatarUploading && (
                   <button
-                    onClick={() => setAvatar(profile.avatar_url || null)}
+                    onClick={() => {
+                      setAvatar(profile.avatar_url || null);
+                    }}
                     className="absolute -top-2 -right-2 bg-white p-1 rounded-full shadow"
                   >
                     <X size={18} />
@@ -204,14 +231,15 @@ const AccountPage = () => {
               </div>
 
               <label className="mt-4 cursor-pointer">
-                <span className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                <span className={`inline-flex items-center px-4 py-2 text-white rounded-lg transition ${avatarUploading ? 'bg-purple-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}>
                   <Upload className="w-4 h-4 mr-2" />
-                  Tải ảnh
+                  {avatarUploading ? "Đang tải..." : "Tải ảnh"}
                 </span>
                 <input
                   type="file"
                   className="hidden"
                   accept="image/*"
+                  disabled={avatarUploading}
                   onChange={handleImageUpload}
                 />
               </label>

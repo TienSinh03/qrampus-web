@@ -9,6 +9,7 @@ export const PERSONNEL_ENDPOINTS = {
   GET_TEACHERS: `${API_VERSION}/personnels/teachers`,
   GET_TEACHER_BY_CODE: (teacherCode) => `${API_VERSION}/personnels/teachers/${teacherCode}`,
   UPDATE_BY_ADMIN: (teacherCode) => `${API_VERSION}/personnels/${teacherCode}`,
+  UPDATE_AVATAR_BY_ADMIN: (teacherCode) => `${API_VERSION}/personnels/${teacherCode}/avatar`,
   BY_ID: (id) => `${API_VERSION}/personnels/${id}`,
   PROFILE: `${API_VERSION}/personnels/profile`,
   UPDATE_ME: `${API_VERSION}/personnels/me`,
