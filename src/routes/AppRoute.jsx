@@ -58,6 +58,18 @@ import DashboardRedirect from "../components/common/DashboardRedirect";
 
 import LayoutMain from "@components/layout/LayoutMain";
 import { ROLES } from "@constants/roles";
+import { useAttendance } from "@contexts/AttendanceContext";
+
+const RequireActiveAttendanceSession = ({ children }) => {
+  const { getSessionTiming } = useAttendance();
+  const hasActiveSession = Boolean(getSessionTiming());
+
+  if (!hasActiveSession) {
+    return <Navigate to="/dashboard/schedule" replace />;
+  }
+
+  return children;
+};
 
 // Router setup
 const router = createBrowserRouter([
@@ -127,7 +139,9 @@ const router = createBrowserRouter([
         path: "qrcode",
         element: (
           <RoleRoute requiredRoles={[ROLES.TEACHER]}>
-            <QRPage />
+            <RequireActiveAttendanceSession>
+              <QRPage />
+            </RequireActiveAttendanceSession>
           </RoleRoute>
         ),
       },

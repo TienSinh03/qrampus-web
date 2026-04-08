@@ -24,13 +24,15 @@ import {
   Grid2X2,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
-import { useState, useEffect, useMemo } from 'react';
+import { useAttendance } from '@contexts/AttendanceContext';
+import { useState, useMemo } from 'react';
 import { ROLES } from '@constants/roles';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const { logout, user, activeRole } = useAuth();
+  const { getSessionTiming } = useAttendance();
 
   // Thêm state để kiểm soát chế độ thu gọn
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -39,16 +41,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const schoolYearOptions = ['2023-2024', '2024-2025', '2025-2026', '2026-2027'];
   const semesterOptions = ['HK1', 'HK2', 'Hè'];
-
-  // Tự động mở rộng khi ở mobile
-  useEffect(() => {
-    if (window.innerWidth < 1024) {
-      setIsCollapsed(false);
-    }
-  }, []);
+  const hasActiveAttendanceSession = Boolean(getSessionTiming());
 
   // Định nghĩa tất cả menu items với roles được phép truy cập
-  const allMenuItems = [
+  const allMenuItems = useMemo(() => [
     // ==================== TEACHER DASHBOARD ====================
     { 
       icon: LayoutDashboard, 
@@ -211,7 +207,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       roles: [ROLES.ATTENDANCE_STAFF]
 
     }
-  ];
+  ], [t]);
 
   // Filter menu items dựa trên activeRole của user
   const menuItems = useMemo(() => {
@@ -223,10 +219,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     }
 
     return allMenuItems.filter(item => {
+      if (item.path === '/dashboard/qrcode' && !hasActiveAttendanceSession) {
+        return false;
+      }
+
       // Kiểm tra xem activeRole có trong danh sách roles của item không
       return item.roles.some(role => effectiveRoles.includes(role));
     });
-  }, [user?.roles, activeRole, allMenuItems]);
+  }, [user?.roles, activeRole, hasActiveAttendanceSession, allMenuItems]);
 
   const userRoles = user?.roles || [];
   const isAttendanceRoleActive =
