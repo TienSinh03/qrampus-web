@@ -40,6 +40,18 @@ export const AttendanceProvider = ({ children }) => {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  const getValidSession = useCallback((session) => {
+    if (!session?.expires_at) return null;
+
+    const expiresAt = new Date(session.expires_at);
+    if (Number.isNaN(expiresAt.getTime())) return null;
+
+    const now = new Date();
+    if (now >= expiresAt) return null;
+
+    return session;
+  }, []);
+
   useEffect(() => {
     try {
       const sessionsArray = Array.from(activeSessions.entries());
@@ -52,13 +64,18 @@ export const AttendanceProvider = ({ children }) => {
   // Listen to localStorage changes from other tabs
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === ACTIVE_SESSIONS_KEY && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          setActiveSessions(new Map(parsed));
-        } catch (error) {
-          console.error('Error syncing active sessions from other tab:', error);
-        }
+      if (e.key !== ACTIVE_SESSIONS_KEY) return;
+
+      if (!e.newValue) {
+        setActiveSessions(new Map());
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(e.newValue);
+        setActiveSessions(new Map(parsed));
+      } catch (error) {
+        console.error('Error syncing active sessions from other tab:', error);
       }
     };
 
@@ -125,14 +142,24 @@ export const AttendanceProvider = ({ children }) => {
         setActiveSession(null);
         setCurrentQR(null);
         setSessionStats(null);
-        
-        if (activeSession?.class_session_id) {
-          setActiveSessions(prev => {
-            const newMap = new Map(prev);
+
+        setActiveSessions(prev => {
+          const newMap = new Map(prev);
+
+          if (activeSession?.class_session_id) {
             newMap.delete(activeSession.class_session_id);
             return newMap;
-          });
-        }
+          }
+
+          for (const [classSessionId, session] of newMap.entries()) {
+            if (session?.id === sessionId) {
+              newMap.delete(classSessionId);
+              break;
+            }
+          }
+
+          return newMap;
+        });
         
         toast.success('Đóng phiên điểm danh thành công');
 
@@ -176,37 +203,99 @@ export const AttendanceProvider = ({ children }) => {
     }
   }, []);
 
+  
 
+  /**
+   * Clear active session
+   */
+  const clearSession = useCallback(() => {
+    setActiveSession(null);
+    setCurrentQR(null);
+    setSessionStats(null);
+  }, []);
 
   /**
    * Kiểm tra xem có phiên điểm danh đang active cho class session không
    */
   const checkActiveSession = useCallback((classSessionId) => {
     // Trước tiên, kiểm tra trong activeSessions map
-    const session = activeSessions.get(classSessionId);
+    const session = getValidSession(activeSessions.get(classSessionId));
     
     if (session) {
+      return session;
+    }
 
-      const now = new Date();
-      const expiresAt = new Date(session.expires_at);
-      
-      if (now < expiresAt) {
-        return session;
-
-      } else {
-        console.log(`Session ${classSessionId} has expired, removing...`);
-        setActiveSessions(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(classSessionId);
-          return newMap;
-        });
-
-        return null;
-      }
+    if (activeSessions.has(classSessionId)) {
+      console.log(`Session ${classSessionId} has expired, removing...`);
+      setActiveSessions(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(classSessionId);
+        return newMap;
+      });
     }
     
     return null;
-  }, [activeSessions]);
+  }, [activeSessions, getValidSession]);
+
+  const getSessionTiming = useCallback((classSessionId = null, _clockTick = 0) => {
+    void _clockTick;
+
+    let targetSession = null;
+
+    if (classSessionId) {
+      targetSession = getValidSession(activeSessions.get(classSessionId));
+    }
+
+    if (!targetSession) {
+      targetSession = getValidSession(activeSession);
+    }
+
+    if (!targetSession) {
+      for (const session of activeSessions.values()) {
+        const validSession = getValidSession(session);
+        if (validSession) {
+          targetSession = validSession;
+          break;
+        }
+      }
+    }
+
+    if (!targetSession) {
+      return null;
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(targetSession.expires_at);
+    const remainingSeconds = Math.max(0, Math.floor((expiresAt - now) / 1000));
+
+    let totalSeconds = Number(targetSession.session_duration_minutes) * 60;
+
+    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+      const startCandidate = targetSession.started_at || targetSession.created_at;
+
+      if (startCandidate) {
+        const startedAt = new Date(startCandidate);
+        if (!Number.isNaN(startedAt.getTime())) {
+          totalSeconds = Math.max(1, Math.floor((expiresAt - startedAt) / 1000));
+        }
+      }
+    }
+
+    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+      totalSeconds = Math.max(remainingSeconds, 1);
+    }
+
+    const elapsedSeconds = Math.max(0, totalSeconds - remainingSeconds);
+    const progressPercent = Math.min(100, Math.max(0, (remainingSeconds / totalSeconds) * 100));
+
+    return {
+      session: targetSession,
+      totalSeconds,
+      elapsedSeconds,
+      remainingSeconds,
+      progressPercent,
+    };
+  }, [activeSession, activeSessions, getValidSession]);
 
   // Clean up expired sessions periodically
   useEffect(() => {
@@ -258,7 +347,9 @@ export const AttendanceProvider = ({ children }) => {
     createSession,
     closeSession,
     getNextQR,
+    clearSession,
     checkActiveSession,
+    getSessionTiming,
   };
 
   return (

@@ -17,6 +17,7 @@ import {
   View,
 } from "lucide-react";
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAttendance } from "@contexts/AttendanceContext";
 
 import { QRCodeSVG } from "qrcode.react";
 
@@ -24,9 +25,30 @@ import { QRCodeSVG } from "qrcode.react";
 const QRPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { getSessionTiming } = useAttendance();
+
   // const { t } = useTranslation();
   const schedule = location.state?.schedule;
-  const practiceGroupName = schedule?.practiceGroup?.group_name;
+
+  const [savedSchedule] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('attendanceSchedule');
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (error) {
+      console.error('Error loading attendance schedule from sessionStorage:', error);
+      return null;
+    }
+  });
+
+  const currentSchedule = schedule || savedSchedule;
+  const classSessionId = currentSchedule?.id || currentSchedule?.class_session_id || null;
+  const practiceGroupName = currentSchedule?.practiceGroup?.group_name || currentSchedule?.practiceGroup?.groupName || "N/A";
+
+  const persistAttendanceSchedule = () => {
+    if (!currentSchedule) return;
+    sessionStorage.setItem('attendanceSchedule', JSON.stringify(currentSchedule));
+  };
   const meetings = [
     // Thành công (<= 20 giây)
     {
@@ -219,6 +241,7 @@ const QRPage = () => {
 
   const [time, setTime] = useState("");
   const [date, setDate] = useState("");
+  const [sessionClockTick, setSessionClockTick] = useState(0);
 
   useEffect(() => {
     const updateClock = () => {
@@ -247,6 +270,66 @@ const QRPage = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSessionClockTick((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const sessionTiming = getSessionTiming(classSessionId, sessionClockTick);
+  const hasActiveSession = Boolean(sessionTiming?.session);
+  const sessionTotalSeconds = sessionTiming?.totalSeconds ?? 0;
+  const sessionElapsedSeconds = sessionTiming?.elapsedSeconds ?? 0; // Thời gian đã trôi qua kể từ khi QR được tạo
+  const sessionRemainingSeconds = sessionTiming?.remainingSeconds ?? 0; // Thời gian còn lại trước khi QR hết hạn
+  
+  const sessionDurationMinutes = sessionTotalSeconds > 0 ? Math.ceil(sessionTotalSeconds / 60) : 0;
+  const sessionProgress = sessionTotalSeconds > 0
+    ? Math.round((sessionElapsedSeconds / sessionTotalSeconds) * 100)
+    : 0;
+
+  const formatCountdown = (seconds) => {
+    const safeSeconds = Math.max(0, seconds);
+    const mins = String(Math.floor(safeSeconds / 60)).padStart(2, "0");
+    const secs = String(safeSeconds % 60).padStart(2, "0");
+    return `${mins}:${secs}`;
+  };
+
+  const sessionClassInfo = sessionTiming?.session?.classInfo || {};
+  const courseName = sessionClassInfo?.course_name || currentSchedule?.courseSection?.name || "Chưa có học phần";
+  const courseCode = sessionClassInfo?.course_code || currentSchedule?.courseSection?.code || "N/A";
+  const semesterLabel = currentSchedule?.courseSection?.semester || "N/A";
+  const teacherName = currentSchedule?.personnel?.full_name || "N/A";
+  const courseDescription = currentSchedule?.courseSection?.description || "Học phần đang được cập nhật mô tả.";
+
+  const classDateRaw = sessionClassInfo?.class_date || currentSchedule?.class_date || currentSchedule?.classDate;
+  const startHourRaw = sessionClassInfo?.start_hour || currentSchedule?.start_hour || "";
+  const endHourRaw = sessionClassInfo?.end_hour || currentSchedule?.end_hour || "";
+
+  const classDateObj = classDateRaw ? new Date(`${classDateRaw}T00:00:00`) : null;
+  const isValidClassDate = classDateObj && !Number.isNaN(classDateObj.getTime());
+
+  const dayLabel = isValidClassDate  ? classDateObj.toLocaleDateString("en-US", { day: "2-digit" }) : "--";
+  const monthLabel = isValidClassDate ? classDateObj.toLocaleDateString("en-US", { month: "short" }) : "N/A";
+
+  const formatHour = (hourValue) => {
+    if (!hourValue || typeof hourValue !== "string") return "";
+
+    return hourValue.slice(0, 5);
+  };
+
+  const timeRange = startHourRaw && endHourRaw ? `${formatHour(startHourRaw)} - ${formatHour(endHourRaw)}` : "Chưa có khung giờ";
+
+  const classDateLabel = isValidClassDate
+    ? classDateObj.toLocaleDateString("vi-VN", {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+    : "Chưa có ngày học";
+
   const getDisplayTag = (tag) => (tag === "Thành công" ? "Thành công" : "Vắng");
   const getDisplayTagColor = (tag) =>
     tag === "Thành công"
@@ -256,13 +339,14 @@ const QRPage = () => {
   const successCount = meetings.filter((m) => m.tag === "Thành công").length;
   const absentCount = meetings.filter((m) => m.tag !== "Thành công").length;
   const strangeDeviceCount = meetings.filter((m) => m.tag === "Vượt mức").length;
-  const classSize = schedule?.courseSection?.total_students ?? 50;
+
+  const classSize = currentSchedule?.courseSection?.max_students || 50;
   const qrCreatedCount = 1;
   const attendedSessionCount = 12;
   const capturedImageCount = meetings.length;
-  const isSessionEnded = schedule?.attendanceSession?.status === "ended";
+
+  const isSessionEnded = classSessionId ? !hasActiveSession : currentSchedule?.attendanceSession?.status === "ended";
   const locationStatsCount = successCount;
-  const attendanceProgress = classSize > 0 ? Math.round((successCount / classSize) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -318,7 +402,10 @@ const QRPage = () => {
             <p className="text-xl font-bold text-slate-800">{time}</p>
             <p className="text-sm text-slate-500 capitalize">{date}</p>
             <a
-              onClick={() => window.open('/dashboard/results-qr-extend-student', '_blank')}
+              onClick={() => {
+                persistAttendanceSchedule();
+                window.open('/dashboard/results-qr-extend-student', '_blank');
+              }}
               className="mt-2 inline-flex items-center justify-center h-10 px-4 py-3 rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md porter cursor-pointer"
             >
               <View className="w-5 h-5" />
@@ -372,13 +459,13 @@ const QRPage = () => {
 
             <div className="mt-3 w-full max-w-sm rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="flex items-center justify-between text-xs text-slate-600">
-                <span>Tiến độ điểm danh</span>
-                <span className="font-semibold text-emerald-600">{attendanceProgress}%</span>
+                <span>Tiến độ phiên</span>
+                <span className="font-semibold text-emerald-600">{sessionProgress}%</span>
               </div>
               <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
                   className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                  style={{ width: `${attendanceProgress}%` }}
+                  style={{ width: `${sessionProgress}%` }}
                 />
               </div>
               <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
@@ -400,11 +487,18 @@ const QRPage = () => {
             {/* thời lượng điểm danh */}
             <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
               <AlarmClockCheck className="w-5 h-5" />
-              <span>Thời lượng điểm danh: 30 phút</span>
+              <span>
+                {hasActiveSession
+                  ? `Thời lượng phiên: ${sessionDurationMinutes} phút | Đã chạy: ${formatCountdown(sessionElapsedSeconds)} | Còn lại: ${formatCountdown(sessionRemainingSeconds)}`
+                  : "Hiện chưa có phiên điểm danh đang hoạt động"}
+              </span>
             </div>
 
             <button
-              onClick={() => navigate('/dashboard/qrcode-fullscreen')}
+              onClick={() => {
+                persistAttendanceSchedule();
+                navigate('/dashboard/qrcode-fullscreen');
+              }}
               className="mt-2 inline-flex h-10 p-3 items-center justify-center rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md"
             >
               <ExternalLink className="w-5 h-5" />
@@ -421,7 +515,7 @@ const QRPage = () => {
           {/* Image */}
           <div className="h-32 w-full overflow-hidden rounded-t-2xl bg-[radial-gradient(circle_at_top,_#e5e7eb,_#cbd5f5)] flex items-end">
             <h2 className="px-4 pb-4 text-lg font-semibold text-slate-800 drop-shadow-sm">
-              LẬP TRÌNH THIẾT BỊ DI ĐỘNG
+              {courseName}
             </h2>
           </div>
 
@@ -430,19 +524,18 @@ const QRPage = () => {
             {/* Header event */}
             <div className="mb-6 flex gap-2">
               <div className="flex h-16 w-24 flex-col items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
-                <span className="text-xs font-medium">Jan</span>
-                <span className="text-xl font-bold">24</span>
+                <span className="text-xs font-medium">{monthLabel}</span>
+                <span className="text-xl font-bold">{dayLabel}</span>
               </div>
               <div>
                 <h2 className="text-base font-semibold text-slate-800">
-                  Mã học phần: 421234567788
+                  Mã học phần: {courseCode}
                 </h2>
                 <p className="mt-1 inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
                   Nhóm thực hành: {practiceGroupName}
                 </p>
                 <p className="mt-1 line-clamp-2 text-xs text-slate-500">
-                  Học phần học về các kỹ thuật lập trình web nâng cao sử dụng
-                  các framework phổ biến hiện nay.
+                  {courseDescription}
                 </p>
               </div>
             </div>
@@ -451,19 +544,19 @@ const QRPage = () => {
             <div className="mb-6 flex items-center justify-between text-xs">
               <button className="flex flex-col items-center gap-1 text-yellow-500 hover:text-yellow-200">
                 <SquareStar className="w-5 h-5 " />
-                <span>HK1</span>
+                <span>{semesterLabel}</span>
               </button>
               <button className="flex flex-col items-center gap-1 text-yellow-500 hover:text-yellow-200">
                 <SquareStar className="w-5 h-5 " />
-                <span>2025-2026</span>
+                <span>{classDateObj ? classDateObj.getFullYear() : "N/A"}</span>
               </button>
               <button className="flex flex-col items-center gap-1 text-green-600 hover:text-slate-700">
                 <SquareCheck className="w-5 h-5 " />
-                <span>ĐANG TẠO QR</span>
+                <span>{hasActiveSession ? "ĐANG TẠO QR" : "CHƯA KÍCH HOẠT"}</span>
               </button>
               <button className="flex flex-col items-center gap-1 text-violet-600">
                 <SquareUser className="w-5 h-5 " />
-                <span>Văn A</span>
+                <span>{teacherName}</span>
               </button>
 
             </div>
@@ -472,8 +565,8 @@ const QRPage = () => {
               <div className="flex items-start gap-3">
                 <CalendarClock className="w-5 h-5 " />
                 <div>
-                  <p>Tuesday, 24 January, 10:20 - 12:30</p>
-                  <p className="text-slate-400">Lần cũ nhất</p>
+                  <p>{`${classDateLabel}, ${timeRange}`}</p>
+                  <p className="text-slate-400">Lịch hiện tại</p>
                 </div>
               </div>
 
@@ -482,7 +575,7 @@ const QRPage = () => {
                 <div>
                   <p>Tạo bởi</p>
                   <p className="text-slate-400">
-                    Nguyen Van A
+                    {teacherName}
                   </p>
                 </div>
               </div>
@@ -491,7 +584,7 @@ const QRPage = () => {
                 <div>
                   <p>Tổng SV:</p>
                   <p className="text-slate-400">
-                    30/50 SV
+                    {`${successCount}/${classSize} SV`}
                   </p>
                 </div>
               </div>

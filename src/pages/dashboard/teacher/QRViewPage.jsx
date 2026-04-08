@@ -8,8 +8,7 @@ import {
     MoreVertical,
 
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
-import ReactPaginate from "react-paginate";
+import { useAttendance } from "@contexts/AttendanceContext";
 const steps = [
     { MSSV: "21010611", HOTEN: "Nguyễn Văn A", completed: true },
     { MSSV: "21010612", HOTEN: "Trần Thị B", completed: true },
@@ -30,144 +29,82 @@ const steps = [
     { MSSV: "21010619", HOTEN: "Ngô Văn I", completed: false },
     { MSSV: "21010620", HOTEN: "Dương Thị K", completed: false },
 ];
-const users = [
-    {
-        id: 1,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }, {
-        id: 2,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }, {
-        id: 3,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }, {
-        id: 4,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }, {
-        id: 5,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    },
-    {
-        id: 6,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }, {
-        id: 7,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }, {
-        id: 8,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }, {
-        id: 9,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }, {
-        id: 10,
-        avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-        full_name: "Galen Slixby",
-        user_id: "123456",
-        time_scanned: "2024-01-15 10:30 AM",
-        time_submitted: "2024-01-15 10:35 AM",
-        status: "Inactive",
-    }
-];
-const ITEMS_PER_PAGE = 5;
-const SESSION_DURATION_SECONDS = 5 * 60;
-
-
 export default function QRViewPage() {
+    const { getSessionTiming } = useAttendance();
 
-    const [page, setPage] = useState(0);
-    const [selected, setSelected] = useState([]);
-    const [sort, setSort] = useState({ key: "", dir: "asc" });
-    const [remainingSeconds, setRemainingSeconds] = useState(SESSION_DURATION_SECONDS);
+    const [clockTick, setClockTick] = useState(0);
+
+    const [savedSchedule] = useState(() => {
+        try {
+            const rawSchedule = sessionStorage.getItem('attendanceSchedule');
+            if (!rawSchedule) return null;
+            return JSON.parse(rawSchedule);
+        } catch (error) {
+            console.error('Error loading class session for QR view:', error);
+            return null;
+        }
+    });
+
+    const classSessionId = savedSchedule?.id || null;
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setRemainingSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+            setClockTick((prev) => prev + 1);
         }, 1000);
 
         return () => clearInterval(timer);
     }, []);
 
-    // Sắp xếp
-    const sortedUsers = [...users].sort((a, b) => {
-        if (!sort.key) return 0;
-        if (a[sort.key] < b[sort.key]) return sort.dir === "asc" ? -1 : 1;
-        if (a[sort.key] > b[sort.key]) return sort.dir === "asc" ? 1 : -1;
-        return 0;
-    });
+    const sessionTiming = getSessionTiming(classSessionId, clockTick);
 
-    const pageCount = Math.ceil(sortedUsers.length / ITEMS_PER_PAGE);
-    const displayedUsers = sortedUsers.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
+    const activeSession = sessionTiming?.session || null;
+    const sessionClassInfo = activeSession?.classInfo || {};
 
-    const handleSort = (key) => {
-        setSort({
-            key,
-            dir: sort.key === key && sort.dir === "asc" ? "desc" : "asc",
+    const displayCourseName = sessionClassInfo?.course_name || savedSchedule?.courseSection?.name || "Chưa có môn học";
+    const displayCourseCode = sessionClassInfo?.course_code || savedSchedule?.courseSection?.code || "N/A";
+    const displaySemester = savedSchedule?.courseSection?.semester || "N/A";
+    const displayPracticeGroup = savedSchedule?.practiceGroup?.group_name || savedSchedule?.practiceGroup?.groupName || "";
+    const displayRoomName =  savedSchedule?.room?.room_name || "N/A";
+    const displayTeacherName = sessionClassInfo?.teacher_name || savedSchedule?.personnel?.full_name || "N/A";
+    const displayDate = sessionClassInfo?.class_date || savedSchedule?.class_date || savedSchedule?.classDate || null;
+    const displayStartHour = sessionClassInfo?.start_hour || savedSchedule?.start_hour || "";
+    const displayEndHour = sessionClassInfo?.end_hour || savedSchedule?.end_hour || "";
+
+    const getCourseInitials = (courseName) => {
+        if (!courseName) return "QR";
+
+        const words = courseName.trim().split(/\s+/).filter(Boolean);
+        if (words.length === 0) return "QR";
+        if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+
+        return `${words[0][0]}${words[1][0]}`.toUpperCase();
+    };
+
+    const formatHour = (hourValue) => {
+        if (!hourValue || typeof hourValue !== "string") return "";
+        return hourValue.slice(0, 5);
+    };
+
+    const formatDateLabel = (dateValue) => {
+        if (!dateValue) return "";
+
+        const date = new Date(`${dateValue}T00:00:00`);
+        if (Number.isNaN(date.getTime())) return "";
+
+        return date.toLocaleDateString("vi-VN", {
+            weekday: "long",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
         });
     };
 
-    const toggleSelect = (id) => {
-        setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    };
-
-    const toggleAll = () => {
-        if (selected.length === displayedUsers.length) {
-            setSelected([]);
-        } else {
-            setSelected(displayedUsers.map(u => u.id));
-        }
-    };
-
-    const getStatusClass = (status) => {
-        return status === "Active" ? "bg-emerald-100 text-emerald-800" :
-            status === "Pending" ? "bg-amber-100 text-amber-800" :
-                "bg-gray-100 text-gray-800";
-    };
+    const courseInitials = getCourseInitials(displayCourseName);
+    const timeRangeLabel = displayStartHour && displayEndHour
+        ? `${formatHour(displayStartHour)} - ${formatHour(displayEndHour)}`
+        : "Chưa có khung giờ";
+    const dateLabel = formatDateLabel(displayDate);
+    const scheduleLabel = dateLabel ? `${timeRangeLabel}, ${dateLabel}` : timeRangeLabel;
 
     const formatCountdown = (seconds) => {
         const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -175,8 +112,10 @@ export default function QRViewPage() {
         return `${mins}:${secs}`;
     };
 
-    const elapsedSeconds = SESSION_DURATION_SECONDS - remainingSeconds;
-    const progressPercent = (remainingSeconds / SESSION_DURATION_SECONDS) * 100;
+    const hasActiveSession = Boolean(sessionTiming?.session);
+    const elapsedSeconds = sessionTiming?.elapsedSeconds ?? 0; // Thời gian đã trôi qua kể từ khi QR được tạo
+    const remainingSeconds = sessionTiming?.remainingSeconds ?? 0; // Thời gian còn lại trước khi QR hết hạn
+    const progressPercent = sessionTiming?.progressPercent ?? 0;
     const progressColorClass = remainingSeconds < 60 ? "bg-red-500" : "bg-emerald-500";
 
 
@@ -189,20 +128,29 @@ export default function QRViewPage() {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between px-8 py-6 gap-6">
                     <div className="flex items-center gap-6">
                         <div className="-mt-20 h-32 w-32 rounded-3xl border-8 border-white bg-gradient-to-br from-indigo-500 to-purple-600 shadow-2xl flex items-center justify-center text-white text-5xl font-bold">
-                            LV
+                            {courseInitials}
                         </div>
 
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
-                                LẬP TRÌNH THIẾT BỊ DI ĐỘNG
+                                {displayCourseName}
                             </h1>
                             <div className="mt-3 flex flex-wrap items-center gap-6 text-gray-600">
-                                <span className="font-mono text-xl">42345677843</span>
+                                <span className="font-mono text-xl">{displayCourseCode}</span>
                                 <span className="flex items-center gap-2">
                                     <SquareStar className="w-6 h-6 text-indigo-600" />
-                                    <span className="font-semibold">HK1 2025-2026</span>
+                                    <span className="font-semibold">{displaySemester}</span>
                                 </span>
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                                    Phòng: {displayRoomName}
+                                </span>
+                                {displayPracticeGroup ? (
+                                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                                        Nhóm: {displayPracticeGroup}
+                                    </span>
+                                ) : null}
                             </div>
+                            <p className="mt-2 text-sm text-slate-500">Giảng viên: {displayTeacherName}</p>
                         </div>
                     </div>
                 </div>
@@ -233,7 +181,11 @@ export default function QRViewPage() {
                         </div>
 
                         <p className="mt-2 text-xs text-gray-500">
-                            {remainingSeconds < 60 ? "Còn dưới 1 phút, vui lòng quét QR ngay" : "Buổi điểm danh đang diễn ra"}
+                            {!hasActiveSession
+                                ? "Hiện chưa có phiên điểm danh đang hoạt động"
+                                : (remainingSeconds < 60
+                                    ? "Còn dưới 1 phút, vui lòng quét QR ngay"
+                                    : "Buổi điểm danh đang diễn ra")}
                         </p>
                     </div>
 
@@ -242,7 +194,7 @@ export default function QRViewPage() {
                             Quét QR để điểm danh
                         </p>
                         <p className="text-sm text-gray-500 mt-1">
-                            12:30 PM - 1:30 PM, Thứ Hai, 20 Tháng 1, 2025
+                            {scheduleLabel}
                         </p>
                     </div>
                 </div>
