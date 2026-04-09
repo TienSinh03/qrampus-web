@@ -24,7 +24,6 @@ import {
   Grid2X2,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
-import { useAttendance } from '@contexts/AttendanceContext';
 import { useState, useMemo } from 'react';
 import { ROLES } from '@constants/roles';
 
@@ -32,7 +31,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const { logout, user, activeRole } = useAuth();
-  const { getSessionTiming } = useAttendance();
 
   // Thêm state để kiểm soát chế độ thu gọn
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -41,7 +39,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const schoolYearOptions = ['2023-2024', '2024-2025', '2025-2026', '2026-2027'];
   const semesterOptions = ['HK1', 'HK2', 'Hè'];
-  const hasActiveAttendanceSession = Boolean(getSessionTiming());
 
   // Định nghĩa tất cả menu items với roles được phép truy cập
   const allMenuItems = useMemo(() => [
@@ -219,14 +216,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     }
 
     return allMenuItems.filter(item => {
-      if (item.path === '/dashboard/qrcode' && !hasActiveAttendanceSession) {
-        return false;
-      }
-
       // Kiểm tra xem activeRole có trong danh sách roles của item không
       return item.roles.some(role => effectiveRoles.includes(role));
     });
-  }, [user?.roles, activeRole, hasActiveAttendanceSession, allMenuItems]);
+  }, [user?.roles, activeRole, allMenuItems]);
 
   const userRoles = user?.roles || [];
   const isAttendanceRoleActive =

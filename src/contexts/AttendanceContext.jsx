@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import AttendanceService from '@services/attendance.service';
 import { toast } from 'sonner';
@@ -5,6 +6,7 @@ import { toast } from 'sonner';
 const AttendanceContext = createContext(null);
 
 const ACTIVE_SESSIONS_KEY = 'attendance_active_sessions';
+const COMPLETED_SESSIONS_KEY = 'attendance_completed_session_snapshots';
 
 export const AttendanceProvider = ({ children }) => {
   // Active session state
@@ -26,6 +28,20 @@ export const AttendanceProvider = ({ children }) => {
     }
     return new Map();
   });
+
+  // Snapshot phiên gần nhất đã đóng theo class_session_id
+  const [completedSessionSnapshots, setCompletedSessionSnapshots] = useState(() => {
+    try {
+      const saved = localStorage.getItem(COMPLETED_SESSIONS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return new Map(parsed);
+      }
+    } catch (error) {
+      console.error('Error loading completed session snapshots from localStorage:', error);
+    }
+    return new Map();
+  });
   
   // Loading states
   const [createLoading, setCreateLoading] = useState(false);
@@ -37,8 +53,8 @@ export const AttendanceProvider = ({ children }) => {
   const [sessionStats, setSessionStats] = useState(null);
   
   // History
-  const [history, setHistory] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const [history] = useState([]);
+  const [historyLoading] = useState(false);
 
   const getValidSession = useCallback((session) => {
     if (!session?.expires_at) return null;
@@ -60,6 +76,42 @@ export const AttendanceProvider = ({ children }) => {
       console.error('Error saving active sessions to localStorage:', error);
     }
   }, [activeSessions]);
+
+  useEffect(() => {
+    try {
+      const snapshotsArray = Array.from(completedSessionSnapshots.entries());
+      localStorage.setItem(COMPLETED_SESSIONS_KEY, JSON.stringify(snapshotsArray));
+    } catch (error) {
+      console.error('Error saving completed session snapshots to localStorage:', error);
+    }
+  }, [completedSessionSnapshots]);
+
+  const saveCompletedSessionSnapshot = useCallback((classSessionId, snapshotData) => {
+    if (!classSessionId || !snapshotData) return;
+
+    setCompletedSessionSnapshots((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(classSessionId, snapshotData);
+      return newMap;
+    });
+  }, []);
+
+  const getLatestCompletedSessionSnapshot = useCallback((classSessionId = null) => {
+    if (classSessionId) {
+      return completedSessionSnapshots.get(classSessionId) || null;
+    }
+
+    if (completedSessionSnapshots.size === 0) return null;
+
+    const snapshots = Array.from(completedSessionSnapshots.values());
+    snapshots.sort((a, b) => {
+      const first = new Date(b?.closed_at || 0).getTime();
+      const second = new Date(a?.closed_at || 0).getTime();
+      return first - second;
+    });
+
+    return snapshots[0] || null;
+  }, [completedSessionSnapshots]);
 
   // Listen to localStorage changes from other tabs
   useEffect(() => {
@@ -135,9 +187,42 @@ export const AttendanceProvider = ({ children }) => {
   const closeSession = useCallback(async (sessionId) => {
     setCloseLoading(true);
     try {
+      let latestStats = null;
+
+      try {
+        const statsResponse = await AttendanceService.getSessionStats(sessionId);
+        if (statsResponse?.success) {
+          latestStats = statsResponse.data;
+        }
+      } catch (error) {
+        console.warn('Unable to fetch latest session stats before close:', error);
+      }
+
       const response = await AttendanceService.closeAttendanceSession(sessionId);
 
       if (response.success) {
+        let targetClassSessionId = activeSession?.class_session_id || null;
+
+        if (!targetClassSessionId) {
+          for (const [classSessionId, session] of activeSessions.entries()) {
+            if (session?.id === sessionId) {
+              targetClassSessionId = classSessionId;
+              break;
+            }
+          }
+        }
+
+        if (targetClassSessionId && latestStats) {
+          saveCompletedSessionSnapshot(targetClassSessionId, {
+            session_id: sessionId,
+            class_session_id: targetClassSessionId,
+            closed_at: new Date().toISOString(),
+            stats: latestStats?.stats || null,
+            attendances: Array.isArray(latestStats?.attendances) ? latestStats.attendances : [],
+            raw: latestStats,
+          });
+        }
+
         // xóa phiên hiện tại nếu đúng phiên đang active
         setActiveSession(null);
         setCurrentQR(null);
@@ -176,7 +261,7 @@ export const AttendanceProvider = ({ children }) => {
     } finally {
       setCloseLoading(false);
     }
-  }, [activeSession]);
+  }, [activeSession, activeSessions, saveCompletedSessionSnapshot]);
 
   /**
    * Lấy QR mới
@@ -263,8 +348,9 @@ export const AttendanceProvider = ({ children }) => {
   /**
    * Hàm lấy thông tin thời gian còn lại của phiên điểm danh, cũng như phần trăm đã trôi qua để hiển thị tiến trình
    */
-  const getSessionTiming = useCallback((classSessionId = null, _clockTick = 0) => {
+  const getSessionTiming = useCallback((classSessionId = null, _clockTick = 0, options = {}) => {
     void _clockTick;
+    const { fallbackToAny = true } = options;
 
     let targetSession = null;
 
@@ -276,7 +362,7 @@ export const AttendanceProvider = ({ children }) => {
       targetSession = getValidSession(activeSession);
     }
 
-    if (!targetSession) {
+    if (!targetSession && fallbackToAny) {
       for (const session of activeSessions.values()) {
         const validSession = getValidSession(session);
         if (validSession) {
@@ -360,6 +446,7 @@ export const AttendanceProvider = ({ children }) => {
     currentQR,
     sessionStats,
     history,
+    completedSessionSnapshots,
     setActiveSession,
 
     // Loading states
@@ -377,6 +464,7 @@ export const AttendanceProvider = ({ children }) => {
     clearSession,
     checkActiveSession,
     getSessionTiming,
+    getLatestCompletedSessionSnapshot,
   };
 
   return (

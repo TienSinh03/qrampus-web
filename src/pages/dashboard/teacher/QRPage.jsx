@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 // import { useTranslation } from 'react-i18next';
 import StatsCard from "../../../components/common/StatsCard";
 import {
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAttendance } from "@contexts/AttendanceContext";
+import { useTeacherSchedule } from "@contexts/TeacherScheduleContext";
 
 import { QRCodeSVG } from "qrcode.react";
 
@@ -25,7 +26,14 @@ import { QRCodeSVG } from "qrcode.react";
 const QRPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { getSessionTiming } = useAttendance();
+  const { getSessionTiming, getStats, getLatestCompletedSessionSnapshot } = useAttendance();
+  const {
+    todaySchedules,
+    todayLoading,
+    todayError,
+    fetchTodaySchedules,
+    refreshTodaySchedules,
+  } = useTeacherSchedule();
 
   // const { t } = useTranslation();
   const schedule = location.state?.schedule;
@@ -41,203 +49,53 @@ const QRPage = () => {
     }
   });
 
-  const currentSchedule = schedule || savedSchedule;
+  const [selectedSchedule, setSelectedSchedule] = useState(() => schedule || savedSchedule || null);
+
+  useEffect(() => {
+    if (!schedule) return;
+    setSelectedSchedule(schedule);
+    sessionStorage.setItem('attendanceSchedule', JSON.stringify(schedule));
+  }, [schedule]);
+
+  useEffect(() => {
+    fetchTodaySchedules();
+  }, [fetchTodaySchedules]);
+
+  const currentSchedule = selectedSchedule;
   const classSessionId = currentSchedule?.id || currentSchedule?.class_session_id || null;
-  const practiceGroupName = currentSchedule?.practiceGroup?.group_name || currentSchedule?.practiceGroup?.groupName || "N/A";
+  const practiceGroupName = currentSchedule?.practiceGroup?.group_name || currentSchedule?.practiceGroup?.groupName || "Chưa phân nhóm";
+
+  const sortedTodaySchedules = useMemo(() => {
+    if (!Array.isArray(todaySchedules)) return [];
+
+    return [...todaySchedules].sort((a, b) => {
+      const first = String(a?.start_hour || '');
+      const second = String(b?.start_hour || '');
+      return first.localeCompare(second);
+    });
+  }, [todaySchedules]);
+
+  const toSessionKey = (value) => {
+    if (value === null || value === undefined) return '';
+    return String(value);
+  };
+
+  const handleSelectSchedule = (scheduleItem) => {
+    if (!scheduleItem) return;
+    setSelectedSchedule(scheduleItem);
+    sessionStorage.setItem('attendanceSchedule', JSON.stringify(scheduleItem));
+    setLiveStats(null);
+    setStatsError(null);
+  };
 
   const persistAttendanceSchedule = () => {
     if (!currentSchedule) return;
     sessionStorage.setItem('attendanceSchedule', JSON.stringify(currentSchedule));
   };
-  const meetings = [
-    // Thành công (<= 20 giây)
-    {
-      name: "Nguyễn Văn An",
-      date: "26 Nov",
-      time: "08:00 - 08:05",
-      tag: "Thành công",
-      tagColor: "bg-violet-100 text-violet-600",
-      avatarBg: "bg-sky-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-    },
-    {
-      name: "Trần Thị Bình",
-      date: "26 Nov",
-      time: "08:15 - 08:25", // 10s
-      tag: "Thành công",
-      tagColor: "bg-violet-100 text-violet-600",
-      avatarBg: "bg-pink-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-    },
-    {
-      name: "Lê Văn Cường",
-      date: "26 Nov",
-      time: "08:30 - 08:40", // 10s
-      tag: "Thành công",
-      tagColor: "bg-violet-100 text-violet-600",
-      avatarBg: "bg-orange-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-    },
-    {
-      name: "Phạm Thu Duyên",
-      date: "26 Nov",
-      time: "09:00 - 09:15", // 15s
-      tag: "Thành công",
-      tagColor: "bg-violet-100 text-violet-600",
-      avatarBg: "bg-green-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-    },
-    {
-      name: "Hoàng Minh Đức",
-      date: "26 Nov",
-      time: "09:30 - 09:50", // 20s
-      tag: "Thành công",
-      tagColor: "bg-violet-100 text-violet-600",
-      avatarBg: "bg-red-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-    },
 
-    // Cho phép (<= 30 giây)
-    {
-      name: "Đỗ Thị Giang",
-      date: "26 Nov",
-      time: "10:00 - 10:25", // 25s
-      tag: "Cho phép",
-      tagColor: "bg-yellow-100 text-yellow-600",
-      avatarBg: "bg-cyan-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/6.png",
-    },
-    {
-      name: "Vũ Văn Hùng",
-      date: "26 Nov",
-      time: "10:30 - 11:00", // 30s
-      tag: "Cho phép",
-      tagColor: "bg-yellow-100 text-yellow-600",
-      avatarBg: "bg-lime-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/7.png",
-    },
-    {
-      name: "Nguyễn Thị Hương",
-      date: "26 Nov",
-      time: "11:05 - 11:30", // 25s
-      tag: "Cho phép",
-      tagColor: "bg-yellow-100 text-yellow-600",
-      avatarBg: "bg-indigo-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/8.png",
-    },
-    {
-      name: "Trần Văn Khoa",
-      date: "26 Nov",
-      time: "11:35 - 11:58", // 23s
-      tag: "Cho phép",
-      tagColor: "bg-yellow-100 text-yellow-600",
-      avatarBg: "bg-amber-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-    },
-    {
-      name: "Lê Minh Lý",
-      date: "26 Nov",
-      time: "13:00 - 13:28", // 28s
-      tag: "Cho phép",
-      tagColor: "bg-yellow-100 text-yellow-600",
-      avatarBg: "bg-teal-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-    },
-
-    // Vượt mức (<= 40 giây)
-    {
-      name: "Phạm Văn Nam",
-      date: "26 Nov",
-      time: "13:30 - 14:05", // 35s
-      tag: "Vượt mức",
-      tagColor: "bg-orange-100 text-orange-600",
-      avatarBg: "bg-blue-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-    },
-    {
-      name: "Hoàng Thị Oanh",
-      date: "26 Nov",
-      time: "14:10 - 14:50", // 40s
-      tag: "Vượt mức",
-      tagColor: "bg-orange-100 text-orange-600",
-      avatarBg: "bg-purple-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-    },
-    {
-      name: "Đỗ Minh Quân",
-      date: "26 Nov",
-      time: "15:00 - 15:35", // 35s
-      tag: "Vượt mức",
-      tagColor: "bg-orange-100 text-orange-600",
-      avatarBg: "bg-rose-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-    },
-    {
-      name: "Vũ Thị Sen",
-      date: "26 Nov",
-      time: "15:40 - 16:18", // 38s
-      tag: "Vượt mức",
-      tagColor: "bg-orange-100 text-orange-600",
-      avatarBg: "bg-fuchsia-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/6.png",
-    },
-    {
-      name: "Nguyễn Văn Tài",
-      date: "26 Nov",
-      time: "16:20 - 16:59", // 39s
-      tag: "Vượt mức",
-      tagColor: "bg-orange-100 text-orange-600",
-      avatarBg: "bg-violet-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/7.png",
-    },
-
-    // Không (<= 5 phút)
-    {
-      name: "Trần Thị Uyên",
-      date: "26 Nov",
-      time: "17:00 - 17:30", // 30s (dưới 5 phút)
-      tag: "Không",
-      tagColor: "bg-gray-100 text-red-600",
-      avatarBg: "bg-lightgray-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-    },
-    {
-      name: "Lê Văn Vinh",
-      date: "26 Nov",
-      time: "17:40 - 18:25", // 45s (dưới 5 phút)
-      tag: "Không",
-      tagColor: "bg-gray-100 text-red-600",
-      avatarBg: "bg-lightgray-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-    },
-    {
-      name: "Phạm Thị Xuân",
-      date: "26 Nov",
-      time: "18:30 - 19:00", // 30s
-      tag: "Không",
-      tagColor: "bg-gray-100 text-red-600",
-      avatarBg: "bg-lightgray-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-    },
-    {
-      name: "Hoàng Minh Yến",
-      date: "26 Nov",
-      time: "19:05 - 19:43", // 38s
-      tag: "Không",
-      tagColor: "bg-gray-100 text-red-600",
-      avatarBg: "bg-lightgray-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-    },
-    {
-      name: "Đỗ Văn Zũng",
-      date: "26 Nov",
-      time: "20:00 - 20:50", // 50s
-      tag: "Không",
-      tagColor: "bg-gray-100 text-red-600",
-      avatarBg: "bg-lightgray-100",
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-    },
-  ];
+  const [liveStats, setLiveStats] = useState(null);
+  const [statsError, setStatsError] = useState(null);
+  const [isStatsLoading, setIsStatsLoading] = useState(false);
 
   const [time, setTime] = useState("");
   const [date, setDate] = useState("");
@@ -278,7 +136,9 @@ const QRPage = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const sessionTiming = getSessionTiming(classSessionId, sessionClockTick);
+  const sessionTiming = getSessionTiming(classSessionId, sessionClockTick, { fallbackToAny: false });
+  const anyActiveSessionTiming = getSessionTiming(null, sessionClockTick);
+  const anyActiveClassSessionId = anyActiveSessionTiming?.session?.class_session_id || null;
   const hasActiveSession = Boolean(sessionTiming?.session);
   const sessionTotalSeconds = sessionTiming?.totalSeconds ?? 0;
   const sessionElapsedSeconds = sessionTiming?.elapsedSeconds ?? 0; // Thời gian đã trôi qua kể từ khi QR được tạo
@@ -288,6 +148,74 @@ const QRPage = () => {
   const sessionProgress = sessionTotalSeconds > 0
     ? Math.round((sessionElapsedSeconds / sessionTotalSeconds) * 100)
     : 0;
+  const completedSnapshot = getLatestCompletedSessionSnapshot(classSessionId);
+
+  useEffect(() => {
+    const currentKey = toSessionKey(classSessionId);
+    const activeKey = toSessionKey(anyActiveClassSessionId);
+
+    if (!activeKey || activeKey === currentKey || hasActiveSession) {
+      return;
+    }
+
+    const matchedSchedule = sortedTodaySchedules.find((item) => {
+      const itemKey = toSessionKey(item?.id || item?.class_session_id);
+      return itemKey === activeKey;
+    });
+
+    if (!matchedSchedule) {
+      return;
+    }
+
+    setSelectedSchedule(matchedSchedule);
+    sessionStorage.setItem('attendanceSchedule', JSON.stringify(matchedSchedule));
+    setLiveStats(null);
+    setStatsError(null);
+  }, [anyActiveClassSessionId, classSessionId, hasActiveSession, sortedTodaySchedules]);
+
+  useEffect(() => {
+    if (!hasActiveSession || !sessionTiming?.session?.id) {
+      setLiveStats(null);
+      setStatsError(null);
+      setIsStatsLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchStats = async () => {
+      setIsStatsLoading(true);
+      try {
+        const data = await getStats(sessionTiming.session.id);
+        if (!isMounted) return;
+
+        if (data) {
+          setLiveStats(data);
+          setStatsError(null);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        setStatsError(error?.message || 'Không thể tải thống kê điểm danh');
+      } finally {
+        if (isMounted) {
+          setIsStatsLoading(false);
+        }
+      }
+    };
+
+    fetchStats();
+    const interval = setInterval(fetchStats, 3000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [hasActiveSession, sessionTiming?.session?.id, getStats]);
+
+  const effectiveStats = hasActiveSession ? liveStats : completedSnapshot?.raw || null;
+  const attendanceRows = Array.isArray(effectiveStats?.attendances)
+    ? [...effectiveStats.attendances].sort((a, b) => new Date(b.scan_time) - new Date(a.scan_time))
+    : [];
 
   const formatCountdown = (seconds) => {
     const safeSeconds = Math.max(0, seconds);
@@ -298,9 +226,9 @@ const QRPage = () => {
 
   const sessionClassInfo = sessionTiming?.session?.classInfo || {};
   const courseName = sessionClassInfo?.course_name || currentSchedule?.courseSection?.name || "Chưa có học phần";
-  const courseCode = sessionClassInfo?.course_code || currentSchedule?.courseSection?.code || "N/A";
-  const semesterLabel = currentSchedule?.courseSection?.semester || "N/A";
-  const teacherName = currentSchedule?.personnel?.full_name || "N/A";
+  const courseCode = sessionClassInfo?.course_code || currentSchedule?.courseSection?.code || "Chưa có mã học phần";
+  const semesterLabel = currentSchedule?.courseSection?.semester || "Chưa cập nhật học kỳ";
+  const teacherName = currentSchedule?.personnel?.full_name || "Chưa cập nhật giảng viên";
   const courseDescription = currentSchedule?.courseSection?.description || "Học phần đang được cập nhật mô tả.";
 
   const classDateRaw = sessionClassInfo?.class_date || currentSchedule?.class_date || currentSchedule?.classDate;
@@ -311,7 +239,7 @@ const QRPage = () => {
   const isValidClassDate = classDateObj && !Number.isNaN(classDateObj.getTime());
 
   const dayLabel = isValidClassDate  ? classDateObj.toLocaleDateString("en-US", { day: "2-digit" }) : "--";
-  const monthLabel = isValidClassDate ? classDateObj.toLocaleDateString("en-US", { month: "short" }) : "N/A";
+  const monthLabel = isValidClassDate ? classDateObj.toLocaleDateString("en-US", { month: "short" }) : "--";
 
   const formatHour = (hourValue) => {
     if (!hourValue || typeof hourValue !== "string") return "";
@@ -330,23 +258,128 @@ const QRPage = () => {
     })
     : "Chưa có ngày học";
 
-  const getDisplayTag = (tag) => (tag === "Thành công" ? "Thành công" : "Vắng");
-  const getDisplayTagColor = (tag) =>
-    tag === "Thành công"
-      ? "bg-violet-100 text-violet-600"
-      : "bg-red-100 text-red-600";
+  const formatScanDate = (scanTime) => {
+    if (!scanTime) return '--/--';
 
-  const successCount = meetings.filter((m) => m.tag === "Thành công").length;
-  const absentCount = meetings.filter((m) => m.tag !== "Thành công").length;
-  const strangeDeviceCount = meetings.filter((m) => m.tag === "Vượt mức").length;
+    const date = new Date(scanTime);
+    if (Number.isNaN(date.getTime())) return '--/--';
 
-  const classSize = currentSchedule?.courseSection?.max_students || 50;
-  const qrCreatedCount = 1;
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  };
+
+  const formatScanHour = (scanTime) => {
+    if (!scanTime) return '--:--';
+
+    const date = new Date(scanTime);
+    if (Number.isNaN(date.getTime())) return '--:--';
+
+    return date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const classSize = Number(effectiveStats?.stats?.total ?? currentSchedule?.courseSection?.max_students ?? 50);
+  const successCount = Number(effectiveStats?.stats?.attended ?? attendanceRows.length ?? 0);
+  const absentCount = Math.max(0, classSize - successCount);
+  const strangeDeviceCount = attendanceRows.filter(
+    (item) => item?.device_match === false || item?.device_verified === false
+  ).length;
+  const qrCreatedCount = Number(effectiveStats?.stats?.qr_generated ?? 1);
   const attendedSessionCount = 12;
-  const capturedImageCount = meetings.length;
+  const capturedImageCount = Number(effectiveStats?.stats?.captured_images ?? effectiveStats?.stats?.photos ?? attendanceRows.length);
 
   const isSessionEnded = classSessionId ? !hasActiveSession : currentSchedule?.attendanceSession?.status === "ended";
-  const locationStatsCount = successCount;
+  const locationStatsCount = attendanceRows.filter(
+    (item) => item?.location_match === true || item?.location_verified === true
+  ).length || successCount;
+
+  if (!currentSchedule) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-2xl bg-gradient-to-r from-sky-50 via-white to-blue-50 border border-sky-100 p-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">Điểm danh QR</p>
+          <h2 className="mt-2 text-2xl font-bold text-slate-800">Chưa chọn buổi học để tạo phiên</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Để giao diện rõ ràng và không bị N/A, hệ thống chỉ hiển thị dashboard chi tiết sau khi bạn chọn một lịch học cụ thể.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/schedule')}
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Mở trang Lịch học
+            </button>
+            <button
+              type="button"
+              onClick={refreshTodaySchedules}
+              disabled={todayLoading}
+              className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            >
+              {todayLoading ? 'Đang tải lịch hôm nay...' : 'Làm mới lịch hôm nay'}
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white shadow-sm border border-slate-100 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-800">Lịch dạy hôm nay</h3>
+            <span className="text-xs text-slate-400">Bấm chọn để vào nhanh màn QR</span>
+          </div>
+
+          {todayError && !todayLoading ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+              <p>{todayError}</p>
+            </div>
+          ) : null}
+
+          {todayLoading && sortedTodaySchedules.length === 0 ? (
+            <div className="space-y-3">
+              <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
+              <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
+            </div>
+          ) : null}
+
+          {!todayLoading && sortedTodaySchedules.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+              Hôm nay chưa có lịch dạy nào. Bạn có thể chọn buổi khác tại trang Lịch học.
+            </div>
+          ) : null}
+
+          <div className="space-y-3">
+            {sortedTodaySchedules.map((item) => {
+              const itemCourseName = item?.courseSection?.name || item?.course_name || 'Chưa có tên học phần';
+              const itemCourseCode = item?.courseSection?.code || item?.course_code || '---';
+              const itemRoom = item?.room?.room_name || item?.room_name || 'Chưa phân phòng';
+              const itemGroup = item?.practiceGroup?.group_name || item?.practice_group_name || 'Không chia nhóm';
+              const itemTime = `${String(item?.start_hour || '').slice(0, 5)} - ${String(item?.end_hour || '').slice(0, 5)}`;
+
+              return (
+                <button
+                  key={item?.id || `${itemCourseCode}-${itemTime}`}
+                  type="button"
+                  onClick={() => handleSelectSchedule(item)}
+                  className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left hover:border-blue-200 hover:bg-blue-50/40"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">{itemCourseName}</p>
+                      <p className="text-xs text-slate-500">{itemCourseCode} • {itemRoom} • {itemGroup}</p>
+                    </div>
+                    <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                      {itemTime}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -432,7 +465,7 @@ const QRPage = () => {
                       </span>
                     </div>
                     <p className="mt-1 text-xs leading-relaxed text-red-600">
-                      QR không còn hiệu lực. Vui lòng tạo phiên điểm danh mới.
+                      QR không còn hiệu lực. Bạn vẫn có thể xem lại kết quả phiên gần nhất ở danh sách bên phải.
                     </p>
                   </div>
                 </div>
@@ -605,48 +638,72 @@ const QRPage = () => {
           </div>
           <div className="mb-4 flex gap-2 text-xs font-medium">
             <button className="rounded-full bg-violet-400 px-3 py-1 text-white shadow-sm">
-              Thành công
+              Thành công: {successCount}
             </button>
             <button className="rounded-full bg-red-400 px-3 py-1 text-white hover:bg-red-500">
-              Vắng
+              Vắng: {absentCount}
             </button>
           </div>
 
+          {statsError ? (
+            <p className="mb-3 text-xs text-red-500">{statsError}</p>
+          ) : null}
+
+          {isStatsLoading ? (
+            <p className="mb-3 text-xs text-slate-400">Đang cập nhật dữ liệu điểm danh...</p>
+          ) : null}
+
           <div className="max-h-72 overflow-y-auto pr-2">
-            {meetings.map((m, index) => (
+            {attendanceRows.map((item, index) => (
               <div
-                key={m.name}
+                key={item.id || `${item?.student?.student_code || index}-${item?.scan_time || index}`}
                 className={`flex items-center justify-between rounded-xl px-2 py-2 hover:bg-slate-50
-                  ${index !== meetings.length - 1 ? "mb-3" : ""}
+                  ${index !== attendanceRows.length - 1 ? "mb-3" : ""}
                 `}
-                onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                onClick={() => navigate('/dashboard/results-qr')}
                 style={{ cursor: "pointer" }}
 
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${m.avatarBg} text-lg`}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-lg overflow-hidden"
                   >
-                    <img src={m.avatar_url} alt={m.name} />
+                    {item?.student?.avatar_url ? (
+                      <img src={item.student.avatar_url} alt={item?.student?.full_name || 'Sinh viên'} />
+                    ) : (
+                      <span className="text-xs font-semibold text-slate-600">
+                        {(item?.student?.full_name || 'SV').slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-800">{m.name}</p>
+                    <p className="text-sm font-medium text-slate-800">{item?.student?.full_name || 'Không rõ tên'}</p>
                     <div className="flex items-center gap-1 text-xs text-slate-500">
                       <span>📅</span>
-                      <span>{m.date}</span>
+                      <span>{formatScanDate(item?.scan_time)}</span>
                       <span className="mx-1">|</span>
-                      <span>{m.time}</span>
+                      <span>{formatScanHour(item?.scan_time)}</span>
                     </div>
                   </div>
                 </div>
 
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${getDisplayTagColor(m.tag)}`}
+                  className="rounded-full px-3 py-1 text-xs font-medium bg-violet-100 text-violet-600"
                 >
-                  {getDisplayTag(m.tag)}
+                  Thành công
                 </span>
               </div>
             ))}
+
+            {attendanceRows.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500">
+                {hasActiveSession
+                  ? 'Chưa có sinh viên quét trong phiên hiện tại.'
+                  : completedSnapshot
+                    ? 'Phiên gần nhất chưa có dữ liệu quét.'
+                    : 'Chưa có dữ liệu phiên gần nhất. Hãy tạo phiên điểm danh mới.'}
+              </div>
+            ) : null}
           </div>
         </div>
 
