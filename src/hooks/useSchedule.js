@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useTeacherSchedule } from '@contexts/TeacherScheduleContext';
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 
@@ -25,9 +25,13 @@ export const useSchedule = () => {
    * Get today's schedules
    */
   const getTodaySchedules = useCallback(() => {
+    if (Array.isArray(context.todaySchedules) && context.todaySchedules.length > 0) {
+      return context.todaySchedules;
+    }
+
     const today = format(new Date(), 'yyyy-MM-dd');
     return context.schedules.filter(schedule => schedule.class_date === today);
-  }, [context.schedules]);
+  }, [context.todaySchedules, context.schedules]);
 
   /**
    * Get upcoming schedules (from today onwards)

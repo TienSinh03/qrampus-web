@@ -1,6 +1,59 @@
-import React from "react";
-import { Calendar, Bell, Clock, User, Ellipsis } from "lucide-react";
+import React, { useEffect, useMemo, useRef } from "react";
+import { Calendar, Bell, Clock, Ellipsis, RefreshCw } from "lucide-react";
+import { useTeacherSchedule } from "@contexts/TeacherScheduleContext";
+import { useNavigate } from "react-router-dom";
+
+const formatTime = (timeValue) => {
+  if (!timeValue) return "--:--";
+  return String(timeValue).slice(0, 5);
+};
+
+const getRoomInfo = (schedule) => {
+  const roomName =
+    schedule?.room?.room_name || "Chưa phân phòng";
+
+  const practiceGroupName =
+    schedule?.practiceGroup?.group_name || null;
+
+  const scheduleTypeLabel = schedule?.schedule_type === "practice" ? "Thực hành" : schedule?.schedule_type === "theory" ? "Lý thuyết" : null;
+
+  const details = [practiceGroupName, scheduleTypeLabel].filter(Boolean).join("  •  ");
+  return details ? `${roomName}  •  ${details}` : roomName;
+};
+
 export default function Dashboard() {
+  const navigate = useNavigate();
+
+  const {
+    todaySchedules,
+    todayLoading,
+    todayError,
+    fetchTodaySchedules,
+    refreshTodaySchedules,
+  } = useTeacherSchedule();
+
+  const hasLoadedTodaySchedules = useRef(false);
+
+  useEffect(() => {
+    if (hasLoadedTodaySchedules.current) return;
+    hasLoadedTodaySchedules.current = true;
+    fetchTodaySchedules();
+  }, [fetchTodaySchedules]);
+
+  const sortedTodaySchedules = useMemo(() => {
+    if (!Array.isArray(todaySchedules)) return [];
+
+    return [...todaySchedules].sort((a, b) => {
+      const first = a?.start_hour || "";
+      const second = b?.start_hour || "";
+      return first.localeCompare(second);
+    });
+  }, [todaySchedules]);
+
+  const handleRefreshTodaySchedules = () => {
+    refreshTodaySchedules();
+  };
+
   return (
     <div className="min-h-screen">
       <div className="bg-gray-50 p-1">
@@ -124,7 +177,7 @@ export default function Dashboard() {
                     <Calendar className="w-8 h-8 text-orange-600" />
                   </div>
                   <p className="text-gray-700 font-medium">Lịch thi trong tuần</p>
-                  <p className="text-4xl font-bold text-orange-700 mt-700 mt-2">0</p>
+                  <p className="text-4xl font-bold text-orange-700 mt-2">0</p>
                   <a href="#" className="text-sm text-orange-600 hover:underline mt-3 inline-block">
                     Xem chi tiết
                   </a>
@@ -224,40 +277,87 @@ export default function Dashboard() {
 
 
 
-        {/* LOGISTICS */}
-        <div className="rounded-xl bg-white p-4 shadow">
+        {/* CURRENT SCHEDULE */}
+        <div className="rounded-xl bg-white p-4 shadow lg:col-span-2">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-2xl bg-rose-500" />
-              <span className="text-0.5xl font-semibold">Số giờ dạy trong tuần</span>
+              <div className="h-9 w-9 rounded-2xl bg-blue-500 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-lg font-semibold">Lịch dạy hôm nay</span>
             </div>
-            <div className="text-slate-400 text-xs">
-              <Ellipsis className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold">18h</span>
-            <span className="text-sm text-emerald-500">89%</span>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Xem chi tiết</p>
-        </div>
 
-        {/* REPORTS */}
-        <div className="rounded-xl bg-white p-4 shadow">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-2xl bg-amber-400" />
-              <span className="text-0.5xl font-semibold">Số giờ dạy trong tháng</span>
-            </div>
-            <div className="text-slate-400 text-xs">
-              <Ellipsis className="w-5 h-5" />
-            </div>
+            <button
+              type="button"
+              onClick={handleRefreshTodaySchedules}
+              disabled={todayLoading}
+              className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline disabled:text-blue-300"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${todayLoading ? "animate-spin" : ""}`} />
+              Làm mới
+            </button>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold">268h</span>
-            <span className="text-sm text-rose-500">89%</span>
+
+          <div className="space-y-3">
+            {todayLoading && sortedTodaySchedules.length === 0 && (
+              <div className="space-y-2">
+                <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
+                <div className="h-16 rounded-xl bg-slate-100 animate-pulse" />
+              </div>
+            )}
+
+            {todayError && sortedTodaySchedules.length === 0 && !todayLoading && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600">
+                <p>{todayError}</p>
+                <button
+                  type="button"
+                  onClick={handleRefreshTodaySchedules}
+                  className="mt-2 inline-flex items-center gap-1 text-red-600 hover:underline"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Tải lại
+                </button>
+              </div>
+            )}
+
+            {sortedTodaySchedules.map((schedule, index) => (
+              <div
+                key={schedule?.id || index}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 cursor-pointer hover:bg-slate-100 transition"
+                onClick={()=> 
+                  navigate('/dashboard/study-session', { state: { schedule: schedule }})
+                }
+              >
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+
+                  <div>
+                    <p className="text-base font-semibold text-slate-800">
+                      {schedule?.courseSection?.name || "Chưa có tên học phần"}
+                    </p>
+                    <p className="text-sm text-slate-500">{getRoomInfo(schedule)}</p>
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 text-sm text-slate-600">
+                    <Clock className="w-4 h-4" />
+                    <span>
+                      {formatTime(schedule?.start_hour)} - {formatTime(schedule?.end_hour)}
+                    </span>
+                  </div>
+
+                </div>
+              </div>
+            ))}
+
+            {!todayLoading && sortedTodaySchedules.length === 0 && !todayError && (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-500">
+                Hôm nay chưa có lịch dạy.
+              </div>
+            )}
+
+            {todayLoading && sortedTodaySchedules.length > 0 && (
+              <p className="text-xs text-slate-400">Đang cập nhật lịch dạy...</p>
+            )}
           </div>
-          <p className="mt-2 text-xs text-slate-400">Xem chi tiết</p>
         </div>
 
         {/* WEBSITE STATS */}

@@ -9,6 +9,11 @@ export const TeacherScheduleProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
+  
+  const [todaySchedules, setTodaySchedules] = useState([]);
+  const [todayLoading, setTodayLoading] = useState(false);
+  const [todayError, setTodayError] = useState(null);
+  const [lastFetchedToday, setLastFetchedToday] = useState(null);
 
   /**
    * Fetch teacher's schedule from API
@@ -45,7 +50,7 @@ export const TeacherScheduleProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [lastFetched, schedules.length]);
+  }, [lastFetched, schedules]);
 
   /**
    * Refresh schedules (force fetch)
@@ -55,12 +60,71 @@ export const TeacherScheduleProvider = ({ children }) => {
   }, [fetchSchedules]);
 
   /**
+   * Fetch today's schedules from API
+   */
+  const fetchTodaySchedules = useCallback(async (forceRefresh = false) => {
+
+    const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
+    if (!forceRefresh && lastFetchedToday) {
+      const timeSinceLastFetch = Date.now() - lastFetchedToday;
+      if (timeSinceLastFetch < CACHE_DURATION) {
+        return { success: true, data: todaySchedules };
+      }
+    }
+
+    setTodayLoading(true);
+    setTodayError(null);
+
+    try {
+      const response = await teacherService.getMyScheduleToday();
+
+      if (response.success) {
+        const normalizedData = Array.isArray(response.data) ? response.data : [];
+
+        setTodaySchedules(normalizedData);
+        setLastFetchedToday(Date.now());
+
+        return { success: true, data: normalizedData };
+      }
+
+      const message = 'Không thể tải lịch dạy hôm nay';
+      setTodayError(message);
+
+      return { success: false, error: message };
+
+    } catch (err) {
+      const errorMessage = err.message || 'Đã xảy ra lỗi khi tải lịch dạy hôm nay';
+      setTodayError(errorMessage);
+
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+
+    } finally {
+      setTodayLoading(false);
+    }
+
+  }, [lastFetchedToday, todaySchedules]);
+
+  /**
+   * Refresh today's schedules (force fetch)
+   */
+  const refreshTodaySchedules = useCallback(async () => {
+    return fetchTodaySchedules(true);
+
+  }, [fetchTodaySchedules]);
+
+  /**
    * Clear schedules data
    */
   const clearSchedules = useCallback(() => {
     setSchedules([]);
     setLastFetched(null);
     setError(null);
+    setTodaySchedules([]);
+    setTodayLoading(false);
+    setTodayError(null);
+    setLastFetchedToday(null);
   }, []);
 
   /**
@@ -115,17 +179,24 @@ export const TeacherScheduleProvider = ({ children }) => {
       scheduled,
       cancelled,
       theory,
-      practice
+      practice,
+      todayTotal: todaySchedules.length
     };
-  }, [schedules]);
+  }, [schedules, todaySchedules.length]);
 
   const value = {
     schedules,
     loading,
     error,
     lastFetched,
+    todaySchedules,
+    todayLoading,
+    todayError,
+    lastFetchedToday,
     fetchSchedules,
     refreshSchedules,
+    fetchTodaySchedules,
+    refreshTodaySchedules,
     clearSchedules,
     getSchedulesByDate,
     getSchedulesByWeek,

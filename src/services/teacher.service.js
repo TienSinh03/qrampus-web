@@ -181,6 +181,23 @@ class TeacherService {
   }
 
   /**
+   * Get current teacher's schedule for today
+   * @returns 
+   */
+  async getMyScheduleToday() {
+    try {
+      const response = await axiosClient.get(TEACHER_ENDPOINTS.ME_SCHEDULE_TODAY);
+      return {
+        success: response.success || true,
+        data: response.data?.schedules || [],
+        message: response.message || ''
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Get students in a class session
    * @param {string} classSessionId - Class session ID
    * @param {Object} params - Query parameters
