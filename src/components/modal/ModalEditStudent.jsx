@@ -19,6 +19,7 @@ const ModalEditStudent = ({ isOpen, onClose, studentData, onSubmit }) => {
     class_name: "",
     phone: "",
     avatar_url: "",
+    avatarFile: null,
     status: "active",
   });
 
@@ -39,6 +40,7 @@ const ModalEditStudent = ({ isOpen, onClose, studentData, onSubmit }) => {
         class_name: studentData.class_name || "",
         phone: studentData.phone || "",
         avatar_url: studentData.avatar_url || "",
+        avatarFile: null,
         status: studentData.user?.status || "active",
       });
       clearErrors();
@@ -77,6 +79,18 @@ const ModalEditStudent = ({ isOpen, onClose, studentData, onSubmit }) => {
 
     if (onSubmit) onSubmit(payload);
     onClose();
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({
+      ...prev,
+      avatarFile: file,
+      avatar_url: previewUrl,
+    }));
   };
 
   if (!isOpen) return null;
@@ -297,8 +311,10 @@ const ModalEditStudent = ({ isOpen, onClose, studentData, onSubmit }) => {
               Ảnh đại diện
             </label>
             <input
+              id="avatar-upload"
               type="file"
               accept="image/*"
+              onChange={handleAvatarChange}
               className="w-full rounded-lg border border-cyan-300 px-4 py-2 text-gray-800 transition-all duration-200 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
             />
           </div>

@@ -35,6 +35,32 @@ class UserService {
   }
 
   /**
+   * Upload avatar for current authenticated user (student/personnel)
+   * @param {File} avatarFile - Image file
+   * @returns {Promise}
+   */
+  async uploadMyAvatar(avatarFile) {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+
+      const response = await axiosClient.put(
+        USER_ENDPOINTS.MY_AVATAR,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Get user by ID
    * @param {string} userId - User ID
    * @returns {Promise} User data

@@ -209,8 +209,21 @@ const AdminStudentPage = () => {
 
   const handleEditStudent = async (formData) => {
     try {
-      const { student_code, status: _status, avatar: _avatar, ...rest } = formData;
+      const {
+        student_code,
+        status: _status,
+        avatar: _avatar,
+        avatarFile,
+        avatar_url: _avatarUrl,
+        ...rest
+      } = formData;
+
       await studentService.updateStudentByAdmin(student_code, rest);
+
+      if (avatarFile) {
+        await studentService.uploadStudentAvatarByAdmin(student_code, avatarFile);
+      }
+
       toast.success("Đã cập nhật thông tin sinh viên thành công!");
       fetchStudents();
     } catch (err) {

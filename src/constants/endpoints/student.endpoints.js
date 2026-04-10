@@ -7,5 +7,6 @@ export const STUDENT_ENDPOINTS = {
   BASE: `${API_VERSION}/students`,
   BY_ID: (id) => `${API_VERSION}/students/${id}`,
   BY_CODE: (code) => `${API_VERSION}/students/code/${code}`,
+  AVATAR_BY_CODE: (code) => `${API_VERSION}/students/${code}/avatar`,
   BULK: `${API_VERSION}/students/bulk`,
 };
