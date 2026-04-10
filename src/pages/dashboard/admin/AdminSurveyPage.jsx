@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Pagination from "../../../components/common/Pagination";
 import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
@@ -6,7 +6,11 @@ import ModalAddSurvey from "../../../components/modal/ModalAddSurvey";
 import ModalEditSurvey from "../../../components/modal/ModalEditSurvey";
 import ModalViewSurvey from "../../../components/modal/ModalViewSurvey";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import ModalCourseSurveyList from "../../../components/modal/ModalCourseSurveyList";
 import reportService from "../../../services/report.service";
+import surveyService from "../../../services/survey.service";
+import LoadingSpinner from "@components/layout/LoadingSpinner";
+import EmptyState from "@components/layout/EmptyState";
 import { toast } from "sonner";
 
 import {
@@ -32,9 +36,18 @@ import StatsCard from "../../../components/common/StatsCard";
 const AdminSurveyPage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 5,
+    totalPages: 0,
+  });
+  const [survey, setSurvey] = useState([]);
   const [openUpload, setOpenUpload] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [cardLoading, setCardLoading] = useState(false);
+  const [tableLoading, setTableLoading] = useState(false);
+  const hasFetchedCardRef = useRef(false);
   const [cardStats, setCardStats] = useState({
     surveys: {
       total: 0,
@@ -51,6 +64,7 @@ const AdminSurveyPage = () => {
   const [modalAddSurvey, setModalAddSurvey] = useState({ isOpen: false });
   const [modalEditSurvey, setModalEditSurvey] = useState({ isOpen: false, surveyData: null });
   const [modalViewSurvey, setModalViewSurvey] = useState({ isOpen: false, surveyData: null });
+  const [modalCourseSurveyList, setModalCourseSurveyList] = useState({ isOpen: false });
   const [modalConfirmAction, setModalConfirmAction] = useState({
     isOpen: false,
     actionType: "",
@@ -74,6 +88,10 @@ const AdminSurveyPage = () => {
     setModalConfirmAction({ isOpen: true, actionType, surveyData: survey });
   };
 
+  const openCourseSurveyListModal = () => {
+    setModalCourseSurveyList({ isOpen: true });
+  };
+
   const closeAddSurveyModal = () => {
     setModalAddSurvey({ isOpen: false });
   };
@@ -84,6 +102,10 @@ const AdminSurveyPage = () => {
 
   const closeViewSurveyModal = () => {
     setModalViewSurvey({ isOpen: false, surveyData: null });
+  };
+
+  const closeCourseSurveyListModal = () => {
+    setModalCourseSurveyList({ isOpen: false });
   };
 
   const closeConfirmActionModal = () => {
@@ -116,8 +138,72 @@ const AdminSurveyPage = () => {
   };
 
   useEffect(() => {
+    if (hasFetchedCardRef.current) return;
+    hasFetchedCardRef.current = true;
     fetchCardSurvey();
   }, []);
+
+  const fetchSurveyList = async () => {
+    try {
+      setTableLoading(true);
+      const response = await surveyService.getAllSurvey({
+        page: currentPage,
+        limit: pagination.limit,
+      });
+
+      setSurvey(Array.isArray(response?.data) ? response.data : []);
+
+      const responsePagination = response?.pagination || {};
+      const total = Number(
+        responsePagination.total ?? responsePagination.totalItems ?? responsePagination.count
+      ) || 0;
+      const page = Number(responsePagination.page) || currentPage;
+      const limit = Number(responsePagination.limit) || pagination.limit;
+      const totalPagesFromApi = Number(
+        responsePagination.totalPages ?? responsePagination.total_pages ?? responsePagination.pageCount
+      ) || 0;
+      const totalPages = totalPagesFromApi > 0 ? totalPagesFromApi : (total > 0 ? Math.ceil(total / limit) : 1);
+
+      setPagination({ total, page, limit, totalPages });
+
+      if (currentPage > totalPages && totalPages > 0) {
+        setCurrentPage(totalPages);
+      }
+
+      setSelectedIds([]);
+    } catch (error) {
+      console.error("Error fetching survey list:", error);
+      toast.error(error.message || "Không thể tải danh sách khảo sát");
+      setSurvey([]);
+      setPagination((prev) => ({
+        ...prev,
+        total: 0,
+        page: 1,
+        totalPages: 0,
+      }));
+    } finally {
+      setTableLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSurveyList();
+    setSelectedIds([]);
+  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePageChange = (page) => {
+    if (tableLoading) return;
+    const maxPage = Math.max(1, Number(pagination.totalPages) || 1);
+    const nextPage = Math.max(1, Math.min(Number(page) || 1, maxPage));
+    if (nextPage === currentPage) return;
+    setCurrentPage(nextPage);
+  };
+
+  const resolvedTotalPages = Number(pagination.totalPages) > 0
+    ? Number(pagination.totalPages)
+    : (Number(pagination.total) > 0
+      ? Math.ceil(Number(pagination.total) / (Number(pagination.limit) || 5))
+      : 1);
 
   // Handle actions
   const handleAddSurvey = (surveyData) => {
@@ -156,75 +242,6 @@ const AdminSurveyPage = () => {
   //   document.addEventListener("click", handleClick);
   //   return () => document.removeEventListener("click", handleClick);
   // }, []);
-
-  const totalPages = 5;
-
-  const survey = [
-    {
-      id: 1,
-      course_code: "4203001549",
-      course_name: "Lập trình nâng cao",
-      semester: "HK1",
-      academic_year: "2024-2025",
-      status: "Active",
-      learning_form: "Lý thuyết",
-      practical_group: "",
-      created_at: "2024-09-01",
-      end_at: "2024-10-01",
-      instructor_code: "GV001",
-      instructor: "Nguyễn Văn A",
-      department: "Khoa Công nghệ thông tin",
-      // trung bình điểm dánh giá
-      average_rating: 4.5,
-    }, {
-      id: 2,
-      course_code: "4203001550",
-      course_name: "Cơ sở dữ liệu",
-      semester: "HK1",
-      academic_year: "2024-2025",
-      status: "Pending",
-      learning_form: "Thực hành",
-      practical_group: "1",
-      created_at: "2024-09-05",
-      end_at: "2024-10-05",
-      instructor_code: "GV002",
-      instructor: "Trần Thị B",
-      department: "Khoa Công nghệ thông tin",
-      average_rating: 4.2,
-    }, {
-      id: 1,
-      course_code: "4203001549",
-      course_name: "Lập trình nâng cao",
-      semester: "HK1",
-      academic_year: "2024-2025",
-      status: "Active",
-      learning_form: "Lý thuyết",
-      practical_group: "",
-      created_at: "2024-09-01",
-      end_at: "2024-10-01",
-      instructor_code: "GV001",
-      instructor: "Nguyễn Văn A",
-      department: "Khoa Công nghệ thông tin",
-      // trung bình điểm dánh giá
-      average_rating: 4.5,
-    }, {
-      id: 2,
-      course_code: "4203001550",
-      course_name: "Cơ sở dữ liệu",
-      semester: "HK1",
-      academic_year: "2024-2025",
-      status: "Pending",
-      learning_form: "Thực hành",
-      practical_group: "1",
-      created_at: "2024-09-05",
-      end_at: "2024-10-05",
-      instructor_code: "GV002",
-      instructor: "Trần Thị B",
-      department: "Khoa Công nghệ thông tin",
-      average_rating: 4.2,
-    }
-
-  ];
 
   // Checkbox handlers
   const handleSelectAll = (e) => {
@@ -455,7 +472,11 @@ const AdminSurveyPage = () => {
                   <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Khóa khảo sát">
                     <Lock className="w-5 h-5" />
                   </button>
-                  <button className="flex items-center gap-2 border border-emerald-400 text-emerald-300 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" title="Tạo khảo sát cho toàn bộ họ phần, khi lọc học phần đã đến hạn">
+                  <button
+                    onClick={openCourseSurveyListModal}
+                    className="flex items-center gap-2 border border-emerald-400 text-emerald-300 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
+                    title="Danh sách học phần và trạng thái khảo sát"
+                  >
                     <ArrowUpWideNarrow className="w-5 h-5" />
                   </button>
 
@@ -683,6 +704,22 @@ const AdminSurveyPage = () => {
 
                 {/* ================== BODY ================== */}
                 <tbody>
+                  {tableLoading && (
+                    <tr>
+                      <td colSpan={14} className="px-4 py-8 text-center">
+                        <LoadingSpinner text="Đang tải dữ liệu..." color="blue" />
+                      </td>
+                    </tr>
+                  )}
+                  {!tableLoading && survey.length === 0 && (
+                    <EmptyState
+                      title="Không có dữ liệu khảo sát"
+                      description="Hiện chưa có khảo sát phù hợp với điều kiện lọc hiện tại."
+                      colSpan={14}
+                      onAction={fetchSurveyList}
+                      actionLabel="Tải lại dữ liệu"
+                    />
+                  )}
                   {survey.map((u) => (
                     <tr
                       key={u.id}
@@ -836,8 +873,10 @@ const AdminSurveyPage = () => {
             {/* PAGINATION */}
             <Pagination
               currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
+              totalPages={resolvedTotalPages}
+              onPageChange={handlePageChange}
+              hideOnSinglePage={false}
+              disabled={tableLoading}
             />
 
             {/* MODAL UPLOAD */}
@@ -861,6 +900,11 @@ const AdminSurveyPage = () => {
               isOpen={modalViewSurvey.isOpen}
               onClose={closeViewSurveyModal}
               surveyData={modalViewSurvey.surveyData}
+            />
+
+            <ModalCourseSurveyList
+              isOpen={modalCourseSurveyList.isOpen}
+              onClose={closeCourseSurveyListModal}
             />
             
             <ModalConfirmAction

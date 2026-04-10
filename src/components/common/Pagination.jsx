@@ -13,10 +13,14 @@ const Pagination = ({
   siblingCount = 1,
   boundaryCount = 1,
   showFirstLast = true,
+  hideOnSinglePage = true,
   className = "",
   disabled = false,
 }) => {
-  if (totalPages <= 1) return null;
+  const safeCurrentPage = Math.max(1, Number(currentPage) || 1);
+  const safeTotalPages = Math.max(1, Number(totalPages) || 1);
+
+  if (hideOnSinglePage && safeTotalPages <= 1) return null;
 
   const range = (start, end) => {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
@@ -26,28 +30,28 @@ const Pagination = ({
     const totalNumbers = siblingCount * 2 + 3 + boundaryCount * 2;
     const totalButtons = totalNumbers + 2; // +2 for ellipsis
 
-    if (totalButtons >= totalPages) {
-      return range(1, totalPages);
+    if (totalButtons >= safeTotalPages) {
+      return range(1, safeTotalPages);
     }
 
-    const leftSiblingIndex = Math.max(currentPage - siblingCount, boundaryCount);
+    const leftSiblingIndex = Math.max(safeCurrentPage - siblingCount, boundaryCount);
     const rightSiblingIndex = Math.min(
-      currentPage + siblingCount,
-      totalPages - boundaryCount
+      safeCurrentPage + siblingCount,
+      safeTotalPages - boundaryCount
     );
 
     const shouldShowLeftDots = leftSiblingIndex > boundaryCount + 1;
-    const shouldShowRightDots = rightSiblingIndex < totalPages - boundaryCount;
+    const shouldShowRightDots = rightSiblingIndex < safeTotalPages - boundaryCount;
 
     const firstPages = range(1, boundaryCount);
-    const lastPages = range(totalPages - boundaryCount + 1, totalPages);
+    const lastPages = range(safeTotalPages - boundaryCount + 1, safeTotalPages);
 
     if (!shouldShowLeftDots && shouldShowRightDots) {
       return [...range(1, 3 + siblingCount * 2), "dots", ...lastPages];
     }
 
     if (shouldShowLeftDots && !shouldShowRightDots) {
-      return [...firstPages, "dots", ...range(totalPages - (3 + siblingCount * 2) + 1, totalPages)];
+      return [...firstPages, "dots", ...range(safeTotalPages - (3 + siblingCount * 2) + 1, safeTotalPages)];
     }
 
     if (shouldShowLeftDots && shouldShowRightDots) {
@@ -60,7 +64,7 @@ const Pagination = ({
       ];
     }
 
-    return range(1, totalPages);
+    return range(1, safeTotalPages);
   };
 
   const pages = getPageNumbers();
@@ -74,7 +78,7 @@ const Pagination = ({
       {showFirstLast && (
         <button
           onClick={() => onPageChange(1)}
-          disabled={currentPage === 1 || disabled}
+          disabled={safeCurrentPage === 1 || disabled}
           className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="First page"
         >
@@ -85,7 +89,7 @@ const Pagination = ({
       {/* Previous */}
       <button
         onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1 || disabled}
+        disabled={safeCurrentPage === 1 || disabled}
         className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         aria-label="Previous page"
       >
@@ -127,8 +131,8 @@ const Pagination = ({
 
       {/* Next */}
       <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages || disabled}
+        onClick={() => onPageChange(safeCurrentPage + 1)}
+        disabled={safeCurrentPage === safeTotalPages || disabled}
         className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         aria-label="Next page"
       >
@@ -138,8 +142,8 @@ const Pagination = ({
       {/* Last */}
       {showFirstLast && (
         <button
-          onClick={() => onPageChange(totalPages)}
-          disabled={currentPage === totalPages || disabled}
+          onClick={() => onPageChange(safeTotalPages)}
+          disabled={safeCurrentPage === safeTotalPages || disabled}
           className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="Last page"
         >
