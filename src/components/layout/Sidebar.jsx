@@ -91,7 +91,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: Bell, 
       label: 'Thông báo', 
       path: '/dashboard/notifications',
-      roles: [ROLES.TEACHER, ROLES.ADMIN, ROLES.ATTENDANCE_STAFF]
+      roles: [ROLES.TEACHER, ROLES.ATTENDANCE_STAFF]
     },
     { 
       icon: Settings, 
@@ -101,6 +101,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     },
 
     // ==================== ADMIN DASHBOARD & MENU ====================
+    {
+      icon: Bell,
+      label: 'Thông báo',
+      path: '/dashboard/admin/announcement',
+      roles: [ROLES.ADMIN]
+    },
     { 
       icon: LayoutDashboard, 
       label: 'Admin Dashboard', 

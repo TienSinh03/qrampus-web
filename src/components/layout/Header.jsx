@@ -249,7 +249,15 @@ const Header = ({ toggleSidebar }) => {
               className="flex items-center gap-3 hover:bg-gray-100 rounded-xl px-3 py-2 transition"
             >
               <div className="w-9 h-9 bg-[#153898] rounded-full flex items-center justify-center text-white font-bold">
-                {user?.name?.charAt(0).toUpperCase() || "A"}
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt="Avatar"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <span>{(user?.full_name || user?.name || user?.user_name || "A").charAt(0).toUpperCase()}</span>
+                )}
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-semibold text-gray-800">
