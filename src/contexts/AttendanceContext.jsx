@@ -51,6 +51,10 @@ export const AttendanceProvider = ({ children }) => {
   
   // Session stats
   const [sessionStats, setSessionStats] = useState(null);
+
+  // Attendance results initialize state
+  const [attendanceResults, setAttendanceResults] = useState(null);
+  const [attendanceResultsLoading, setAttendanceResultsLoading] = useState(false);
   
   // History
   const [history] = useState([]);
@@ -312,6 +316,38 @@ export const AttendanceProvider = ({ children }) => {
     }
   }, []);
 
+  /**
+   * Khởi tạo/làm mới dữ liệu chốt điểm danh cho class session
+   */
+  const initializeAttendanceResults = useCallback(async (payload) => {
+    setAttendanceResultsLoading(true);
+
+    try {
+      const response = await AttendanceService.initializeAttendanceResults(payload);
+
+      if (response?.success) {
+        setAttendanceResults(response.data);
+        return response.data;
+      }
+
+      const message = response?.message || 'Khởi tạo kết quả chốt thất bại';
+      toast.error(message);
+
+      return null;
+
+    } catch (error) {
+
+      const errorMessage = error?.message || 'Khởi tạo kết quả chốt thất bại';
+      toast.error(errorMessage);
+
+      console.error('Initialize attendance results error:', error);
+      return null;
+      
+    } finally {
+      setAttendanceResultsLoading(false);
+    }
+  }, []);
+
 
   /**
    * Clear active session
@@ -320,6 +356,7 @@ export const AttendanceProvider = ({ children }) => {
     setActiveSession(null);
     setCurrentQR(null);
     setSessionStats(null);
+    setAttendanceResults(null);
   }, []);
 
   /**
@@ -445,6 +482,7 @@ export const AttendanceProvider = ({ children }) => {
     activeSession,
     currentQR,
     sessionStats,
+    attendanceResults,
     history,
     completedSessionSnapshots,
     setActiveSession,
@@ -454,6 +492,7 @@ export const AttendanceProvider = ({ children }) => {
     closeLoading,
     nextQRLoading,
     statsLoading,
+    attendanceResultsLoading,
     historyLoading,
     
     // Actions
@@ -461,6 +500,7 @@ export const AttendanceProvider = ({ children }) => {
     closeSession,
     getNextQR,
     getStats,
+    initializeAttendanceResults,
     clearSession,
     checkActiveSession,
     getSessionTiming,

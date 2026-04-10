@@ -61,6 +61,21 @@ class AttendanceService {
       throw this.handleError(error);
     }
   }
+
+  /**
+   * Khởi tạo/làm mới kết quả chốt điểm danh theo buổi học
+   * @param {Object} payload - { class_session_id, attendance_session_id?, overwrite_non_finalized? }
+   * @returns {Promise} Attendance results initialize response
+   */
+  async initializeAttendanceResults(payload) {
+    try {
+      const response = await axiosClient.post(ATTENDANCE_ENDPOINTS.RESULTS_INITIALIZE, payload);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   /**
    * Handle API errors
    * @param {Error} error - Axios error
