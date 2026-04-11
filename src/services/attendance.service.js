@@ -63,6 +63,18 @@ class AttendanceService {
   }
 
   /**
+   * Lấy lịch sử các phiên điểm danh theo học phần/nhóm thực hành
+   */
+  async getSessionHistory(params) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SESSION_HISTORY, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Khởi tạo/làm mới kết quả chốt điểm danh theo buổi học
    * @param {Object} payload - { class_session_id, attendance_session_id?, overwrite_non_finalized? }
    * @returns {Promise} Attendance results initialize response

@@ -57,8 +57,15 @@ export const AttendanceProvider = ({ children }) => {
   const [attendanceResultsLoading, setAttendanceResultsLoading] = useState(false);
   
   // History
-  const [history] = useState([]);
-  const [historyLoading] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+  const [historyPagination, setHistoryPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+  });
 
   const getValidSession = useCallback((session) => {
     if (!session?.expires_at) return null;
@@ -348,6 +355,84 @@ export const AttendanceProvider = ({ children }) => {
     }
   }, []);
 
+  /**
+   * Lấy lịch sử phiên điểm danh theo học phần/nhóm thực hành
+   */
+  const fetchSessionHistory = useCallback(async ({
+    courseSectionId,
+    practiceGroupId,
+    page = 1,
+    limit = 10,
+  }) => {
+    if (!courseSectionId) {
+      const message = 'Thiếu course_section_id để lấy lịch sử phiên điểm danh';
+      setHistoryError(message);
+      setHistory([]);
+      return { success: false, error: message };
+    }
+
+    setHistoryLoading(true);
+    setHistoryError(null);
+
+    try {
+      const params = {
+        course_section_id: courseSectionId,
+        page,
+        limit,
+      };
+
+      if (practiceGroupId) {
+        params.practice_group_id = practiceGroupId;
+      }
+
+      const response = await AttendanceService.getSessionHistory(params);
+
+      if (response?.success) {
+        const sessions = Array.isArray(response?.data?.sessions) ? response.data.sessions : [];
+        const pagination = response?.data?.pagination || {
+          total: sessions.length,
+          page,
+          limit,
+          totalPages: sessions.length > 0 ? 1 : 0,
+        };
+
+        setHistory(sessions);
+        setHistoryPagination(pagination);
+
+        return {
+          success: true,
+          data: sessions,
+          pagination,
+        };
+      }
+
+      const message = response?.message || 'Không thể lấy lịch sử phiên điểm danh';
+      setHistoryError(message);
+      setHistory([]);
+      setHistoryPagination({ total: 0, page, limit, totalPages: 0 });
+      return { success: false, error: message };
+    } catch (error) {
+      const message = error?.message || 'Không thể lấy lịch sử phiên điểm danh';
+      setHistoryError(message);
+      setHistory([]);
+      setHistoryPagination({ total: 0, page, limit, totalPages: 0 });
+      return { success: false, error: message };
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  const clearSessionHistory = useCallback(() => {
+    setHistory([]);
+    setHistoryError(null);
+    setHistoryPagination({
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0,
+    });
+  }, []);
+
 
   /**
    * Clear active session
@@ -484,6 +569,8 @@ export const AttendanceProvider = ({ children }) => {
     sessionStats,
     attendanceResults,
     history,
+    historyError,
+    historyPagination,
     completedSessionSnapshots,
     setActiveSession,
 
@@ -501,6 +588,8 @@ export const AttendanceProvider = ({ children }) => {
     getNextQR,
     getStats,
     initializeAttendanceResults,
+    fetchSessionHistory,
+    clearSessionHistory,
     clearSession,
     checkActiveSession,
     getSessionTiming,
