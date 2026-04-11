@@ -193,6 +193,28 @@ class SurveyService {
     }
   }
 
+  async bulkCreateSurveysWithQuestionsExcel({ title, closes_at, targets, file }) {
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('closes_at', closes_at);
+    formData.append('targets', JSON.stringify(targets || []));
+    formData.append('file', file);
+
+    try {
+      return await axiosClient.post(
+        SURVEY_ENDPOINTS.BULK_CREATE_WITH_QUESTIONS_EXCEL,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   handleError(error) {
     const message = error.response?.data?.message || error.message || 'Khong the tai danh sach khao sat';
     const formattedError = new Error(message);

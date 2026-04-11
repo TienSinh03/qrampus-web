@@ -480,6 +480,8 @@ const AdminSurveyPage = () => {
                     <ArrowUpWideNarrow className="w-5 h-5" />
                   </button>
 
+                  {/* soạn bộ câu hỏi */}
+
                   <button
                     onClick={() => setOpenUpload(true)}
                     className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
