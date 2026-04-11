@@ -16,6 +16,7 @@ export const ATTENDANCE_ENDPOINTS = {
   SESSION_CLOSE: (id) => `${API_VERSION}/attendance-sessions/${id}/close`,
   SESSION_NEXT_QR: (id) => `${API_VERSION}/attendance-sessions/${id}/next-qr`,
   SESSION_STATS: (id) => `${API_VERSION}/attendance-sessions/${id}/stats`,
+  SESSION_HISTORY: `${API_VERSION}/attendance-sessions/history`,
 
   // Attendance results endpoints
   RESULTS_INITIALIZE: `${API_VERSION}/attendance-results/initialize`,
