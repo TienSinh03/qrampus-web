@@ -193,6 +193,37 @@ class SurveyService {
     }
   }
 
+  async getSurveyById(surveyId) {
+    try {
+      const response = await axiosClient.get(SURVEY_ENDPOINTS.BY_ID(surveyId));
+      return {
+        success: response?.success ?? true,
+        message: response?.message || '',
+        data: response?.data || null,
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async updateSurveyStatus(surveyIds = []) {
+    try {
+      return await axiosClient.put(SURVEY_ENDPOINTS.STATUS, {
+        survey_id: surveyIds,
+      });
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async updateSurveyInfo(surveyId, payload = {}) {
+    try {
+      return await axiosClient.put(SURVEY_ENDPOINTS.BY_ID(surveyId), payload);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async bulkCreateSurveysWithQuestionsExcel({ title, closes_at, targets, file }) {
     const formData = new FormData();
     formData.append('title', title);

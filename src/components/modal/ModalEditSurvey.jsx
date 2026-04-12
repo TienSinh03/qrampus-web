@@ -1,41 +1,73 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import surveyService from "../../services/survey.service";
+import { toast } from "sonner";
 
 const ModalEditSurvey = ({ isOpen, onClose, surveyData, onSubmit }) => {
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [formData, setFormData] = useState({
-    courseCode: "",
-    courseName: "",
-    semester: "",
-    academicYear: "",
-    learningForm: "",
-    practicalGroup: "",
+    surveyId: "",
+    title: "",
     createdAt: "",
     endAt: "",
-    instructorCode: "",
-    instructor: "",
-    department: "",
     status: "",
   });
+  const [questions, setQuestions] = useState([]);
+
+  const toDateInputValue = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 10);
+  };
+
+  const parseOptionsText = (value) => {
+    if (!value?.trim()) return [];
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
 
   // Initialize form data when surveyData changes
   useEffect(() => {
-    if (isOpen && surveyData) {
-      // eslint-disable-next-line
-      setFormData({
-        courseCode: surveyData.course_code || "",
-        courseName: surveyData.course_name || "",
-        semester: surveyData.semester || "",
-        academicYear: surveyData.academic_year || "",
-        learningForm: surveyData.learning_form || "",
-        practicalGroup: surveyData.practical_group || "",
-        createdAt: surveyData.created_at || "",
-        endAt: surveyData.end_at || "",
-        instructorCode: surveyData.instructor_code || "",
-        instructor: surveyData.instructor || "",
-        department: surveyData.department || "",
-        status: surveyData.status || "",
-      });
-    }
+    const fetchSurveyDetail = async () => {
+      if (!isOpen || !surveyData?.id) return;
+
+      try {
+        setLoadingDetail(true);
+        const response = await surveyService.getSurveyById(surveyData.id);
+        const detail = response?.data || {};
+
+        setFormData({
+          surveyId: detail.id || surveyData.id || "",
+          title: detail.title || "",
+          createdAt: toDateInputValue(detail.opens_at || surveyData.created_at),
+          endAt: toDateInputValue(detail.closes_at || surveyData.end_at),
+          status: detail.is_active ? "Active" : "Inactive",
+        });
+
+        const detailQuestions = Array.isArray(detail.questions) ? detail.questions : [];
+        setQuestions(
+          detailQuestions
+            .sort((a, b) => Number(a.order_index || 0) - Number(b.order_index || 0))
+            .map((item) => ({
+              id: item.id,
+              question_text: item.question_text || "",
+              question_type: item.question_type || "text",
+              options_text: Array.isArray(item.options) ? item.options.join(", ") : "",
+              is_required: Boolean(item.is_required),
+              order_index: item.order_index || 0,
+            }))
+        );
+      } catch (error) {
+        toast.error(error.message || "Không thể tải thông tin khảo sát");
+      } finally {
+        setLoadingDetail(false);
+      }
+    };
+
+    fetchSurveyDetail();
   }, [isOpen, surveyData]);
 
   const handleChange = (e) => {
@@ -46,9 +78,24 @@ const ModalEditSurvey = ({ isOpen, onClose, surveyData, onSubmit }) => {
   const handleSubmit = () => {
     // Validate and submit logic
     if (onSubmit) {
-      onSubmit(formData);
+      onSubmit({
+        ...formData,
+        is_active: formData.status === "Active",
+        questions: questions.map((item) => ({
+          id: item.id,
+          question_text: item.question_text,
+          question_type: item.question_type,
+          options: item.question_type === "multiple_choice" ? parseOptionsText(item.options_text) : null,
+          is_required: item.is_required,
+          order_index: item.order_index,
+        })),
+      });
     }
     onClose();
+  };
+
+  const handleQuestionChange = (id, key, value) => {
+    setQuestions((prev) => prev.map((item) => (item.id === id ? { ...item, [key]: value } : item)));
   };
 
   if (!isOpen) return null;
@@ -78,86 +125,20 @@ const ModalEditSurvey = ({ isOpen, onClose, surveyData, onSubmit }) => {
 
         {/* Body (Scrollable) */}
         <div className="flex-1 overflow-y-auto px-6 py-6 pb-36 space-y-4">
+          {loadingDetail && (
+            <div className="text-sm text-indigo-700 bg-indigo-50 px-3 py-2 rounded-lg">
+              Đang tải thông tin khảo sát...
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mã học phần
+              Tiêu đề khảo sát
             </label>
             <input
               type="text"
-              name="courseCode"
-              value={formData.courseCode}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-indigo-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-              disabled
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tên học phần
-            </label>
-            <input
-              type="text"
-              name="courseName"
-              value={formData.courseName}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-indigo-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Học kỳ
-            </label>
-            <select
-              name="semester"
-              value={formData.semester}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-            >
-              <option>HK1</option>
-              <option>HK2</option>
-              <option>HK3</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Năm học
-            </label>
-            <input
-              type="text"
-              name="academicYear"
-              value={formData.academicYear}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-indigo-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Hình thức học
-            </label>
-            <select
-              name="learningForm"
-              value={formData.learningForm}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-            >
-              <option>Lý thuyết</option>
-              <option>Thực hành</option>
-              <option>Lý thuyết + Thực hành</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nhóm thực hành
-            </label>
-            <input
-              type="text"
-              name="practicalGroup"
-              value={formData.practicalGroup}
+              name="title"
+              value={formData.title}
               onChange={handleChange}
               className="w-full rounded-lg border border-indigo-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
@@ -191,49 +172,6 @@ const ModalEditSurvey = ({ isOpen, onClose, surveyData, onSubmit }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mã giảng viên
-            </label>
-            <input
-              type="text"
-              name="instructorCode"
-              value={formData.instructorCode}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-indigo-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tên giảng viên
-            </label>
-            <input
-              type="text"
-              name="instructor"
-              value={formData.instructor}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-indigo-300 px-4 py-2 text-gray-800 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Khoa / Viện
-            </label>
-            <select
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-            >
-              <option>Khoa Công nghệ thông tin</option>
-              <option>Khoa Điện tử - Viễn thông</option>
-              <option>Khoa Cơ khí</option>
-              <option>Khoa Kinh tế</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
               Trạng thái
             </label>
             <select
@@ -243,9 +181,63 @@ const ModalEditSurvey = ({ isOpen, onClose, surveyData, onSubmit }) => {
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
             >
               <option>Active</option>
-              <option>Pending</option>
               <option>Inactive</option>
             </select>
+          </div>
+
+          <div className="pt-2">
+            <p className="text-sm font-semibold text-gray-800 mb-2">Câu hỏi khảo sát</p>
+            <div className="space-y-3">
+              {questions.length === 0 && (
+                <div className="text-sm text-gray-500 border border-dashed rounded-lg px-3 py-2">
+                  Không có câu hỏi trong khảo sát này.
+                </div>
+              )}
+
+              {questions.map((question, index) => (
+                <div key={question.id} className="border rounded-lg p-3 bg-gray-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-indigo-600">Câu {index + 1}</span>
+                    <label className="text-xs text-gray-600 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={question.is_required}
+                        onChange={(e) => handleQuestionChange(question.id, "is_required", e.target.checked)}
+                      />
+                      Bắt buộc
+                    </label>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={question.question_text}
+                    onChange={(e) => handleQuestionChange(question.id, "question_text", e.target.value)}
+                    className="w-full rounded-lg border border-indigo-200 px-3 py-2 text-sm"
+                    placeholder="Nội dung câu hỏi"
+                  />
+
+                  <select
+                    value={question.question_type}
+                    onChange={(e) => handleQuestionChange(question.id, "question_type", e.target.value)}
+                    className="w-full rounded-lg border border-indigo-200 px-3 py-2 text-sm"
+                  >
+                    <option value="rating">rating</option>
+                    <option value="multiple_choice">multiple_choice</option>
+                    <option value="text">text</option>
+                  </select>
+
+                  {question.question_type === "multiple_choice" && (
+                    <input
+                      type="text"
+                      value={question.options_text}
+                      onChange={(e) => handleQuestionChange(question.id, "options_text", e.target.value)}
+                      className="w-full rounded-lg border border-indigo-200 px-3 py-2 text-sm"
+                      placeholder="Các lựa chọn, ngăn cách bằng dấu phẩy"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

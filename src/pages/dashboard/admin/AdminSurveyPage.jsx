@@ -39,12 +39,14 @@ const AdminSurveyPage = () => {
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    limit: 5,
+    limit: 10,
     totalPages: 0,
   });
   const [survey, setSurvey] = useState([]);
   const [openUpload, setOpenUpload] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectAllPages, setSelectAllPages] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
   const [cardLoading, setCardLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const hasFetchedCardRef = useRef(false);
@@ -170,7 +172,9 @@ const AdminSurveyPage = () => {
         setCurrentPage(totalPages);
       }
 
-      setSelectedIds([]);
+      if (!selectAllPages) {
+        setSelectedIds([]);
+      }
     } catch (error) {
       console.error("Error fetching survey list:", error);
       toast.error(error.message || "Không thể tải danh sách khảo sát");
@@ -188,8 +192,13 @@ const AdminSurveyPage = () => {
 
   useEffect(() => {
     fetchSurveyList();
-    setSelectedIds([]);
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (selectAllPages && survey.length > 0) {
+      setSelectedIds(survey.filter((item) => !excludedIds.includes(item.id)).map((item) => item.id));
+    }
+  }, [survey, selectAllPages, excludedIds]);
 
   const handlePageChange = (page) => {
     if (tableLoading) return;
@@ -202,7 +211,7 @@ const AdminSurveyPage = () => {
   const resolvedTotalPages = Number(pagination.totalPages) > 0
     ? Number(pagination.totalPages)
     : (Number(pagination.total) > 0
-      ? Math.ceil(Number(pagination.total) / (Number(pagination.limit) || 5))
+      ? Math.ceil(Number(pagination.total) / (Number(pagination.limit) || 10))
       : 1);
 
   // Handle actions
@@ -212,22 +221,81 @@ const AdminSurveyPage = () => {
     closeAddSurveyModal();
   };
 
-  const handleEditSurvey = (surveyData) => {
-    console.log("Updating survey:", surveyData);
-    toast.success("Cập nhật khảo sát thành công!");
-    closeEditSurveyModal();
+  const handleEditSurvey = async (surveyData) => {
+    try {
+      const surveyId = surveyData?.surveyId || modalEditSurvey?.surveyData?.id;
+      if (!surveyId) {
+        toast.error("Không tìm thấy ID khảo sát để cập nhật");
+        return;
+      }
+
+      const payload = {
+        title: surveyData?.title,
+        opens_at: surveyData?.createdAt || undefined,
+        closes_at: surveyData?.endAt || undefined,
+        is_active: surveyData?.status === "Active",
+        questions: Array.isArray(surveyData?.questions)
+          ? surveyData.questions.map((item) => ({
+            id: item.id,
+            question_text: item.question_text,
+            question_type: item.question_type,
+            options: item.question_type === "multiple_choice" ? item.options || [] : null,
+            is_required: item.is_required,
+            order_index: item.order_index,
+          }))
+          : [],
+      };
+
+      const response = await surveyService.updateSurveyInfo(surveyId, payload);
+      toast.success(response?.message || "Cập nhật khảo sát thành công!");
+
+      await fetchSurveyList();
+      await fetchCardSurvey();
+      closeEditSurveyModal();
+    } catch (error) {
+      console.error("Error updating survey:", error);
+      toast.error(error.message || "Không thể cập nhật khảo sát");
+    }
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     const { actionType, surveyData } = modalConfirmAction;
     console.log(`${actionType} survey:`, surveyData);
-    
+
     if (actionType === "delete") {
       toast.success("Xóa khảo sát thành công!");
-    } else if (actionType === "lock") {
-      toast.success("Khóa khảo sát thành công!");
+      closeConfirmActionModal();
+      return;
     }
-    
+
+    if (actionType === "lock") {
+      try {
+        const surveyIds = Array.isArray(surveyData?.ids)
+          ? surveyData.ids
+          : surveyData?.id
+            ? [surveyData.id]
+            : [];
+
+        if (surveyIds.length === 0) {
+          toast.error("Không tìm thấy khảo sát để cập nhật trạng thái");
+          closeConfirmActionModal();
+          return;
+        }
+
+        const response = await surveyService.updateSurveyStatus(surveyIds);
+        toast.success(response?.message || "Cập nhật trạng thái khảo sát thành công!");
+
+        setSelectedIds([]);
+        setSelectAllPages(false);
+        setExcludedIds([]);
+        await fetchSurveyList();
+        await fetchCardSurvey();
+      } catch (error) {
+        console.error("Error updating survey status:", error);
+        toast.error(error.message || "Không thể cập nhật trạng thái khảo sát");
+      }
+    }
+
     closeConfirmActionModal();
   };
 
@@ -246,20 +314,35 @@ const AdminSurveyPage = () => {
   // Checkbox handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(survey.map(item => item.id));
+      const pageIds = survey.map((item) => item.id);
+      setSelectedIds(pageIds);
+      if (selectAllPages) {
+        setExcludedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+      }
     } else {
       setSelectedIds([]);
+      setSelectAllPages(false);
+      setExcludedIds([]);
     }
   };
 
   const handleSelectOne = (id) => {
-    if (selectedIds.includes(id)) {
+    if (selectAllPages) {
+      if (excludedIds.includes(id)) {
+        setExcludedIds((prev) => prev.filter((eid) => eid !== id));
+        setSelectedIds((prev) => [...prev, id]);
+      } else {
+        setExcludedIds((prev) => [...prev, id]);
+        setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+      }
+    } else if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
     } else {
       setSelectedIds([...selectedIds, id]);
     }
   };
 
+  const selectedCount = selectAllPages ? pagination.total - excludedIds.length : selectedIds.length;
   const isAllSelected = survey.length > 0 && selectedIds.length === survey.length;
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < survey.length;
 
@@ -462,15 +545,54 @@ const AdminSurveyPage = () => {
               {/* Actions */}
               <div className="mt-6 flex flex-wrap items-center gap-4 w-full justify-start md:justify-end md:w-auto">
                 <div className="flex flex-wrap items-center gap-2 ">
-                  <button 
-                    onClick={openAddSurveyModal}
-                    className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" 
-                    title="Tạo khảo sát, thủ công"
+                  <button
+                    onClick={async () => {
+                      if (selectedCount === 0) {
+                        toast.warning("Vui lòng chọn ít nhất 1 khảo sát để khóa");
+                        return;
+                      }
+
+                      let surveyIds = [];
+
+                      if (selectAllPages) {
+                        try {
+                          const response = await surveyService.getAllSurvey({
+                            page: 1,
+                            limit: pagination.total,
+                          });
+                          const allItems = Array.isArray(response?.data) ? response.data : [];
+                          surveyIds = allItems
+                            .map((item) => item.id)
+                            .filter(Boolean)
+                            .filter((id) => !excludedIds.includes(id));
+                        } catch (error) {
+                          toast.error(error.message || "Không thể tải danh sách khảo sát đã chọn");
+                          return;
+                        }
+                      } else {
+                        surveyIds = selectedIds.filter(Boolean);
+                      }
+
+                      if (surveyIds.length === 0) {
+                        toast.error("Không tìm thấy khảo sát hợp lệ để khóa");
+                        return;
+                      }
+
+                      openConfirmActionModal("lock", {
+                        ids: surveyIds,
+                        count: surveyIds.length,
+                      });
+                    }}
+                    disabled={tableLoading}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedCount > 0
+                        ? "border-rose-600 bg-rose-600 text-white hover:bg-rose-700 hover:shadow-md focus:ring-rose-500"
+                        : "border-rose-400 text-rose-400 hover:bg-rose-100 hover:shadow-md focus:ring-rose-500"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    title={selectedCount > 0 ? `Khóa ${selectedCount} khảo sát đã chọn` : "Khóa khảo sát"}
                   >
-                    <CirclePlus className="w-5 h-5" />
-                  </button>
-                  <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Khóa khảo sát">
                     <Lock className="w-5 h-5" />
+                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
                   </button>
                   <button
                     onClick={openCourseSurveyListModal}
@@ -483,22 +605,12 @@ const AdminSurveyPage = () => {
                   {/* soạn bộ câu hỏi */}
 
                   <button
-                    onClick={() => setOpenUpload(true)}
-                    className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Upload danh sách học phần cần khảo sát"
-                  >
-                    <CloudUpload className="w-5 h-5" />
-                  </button>
-                  <button
                     className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
                   >
                     <FileSearchIcon className="w-5 h-5" />
                   </button>
                   <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 transition-all duration-200" title="Tải file excel">
                     <FileSpreadsheet className="w-5 h-5" />
-                  </button>
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Tải file mẫu excel">
-                    <File className="w-5 h-5" />
                   </button>
                   <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Xóa bộ lọc">
                     <FilterX className="w-5 h-5" />
@@ -554,14 +666,18 @@ const AdminSurveyPage = () => {
 
 
             {/* Bulk Actions Bar */}
-            {selectedIds.length > 0 && (
+            {selectedCount > 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-blue-900">
-                    Đã chọn {selectedIds.length} mục
+                    Đã chọn {selectedCount} mục
                   </span>
                   <button
-                    onClick={() => setSelectedIds([])}
+                    onClick={() => {
+                      setSelectedIds([]);
+                      setSelectAllPages(false);
+                      setExcludedIds([]);
+                    }}
                     className="text-sm text-blue-600 hover:text-blue-800 underline"
                   >
                     Bỏ chọn tất cả
@@ -570,7 +686,7 @@ const AdminSurveyPage = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      console.log("Export selected:", selectedIds);
+                      console.log("Export selected:", selectedIds, "selectAllPages:", selectAllPages, "excludedIds:", excludedIds);
                       toast.success("Xuất dữ liệu thành công");
                     }}
                     className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
@@ -584,7 +700,7 @@ const AdminSurveyPage = () => {
                         "delete",
                         {
                           ids: selectedIds,
-                          count: selectedIds.length
+                          count: selectedCount
                         }
                       );
                     }}
@@ -594,6 +710,33 @@ const AdminSurveyPage = () => {
                     Xóa đã chọn
                   </button>
                 </div>
+              </div>
+            )}
+
+            {isAllSelected && !selectAllPages && pagination.total > survey.length && (
+              <div className="bg-blue-50 border-x border-b border-blue-200 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedIds.length}</strong> khảo sát trên trang này.{" "}
+                <button
+                  onClick={() => setSelectAllPages(true)}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Chọn tất cả {pagination.total} khảo sát trong tất cả trang
+                </button>
+              </div>
+            )}
+            {selectAllPages && (
+              <div className="bg-blue-100 border-x border-b border-blue-300 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedCount}</strong> khảo sát trong tất cả trang.{" "}
+                <button
+                  onClick={() => {
+                    setSelectAllPages(false);
+                    setSelectedIds([]);
+                    setExcludedIds([]);
+                  }}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Bỏ chọn tất cả
+                </button>
               </div>
             )}
 
