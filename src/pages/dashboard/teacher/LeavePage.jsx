@@ -1,86 +1,133 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Calendar,
-  Filter,
   Eye,
   CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
-  ChevronDown,
-  TrendingUp,
   Star, ArrowDown, ArrowUp, FileSpreadsheet, File, FilterX, FileSearchIcon
 } from "lucide-react";
+import { useLeaveDashboard } from "@contexts/LeaveDashboardContext";
+
+const toLower = (value) => String(value || "").toLowerCase().trim();
 
 export default function LeavePage() {
   const [selectedSemester, setSelectedSemester] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [expanded, setExpanded] = useState(false);
 
-  const semesters = [
-    { value: "all", label: "Tất cả học kỳ" },
-    { value: "hk1-2024-2025", label: "HK1 2024-2025" },
-    { value: "hk2-2023-2024", label: "HK2 2023-2024" },
-    { value: "hk1-2023-2024", label: "HK1 2023-2024" },
-  ];
+  const {
+    leaves,
+    statistics,
+    semesters: semesterValues,
+    loading,
+    error,
+    fetchLeaveDashboard,
+  } = useLeaveDashboard();
 
-  // Mock data
-  const leaves = [
-    {
-      id: 1,
-      mssv: "21010611",
-      hoTen: "Nguyễn Văn An",
-      lop: "20TCLC_DT3",
-      hocPhan: "Lập trình thiết bị di động",
-      ngayNghi: "2025-04-05",
-      lyDo: "Khám bệnh (có giấy bệnh viện)",
-      trangThai: "pending",
-      ghiChu: "",
-      ky: "hk1-2024-2025",
-    },
-    {
-      id: 2,
-      mssv: "21010612",
-      hoTen: "Trần Thị Bình",
-      lop: "20TCLC_DT3",
-      hocPhan: "Lập trình thiết bị di động",
-      ngayNghi: "2025-04-03",
-      lyDo: "Tang lễ ông nội",
-      trangThai: "approved",
-      ghiChu: "Đã duyệt",
-      ky: "hk1-2024-2025",
-    },
-    {
-      id: 3,
-      mssv: "21010613",
-      hoTen: "Lê Văn Cường",
-      lop: "21TCLC_DT1",
-      hocPhan: "Phát triển ứng dụng Web",
-      ngayNghi: "2025-03-28",
-      lyDo: "Xe hỏng trên đường đi học",
-      trangThai: "rejected",
-      ghiChu: "Không hợp lệ (không có ảnh rõ ràng)",
-      ky: "hk1-2024-2025",
-    },
-    {
-      id: 4,
-      mssv: "21010614",
-      hoTen: "Phạm Thị Dung",
-      lop: "20TCLC_DT4",
-      hocPhan: "Cơ sở dữ liệu",
-      ngayNghi: "2024-12-15",
-      lyDo: "Ốm nặng – Nghỉ 3 buổi",
-      trangThai: "approved",
-      ghiChu: "",
-      ky: "hk2-2023-2024",
-    },
-  ];
-
-  const filtered = leaves.filter((item) => {
-    if (selectedSemester !== "all" && item.ky !== selectedSemester)
-      return false;
-    if (statusFilter !== "all" && item.trangThai !== statusFilter) return false;
-    return true;
+  const [filters, setFilters] = useState({
+    leaveDate: "",
+    courseCode: "",
+    courseName: "",
+    className: "",
+    studentCode: "",
+    studentName: "",
   });
+
+  const [appliedFilters, setAppliedFilters] = useState({
+    leaveDate: "",
+    courseCode: "",
+    courseName: "",
+    className: "",
+    studentCode: "",
+    studentName: "",
+  });
+
+  useEffect(() => {
+    fetchLeaveDashboard();
+  }, [fetchLeaveDashboard]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSearch = () => {
+    setAppliedFilters(filters);
+  };
+
+  const handleResetFilters = () => {
+    const resetValue = {
+      leaveDate: "",
+      courseCode: "",
+      courseName: "",
+      className: "",
+      studentCode: "",
+      studentName: "",
+    };
+
+    setSelectedSemester("all");
+    setStatusFilter("all");
+    setFilters(resetValue);
+    setAppliedFilters(resetValue);
+  };
+
+  const filtered = useMemo(() => {
+    return leaves.filter((item) => {
+      const semester = item?.classSession?.courseSection?.semester || "";
+      const status = item?.status || "";
+      const leaveDate = item?.classSession?.class_date || "";
+      const courseCode = item?.classSession?.courseSection?.code || "";
+      const courseName = item?.classSession?.courseSection?.name || "";
+      const className = item?.student?.class_name || "";
+      const studentCode = item?.student?.student_code || "";
+      const studentName = item?.student?.full_name || "";
+
+      if (selectedSemester !== "all" && semester !== selectedSemester) {
+        return false;
+      }
+
+      if (statusFilter !== "all" && status !== statusFilter) {
+        return false;
+      }
+
+      if (appliedFilters.leaveDate && leaveDate !== appliedFilters.leaveDate) {
+        return false;
+      }
+
+      if (appliedFilters.courseCode && !toLower(courseCode).includes(toLower(appliedFilters.courseCode))) {
+        return false;
+      }
+
+      if ( appliedFilters.courseName && !toLower(courseName).includes(toLower(appliedFilters.courseName))    ) {
+        return false;
+      }
+
+      if (appliedFilters.className && !toLower(className).includes(toLower(appliedFilters.className))) {
+        return false;
+      }
+
+      if ( appliedFilters.studentCode && !toLower(studentCode).includes(toLower(appliedFilters.studentCode))) {
+        return false;
+      }
+
+      if ( appliedFilters.studentName && !toLower(studentName).includes(toLower(appliedFilters.studentName)) ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [appliedFilters, leaves, selectedSemester, statusFilter]);
+
+  const semesterOptions = useMemo(() => {
+    const values = Array.isArray(semesterValues) ? semesterValues
+      : [...new Set(leaves.map((item) => item?.classSession?.courseSection?.semester).filter(Boolean))];
+
+    return [
+      { value: "all", label: "Tất cả học kỳ" },
+      ...values.map((semester) => ({ value: semester, label: semester })),
+    ];
+  }, [leaves, semesterValues]);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -107,7 +154,6 @@ export default function LeavePage() {
         return null;
     }
   };
-  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -136,7 +182,8 @@ export default function LeavePage() {
 
             <div className="bg-blue-50 rounded-xl p-4">
               <p className="text-3xl font-bold text-blue-600">
-                {leaves.length}                </p>
+                {statistics.total}
+              </p>
               <p className="text-sm text-gray-600 mt-1">
                 Tổng đơn xin
               </p>
@@ -144,7 +191,7 @@ export default function LeavePage() {
 
             <div className="bg-emerald-50 rounded-xl p-4">
               <p className="text-3xl font-bold text-emerald-600">
-                {leaves.filter((l) => l.trangThai === "pending").length}
+                {statistics.pending}
               </p>
               <p className="text-sm text-gray-600 mt-1">
                 Chờ duyệt đơn
@@ -153,7 +200,7 @@ export default function LeavePage() {
 
             <div className="bg-amber-50 rounded-xl p-4">
               <p className="text-3xl font-bold text-amber-600 flex items-center justify-center gap-1">
-                {leaves.filter((l) => l.trangThai === "approved").length}
+                {statistics.approved}
                 <Star size={18} />
               </p>
               <p className="text-sm text-gray-600 mt-1">
@@ -163,7 +210,7 @@ export default function LeavePage() {
 
             <div className="bg-purple-50 rounded-xl p-4">
               <p className="text-3xl font-bold text-purple-600">
-                {leaves.filter((l) => l.trangThai === "rejected").length}
+                {statistics.rejected}
               </p>
               <p className="text-sm text-gray-600 mt-1">
                 Từ chối
@@ -211,7 +258,7 @@ export default function LeavePage() {
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(e.target.value)}
               className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              {semesters.map((s) => (
+              {semesterOptions.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
                 </option>
@@ -239,6 +286,8 @@ export default function LeavePage() {
             </label>
             <input
               type="date"
+              value={filters.leaveDate}
+              onChange={(e) => handleFilterChange("leaveDate", e.target.value)}
               placeholder="Ví dụ: 05/04/2025"
               className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -251,6 +300,8 @@ export default function LeavePage() {
             </label>
             <input
               type="text"
+              value={filters.courseCode}
+              onChange={(e) => handleFilterChange("courseCode", e.target.value)}
               placeholder="Ví dụ: 4203001549"
               className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -264,6 +315,8 @@ export default function LeavePage() {
                 </label>
                 <input
                   type="text"
+                  value={filters.courseName}
+                  onChange={(e) => handleFilterChange("courseName", e.target.value)}
                   placeholder="Ví dụ: Lập trình thiết bị di động"
                   className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -275,6 +328,8 @@ export default function LeavePage() {
                 </label>
                 <input
                   type="text"
+                  value={filters.className}
+                  onChange={(e) => handleFilterChange("className", e.target.value)}
                   placeholder="Ví dụ: 20TCLC_DT3"
                   className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -285,7 +340,9 @@ export default function LeavePage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Ví dụ: 20TCLC_DT3"
+                  value={filters.studentCode}
+                  onChange={(e) => handleFilterChange("studentCode", e.target.value)}
+                  placeholder="Ví dụ: 21210001"
                   className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -295,7 +352,9 @@ export default function LeavePage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Ví dụ: 20TCLC_DT3"
+                  value={filters.studentName}
+                  onChange={(e) => handleFilterChange("studentName", e.target.value)}
+                  placeholder="Ví dụ: Nguyễn Văn Anh"
                   className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -309,6 +368,7 @@ export default function LeavePage() {
           <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
             {/* Xóa bộ lọc */}
             <button
+              onClick={handleSearch}
               className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
             >
               <FileSearchIcon className="w-5 h-5" />
@@ -322,15 +382,13 @@ export default function LeavePage() {
               <File className="w-5 h-5" />
               Tải PDF
             </button>
-            <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+            <button
+              onClick={handleResetFilters}
+              className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200"
+            >
               <FilterX className="w-5 h-5" />
               Xóa bộ lọc
             </button>
-
-
-
-
-
 
           </div>
 
@@ -340,6 +398,11 @@ export default function LeavePage() {
       <div className="mx-auto">
         <div className="bg-white shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
+            {error && (
+              <div className="mx-6 mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
@@ -365,13 +428,29 @@ export default function LeavePage() {
               </thead>
 
               <tbody className="divide-y divide-gray-200">
-                {filtered.map((item) => (
+                {loading && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      Đang tải dữ liệu...
+                    </td>
+                  </tr>
+                )}
+
+                {!loading && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      Không có đơn xin nghỉ phù hợp với bộ lọc
+                    </td>
+                  </tr>
+                )}
+
+                {!loading && filtered.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 transition">
                     {/* Sinh viên */}
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium">{item.hoTen}</p>
-                        <p className="text-sm text-gray-500">{item.mssv}</p>
+                        <p className="font-medium">{item?.student?.full_name || '-'}</p>
+                        <p className="text-sm text-gray-500">{item?.student?.student_code || '-'}</p>
                       </div>
                     </td>
 
@@ -379,24 +458,24 @@ export default function LeavePage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 text-sm">
                         <Calendar size={14} />
-                        {new Date(item.ngayNghi).toLocaleDateString("vi-VN")}
+                        {item?.classSession?.class_date ? new Date(item.classSession.class_date).toLocaleDateString("vi-VN") : "-"}
                       </div>
                     </td>
 
                     {/* Học phần */}
                     <td className="px-6 py-4">
-                      <p className="font-medium text-sm">{item.hocPhan}</p>
-                      <p className="text-xs text-gray-500">{item.lop}</p>
+                      <p className="font-medium text-sm">{item?.classSession?.courseSection?.name || '-'}</p>
+                      <p className="text-xs text-gray-500">{item?.student?.class_name || '-'}</p>
                     </td>
 
                     {/* Lý do */}
                     <td className="px-6 py-4">
                       <p className="text-sm italic text-gray-700 line-clamp-2">
-                        {item.lyDo}
+                        {item?.note || '-'}
                       </p>
-                      {item.ghiChu && (
+                      {(item?.status === "approved" || item?.status === "rejected") && (
                         <p className="text-xs italic text-gray-500 mt-1">
-                          Ghi chú: {item.ghiChu}
+                          Ghi chú: {item?.status === "approved" ? "Đã duyệt" : (item?.rejected_reason || "Từ chối")}
                         </p>
                       )}
                     </td>
@@ -405,13 +484,13 @@ export default function LeavePage() {
                     <td className="px-6 py-4 text-center">
                       <div
                         className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium ${getStatusBadge(
-                          item.trangThai
+                          item?.status
                         )}`}
                       >
-                        {getStatusIcon(item.trangThai)}
-                        {item.trangThai === "approved"
+                        {getStatusIcon(item?.status)}
+                        {item?.status === "approved"
                           ? "Đã duyệt"
-                          : item.trangThai === "rejected"
+                          : item?.status === "rejected"
                             ? "Từ chối"
                             : "Chờ duyệt"}
                       </div>
