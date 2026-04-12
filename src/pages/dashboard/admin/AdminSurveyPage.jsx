@@ -39,12 +39,14 @@ const AdminSurveyPage = () => {
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    limit: 5,
+    limit: 10,
     totalPages: 0,
   });
   const [survey, setSurvey] = useState([]);
   const [openUpload, setOpenUpload] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectAllPages, setSelectAllPages] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
   const [cardLoading, setCardLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const hasFetchedCardRef = useRef(false);
@@ -170,7 +172,9 @@ const AdminSurveyPage = () => {
         setCurrentPage(totalPages);
       }
 
-      setSelectedIds([]);
+      if (!selectAllPages) {
+        setSelectedIds([]);
+      }
     } catch (error) {
       console.error("Error fetching survey list:", error);
       toast.error(error.message || "Không thể tải danh sách khảo sát");
@@ -188,8 +192,13 @@ const AdminSurveyPage = () => {
 
   useEffect(() => {
     fetchSurveyList();
-    setSelectedIds([]);
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (selectAllPages && survey.length > 0) {
+      setSelectedIds(survey.filter((item) => !excludedIds.includes(item.id)).map((item) => item.id));
+    }
+  }, [survey, selectAllPages, excludedIds]);
 
   const handlePageChange = (page) => {
     if (tableLoading) return;
@@ -202,7 +211,7 @@ const AdminSurveyPage = () => {
   const resolvedTotalPages = Number(pagination.totalPages) > 0
     ? Number(pagination.totalPages)
     : (Number(pagination.total) > 0
-      ? Math.ceil(Number(pagination.total) / (Number(pagination.limit) || 5))
+      ? Math.ceil(Number(pagination.total) / (Number(pagination.limit) || 10))
       : 1);
 
   // Handle actions
@@ -246,20 +255,35 @@ const AdminSurveyPage = () => {
   // Checkbox handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(survey.map(item => item.id));
+      const pageIds = survey.map((item) => item.id);
+      setSelectedIds(pageIds);
+      if (selectAllPages) {
+        setExcludedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+      }
     } else {
       setSelectedIds([]);
+      setSelectAllPages(false);
+      setExcludedIds([]);
     }
   };
 
   const handleSelectOne = (id) => {
-    if (selectedIds.includes(id)) {
+    if (selectAllPages) {
+      if (excludedIds.includes(id)) {
+        setExcludedIds((prev) => prev.filter((eid) => eid !== id));
+        setSelectedIds((prev) => [...prev, id]);
+      } else {
+        setExcludedIds((prev) => [...prev, id]);
+        setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+      }
+    } else if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
     } else {
       setSelectedIds([...selectedIds, id]);
     }
   };
 
+  const selectedCount = selectAllPages ? pagination.total - excludedIds.length : selectedIds.length;
   const isAllSelected = survey.length > 0 && selectedIds.length === survey.length;
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < survey.length;
 
@@ -554,14 +578,18 @@ const AdminSurveyPage = () => {
 
 
             {/* Bulk Actions Bar */}
-            {selectedIds.length > 0 && (
+            {selectedCount > 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-blue-900">
-                    Đã chọn {selectedIds.length} mục
+                    Đã chọn {selectedCount} mục
                   </span>
                   <button
-                    onClick={() => setSelectedIds([])}
+                    onClick={() => {
+                      setSelectedIds([]);
+                      setSelectAllPages(false);
+                      setExcludedIds([]);
+                    }}
                     className="text-sm text-blue-600 hover:text-blue-800 underline"
                   >
                     Bỏ chọn tất cả
@@ -570,7 +598,7 @@ const AdminSurveyPage = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      console.log("Export selected:", selectedIds);
+                      console.log("Export selected:", selectedIds, "selectAllPages:", selectAllPages, "excludedIds:", excludedIds);
                       toast.success("Xuất dữ liệu thành công");
                     }}
                     className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center gap-2"
@@ -584,7 +612,7 @@ const AdminSurveyPage = () => {
                         "delete",
                         {
                           ids: selectedIds,
-                          count: selectedIds.length
+                          count: selectedCount
                         }
                       );
                     }}
@@ -594,6 +622,33 @@ const AdminSurveyPage = () => {
                     Xóa đã chọn
                   </button>
                 </div>
+              </div>
+            )}
+
+            {isAllSelected && !selectAllPages && pagination.total > survey.length && (
+              <div className="bg-blue-50 border-x border-b border-blue-200 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedIds.length}</strong> khảo sát trên trang này.{" "}
+                <button
+                  onClick={() => setSelectAllPages(true)}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Chọn tất cả {pagination.total} khảo sát trong tất cả trang
+                </button>
+              </div>
+            )}
+            {selectAllPages && (
+              <div className="bg-blue-100 border-x border-b border-blue-300 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedCount}</strong> khảo sát trong tất cả trang.{" "}
+                <button
+                  onClick={() => {
+                    setSelectAllPages(false);
+                    setSelectedIds([]);
+                    setExcludedIds([]);
+                  }}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Bỏ chọn tất cả
+                </button>
               </div>
             )}
 

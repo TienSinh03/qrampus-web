@@ -11,6 +11,9 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [rows, setRows] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectAllPages, setSelectAllPages] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -42,6 +45,8 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
     surveyActive: "null",
   };
 
+  const getRowKey = (item) => `${item.course_section_id}-${item.practice_group_id || "LT"}`;
+
   const fetchCourseSections = async (page = pagination.page, nextFilters = appliedFilters) => {
     try {
       setLoading(true);
@@ -64,6 +69,10 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
         total,
         totalPages,
       });
+
+      if (!selectAllPages) {
+        setSelectedIds([]);
+      }
     } catch (error) {
       console.error("Error fetching course sections with surveys:", error);
       toast.error(error.message || "Không thể tải danh sách học phần");
@@ -80,20 +89,35 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  useEffect(() => {
+    if (selectAllPages && rows.length > 0) {
+      const pageSelectedIds = rows
+        .filter((item) => !excludedIds.includes(getRowKey(item)))
+        .map((item) => getRowKey(item));
+      setSelectedIds(pageSelectedIds);
+    }
+  }, [rows, selectAllPages, excludedIds]);
+
   const handleApplyFilters = () => {
     setAppliedFilters(filters);
+    setSelectedIds([]);
+    setSelectAllPages(false);
+    setExcludedIds([]);
     fetchCourseSections(1, filters);
   };
 
   const handleClearFilters = () => {
     setFilters(defaultFilters);
     setAppliedFilters(defaultFilters);
+    setSelectedIds([]);
+    setSelectAllPages(false);
+    setExcludedIds([]);
     fetchCourseSections(1, defaultFilters);
   };
 
   const handleOpenBulkModal = () => {
-    if (pendingRows.length === 0) {
-      toast.warning("Không có dòng nào cần tạo khảo sát ở trang hiện tại");
+    if (selectedCount === 0) {
+      toast.warning("Vui lòng chọn ít nhất 1 dòng để tạo khảo sát hàng loạt");
       return;
     }
     setIsBulkModalOpen(true);
@@ -167,13 +191,34 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
       return;
     }
 
-    const targets = pendingRows.map((item) => ({
-      course_section_id: item.course_section_id,
-      practice_group_id: item.practice_group_id || null,
-    }));
+    let sourceRows = [];
+
+    if (selectAllPages) {
+      try {
+        const response = await surveyService.getCourseSectionsWithSurveys({
+          page: 1,
+          limit: pagination.total,
+          ...appliedFilters,
+        });
+        const allRows = Array.isArray(response?.data) ? response.data : [];
+        sourceRows = allRows.filter((item) => !excludedIds.includes(getRowKey(item)));
+      } catch (error) {
+        toast.error(error.message || "Không thể tải danh sách đã chọn để tạo khảo sát");
+        return;
+      }
+    } else {
+      sourceRows = rows.filter((item) => selectedIds.includes(getRowKey(item)));
+    }
+
+    const targets = sourceRows
+      .filter((item) => !item.survey_id)
+      .map((item) => ({
+        course_section_id: item.course_section_id,
+        practice_group_id: item.practice_group_id || null,
+      }));
 
     if (targets.length === 0) {
-      toast.warning("Không có dòng nào cần tạo khảo sát");
+      toast.warning("Các dòng đã chọn đều đã có khảo sát");
       return;
     }
 
@@ -197,6 +242,9 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
       toast.success(response?.message || `Tạo thành công ${created} khảo sát`);
 
       await fetchCourseSections(1, appliedFilters);
+      setSelectedIds([]);
+      setSelectAllPages(false);
+      setExcludedIds([]);
       handleCloseBulkModal();
     } catch (error) {
       toast.error(error.message || "Không thể tạo khảo sát hàng loạt");
@@ -300,6 +348,36 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
     fetchCourseSections(nextPage);
   };
 
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const pageIds = rows.map((item) => getRowKey(item));
+      setSelectedIds(pageIds);
+      if (selectAllPages) {
+        setExcludedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+      }
+    } else {
+      setSelectedIds([]);
+      setSelectAllPages(false);
+      setExcludedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    if (selectAllPages) {
+      if (excludedIds.includes(id)) {
+        setExcludedIds((prev) => prev.filter((eid) => eid !== id));
+        setSelectedIds((prev) => [...prev, id]);
+      } else {
+        setExcludedIds((prev) => [...prev, id]);
+        setSelectedIds((prev) => prev.filter((sid) => sid !== id));
+      }
+    } else if (selectedIds.includes(id)) {
+      setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id));
+    } else {
+      setSelectedIds((prev) => [...prev, id]);
+    }
+  };
+
   const statusBadge = (item) => {
     if (!item.survey_id) {
       return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">Chưa tạo</span>;
@@ -312,6 +390,9 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
 
   const tableRows = useMemo(() => rows, [rows]);
   const pendingRows = useMemo(() => rows.filter((item) => !item.survey_id), [rows]);
+  const selectedCount = selectAllPages ? pagination.total - excludedIds.length : selectedIds.length;
+  const isAllSelected = tableRows.length > 0 && selectedIds.length === tableRows.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < tableRows.length;
 
   if (!isOpen) return null;
 
@@ -413,9 +494,48 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
           </div>
 
           <div className="max-h-[55vh] overflow-auto">
+            {isAllSelected && !selectAllPages && pagination.total > tableRows.length && (
+              <div className="bg-blue-50 border-b border-blue-200 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedIds.length}</strong> dòng trên trang này.{" "}
+                <button
+                  onClick={() => setSelectAllPages(true)}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Chọn tất cả {pagination.total} dòng trong tất cả trang
+                </button>
+              </div>
+            )}
+            {selectAllPages && (
+              <div className="bg-blue-100 border-b border-blue-300 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedCount}</strong> dòng trong tất cả trang.{" "}
+                <button
+                  onClick={() => {
+                    setSelectAllPages(false);
+                    setSelectedIds([]);
+                    setExcludedIds([]);
+                  }}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Bỏ chọn tất cả
+                </button>
+              </div>
+            )}
             <table className="w-full text-sm border-collapse">
               <thead className="sticky top-0 bg-gray-100 z-10">
                 <tr className="border-b text-gray-600 uppercase text-xs">
+                  <th className="px-3 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      className="cursor-pointer"
+                      checked={isAllSelected}
+                      ref={(input) => {
+                        if (input) {
+                          input.indeterminate = isSomeSelected;
+                        }
+                      }}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
                   <th className="px-3 py-3 text-left">Mã học phần</th>
                   <th className="px-3 py-3 text-left">Tên học phần</th>
                   <th className="px-3 py-3 text-left">Học kỳ</th>
@@ -429,7 +549,7 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center">
+                    <td colSpan={9} className="py-8 text-center">
                       <LoadingSpinner text="Đang tải danh sách..." color="blue" />
                     </td>
                   </tr>
@@ -439,15 +559,28 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
                   <EmptyState
                     title="Không có dữ liệu học phần"
                     description="Không tìm thấy học phần phù hợp với bộ lọc hiện tại."
-                    colSpan={8}
+                    colSpan={9}
                     onAction={() => fetchCourseSections(1, appliedFilters)}
                     actionLabel="Tải lại"
                   />
                 )}
 
                 {!loading &&
-                  tableRows.map((item) => (
-                    <tr key={`${item.course_section_id}-${item.practice_group_id || "LT"}`} className="border-b hover:bg-slate-50">
+                  tableRows.map((item) => {
+                    const rowKey = getRowKey(item);
+                    return (
+                    <tr
+                      key={rowKey}
+                      className={`border-b hover:bg-slate-50 ${selectedIds.includes(rowKey) ? "bg-blue-50" : ""}`}
+                    >
+                      <td className="px-3 py-3">
+                        <input
+                          type="checkbox"
+                          className="cursor-pointer"
+                          checked={selectedIds.includes(rowKey)}
+                          onChange={() => handleSelectOne(rowKey)}
+                        />
+                      </td>
                       <td className="px-3 py-3">{item.course_code}</td>
                       <td className="px-3 py-3 max-w-[320px] truncate" title={item.course_name}>{item.course_name}</td>
                       <td className="px-3 py-3">{item.semester}</td>
@@ -457,7 +590,7 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
                       <td className="px-3 py-3 text-right">{Number(item.total_students || 0)}</td>
                       <td className="px-3 py-3 text-center">{statusBadge(item)}</td>
                     </tr>
-                  ))}
+                  )})}
               </tbody>
             </table>
           </div>
@@ -497,7 +630,8 @@ const ModalCourseSurveyList = ({ isOpen, onClose }) => {
 
             <div className="px-6 py-5 space-y-4">
               <div className="text-sm text-blue-700 bg-blue-50 rounded-lg px-3 py-2">
-                Số lớp chưa có khảo sát trong trang hiện tại: <span className="font-semibold">{pendingRows.length}</span>
+                Đã chọn: <span className="font-semibold">{selectedCount}</span> dòng.
+                Lớp chưa có khảo sát trong trang hiện tại: <span className="font-semibold">{pendingRows.length}</span>
               </div>
 
               <div>
