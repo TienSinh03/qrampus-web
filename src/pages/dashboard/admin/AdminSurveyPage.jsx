@@ -221,22 +221,81 @@ const AdminSurveyPage = () => {
     closeAddSurveyModal();
   };
 
-  const handleEditSurvey = (surveyData) => {
-    console.log("Updating survey:", surveyData);
-    toast.success("Cập nhật khảo sát thành công!");
-    closeEditSurveyModal();
+  const handleEditSurvey = async (surveyData) => {
+    try {
+      const surveyId = surveyData?.surveyId || modalEditSurvey?.surveyData?.id;
+      if (!surveyId) {
+        toast.error("Không tìm thấy ID khảo sát để cập nhật");
+        return;
+      }
+
+      const payload = {
+        title: surveyData?.title,
+        opens_at: surveyData?.createdAt || undefined,
+        closes_at: surveyData?.endAt || undefined,
+        is_active: surveyData?.status === "Active",
+        questions: Array.isArray(surveyData?.questions)
+          ? surveyData.questions.map((item) => ({
+            id: item.id,
+            question_text: item.question_text,
+            question_type: item.question_type,
+            options: item.question_type === "multiple_choice" ? item.options || [] : null,
+            is_required: item.is_required,
+            order_index: item.order_index,
+          }))
+          : [],
+      };
+
+      const response = await surveyService.updateSurveyInfo(surveyId, payload);
+      toast.success(response?.message || "Cập nhật khảo sát thành công!");
+
+      await fetchSurveyList();
+      await fetchCardSurvey();
+      closeEditSurveyModal();
+    } catch (error) {
+      console.error("Error updating survey:", error);
+      toast.error(error.message || "Không thể cập nhật khảo sát");
+    }
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     const { actionType, surveyData } = modalConfirmAction;
     console.log(`${actionType} survey:`, surveyData);
-    
+
     if (actionType === "delete") {
       toast.success("Xóa khảo sát thành công!");
-    } else if (actionType === "lock") {
-      toast.success("Khóa khảo sát thành công!");
+      closeConfirmActionModal();
+      return;
     }
-    
+
+    if (actionType === "lock") {
+      try {
+        const surveyIds = Array.isArray(surveyData?.ids)
+          ? surveyData.ids
+          : surveyData?.id
+            ? [surveyData.id]
+            : [];
+
+        if (surveyIds.length === 0) {
+          toast.error("Không tìm thấy khảo sát để cập nhật trạng thái");
+          closeConfirmActionModal();
+          return;
+        }
+
+        const response = await surveyService.updateSurveyStatus(surveyIds);
+        toast.success(response?.message || "Cập nhật trạng thái khảo sát thành công!");
+
+        setSelectedIds([]);
+        setSelectAllPages(false);
+        setExcludedIds([]);
+        await fetchSurveyList();
+        await fetchCardSurvey();
+      } catch (error) {
+        console.error("Error updating survey status:", error);
+        toast.error(error.message || "Không thể cập nhật trạng thái khảo sát");
+      }
+    }
+
     closeConfirmActionModal();
   };
 
@@ -486,15 +545,54 @@ const AdminSurveyPage = () => {
               {/* Actions */}
               <div className="mt-6 flex flex-wrap items-center gap-4 w-full justify-start md:justify-end md:w-auto">
                 <div className="flex flex-wrap items-center gap-2 ">
-                  <button 
-                    onClick={openAddSurveyModal}
-                    className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200" 
-                    title="Tạo khảo sát, thủ công"
+                  <button
+                    onClick={async () => {
+                      if (selectedCount === 0) {
+                        toast.warning("Vui lòng chọn ít nhất 1 khảo sát để khóa");
+                        return;
+                      }
+
+                      let surveyIds = [];
+
+                      if (selectAllPages) {
+                        try {
+                          const response = await surveyService.getAllSurvey({
+                            page: 1,
+                            limit: pagination.total,
+                          });
+                          const allItems = Array.isArray(response?.data) ? response.data : [];
+                          surveyIds = allItems
+                            .map((item) => item.id)
+                            .filter(Boolean)
+                            .filter((id) => !excludedIds.includes(id));
+                        } catch (error) {
+                          toast.error(error.message || "Không thể tải danh sách khảo sát đã chọn");
+                          return;
+                        }
+                      } else {
+                        surveyIds = selectedIds.filter(Boolean);
+                      }
+
+                      if (surveyIds.length === 0) {
+                        toast.error("Không tìm thấy khảo sát hợp lệ để khóa");
+                        return;
+                      }
+
+                      openConfirmActionModal("lock", {
+                        ids: surveyIds,
+                        count: surveyIds.length,
+                      });
+                    }}
+                    disabled={tableLoading}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedCount > 0
+                        ? "border-rose-600 bg-rose-600 text-white hover:bg-rose-700 hover:shadow-md focus:ring-rose-500"
+                        : "border-rose-400 text-rose-400 hover:bg-rose-100 hover:shadow-md focus:ring-rose-500"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    title={selectedCount > 0 ? `Khóa ${selectedCount} khảo sát đã chọn` : "Khóa khảo sát"}
                   >
-                    <CirclePlus className="w-5 h-5" />
-                  </button>
-                  <button className="flex items-center gap-2 border border-rose-400 text-rose-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-rose-500 focus:ring-offset-1 transition-all duration-200" title="Khóa khảo sát">
                     <Lock className="w-5 h-5" />
+                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
                   </button>
                   <button
                     onClick={openCourseSurveyListModal}
@@ -507,22 +605,12 @@ const AdminSurveyPage = () => {
                   {/* soạn bộ câu hỏi */}
 
                   <button
-                    onClick={() => setOpenUpload(true)}
-                    className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Upload danh sách học phần cần khảo sát"
-                  >
-                    <CloudUpload className="w-5 h-5" />
-                  </button>
-                  <button
                     className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" title="Tìm kiếm"
                   >
                     <FileSearchIcon className="w-5 h-5" />
                   </button>
                   <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 transition-all duration-200" title="Tải file excel">
                     <FileSpreadsheet className="w-5 h-5" />
-                  </button>
-                  <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Tải file mẫu excel">
-                    <File className="w-5 h-5" />
                   </button>
                   <button className="flex items-center gap-2 border border-gray-300 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200" title="Xóa bộ lọc">
                     <FilterX className="w-5 h-5" />
