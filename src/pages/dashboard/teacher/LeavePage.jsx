@@ -9,6 +9,7 @@ import {
   Star, ArrowDown, ArrowUp, FileSpreadsheet, File, FilterX, FileSearchIcon
 } from "lucide-react";
 import { useLeaveDashboard } from "@contexts/LeaveDashboardContext";
+import ModalViewLeaveRequest from "@components/modal/ModalViewLeaveRequest";
 
 const toLower = (value) => String(value || "").toLowerCase().trim();
 
@@ -33,6 +34,9 @@ export default function LeavePage() {
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState("");
+  
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedDetailLeave, setSelectedDetailLeave] = useState(null);
 
   const [filters, setFilters] = useState({
     leaveDate: "",
@@ -100,6 +104,16 @@ export default function LeavePage() {
     setSelectedLeave(null);
     setRejectReason("");
     setRejectError("");
+  };
+
+  const openDetailModal = (leaveItem) => {
+    setSelectedDetailLeave(leaveItem || null);
+    setShowDetailModal(true);
+  };
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedDetailLeave(null);
   };
 
   /**
@@ -598,7 +612,11 @@ export default function LeavePage() {
                           </>
                         )}
 
-                        <button className="p-2 rounded-full hover:bg-gray-100 transition" title="Xem chi tiết">
+                        <button
+                          onClick={() => openDetailModal(item)}
+                          className="p-2 rounded-full hover:bg-gray-100 transition"
+                          title="Xem chi tiết"
+                        >
                           <Eye size={18} />
                         </button>
 
@@ -659,6 +677,12 @@ export default function LeavePage() {
           </div>
         </div>
       )}
+
+      <ModalViewLeaveRequest
+        isOpen={showDetailModal}
+        onClose={closeDetailModal}
+        leaveData={selectedDetailLeave}
+      />
     </div>
   );
 }
