@@ -24,7 +24,15 @@ export default function LeavePage() {
     loading,
     error,
     fetchLeaveDashboard,
+    approveLeaveRequest,
+    rejectLeaveRequest,
+    actionLoadingId,
   } = useLeaveDashboard();
+
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectError, setRejectError] = useState("");
 
   const [filters, setFilters] = useState({
     leaveDate: "",
@@ -70,6 +78,74 @@ export default function LeavePage() {
     setStatusFilter("all");
     setFilters(resetValue);
     setAppliedFilters(resetValue);
+  };
+
+  const openRejectModal = (leaveItem) => {
+    if (!leaveItem?.id || leaveItem?.status !== "pending") {
+      return;
+    }
+
+    setSelectedLeave(leaveItem);
+    setRejectReason("");
+    setRejectError("");
+    setShowRejectModal(true);
+  };
+
+  const closeRejectModal = () => {
+    if (actionLoadingId) {
+      return;
+    }
+
+    setShowRejectModal(false);
+    setSelectedLeave(null);
+    setRejectReason("");
+    setRejectError("");
+  };
+
+  /**
+   * Duyệt đơn xin nghỉ
+   */
+  const handleApproveLeave = async (leaveItem) => {
+    if (!leaveItem?.id || leaveItem?.status !== "pending") {
+      return;
+    }
+
+    const confirmed = window.confirm("Bạn chắc chắn muốn duyệt đơn xin nghỉ này?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    await approveLeaveRequest(leaveItem.id);
+  };
+
+
+  /**
+   * Xử lý từ chối đơn xin nghỉ
+   */
+  const submitRejectLeave = async () => {
+
+    if (!selectedLeave?.id) {
+      return;
+    }
+
+    const reason = String(rejectReason || "").trim();
+    if (reason.length < 10) {
+      setRejectError("Lý do từ chối phải có ít nhất 10 ký tự");
+      return;
+    }
+
+    setRejectError("");
+
+    const result = await rejectLeaveRequest(selectedLeave.id, reason);
+
+    if (result.success) {
+      closeRejectModal();
+
+    } else if (result.error) {
+      setRejectError(result.error);
+    }
+
   };
 
   const filtered = useMemo(() => {
@@ -498,9 +574,35 @@ export default function LeavePage() {
 
                     {/* Hành động */}
                     <td className="px-6 py-4 text-center">
-                      <button className="p-2 rounded-full hover:bg-gray-100 transition">
-                        <Eye size={18} />
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        {item?.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() => handleApproveLeave(item)}
+                              disabled={actionLoadingId === item.id}
+                              title="Duyệt đơn"
+                              className="p-2 rounded-full hover:bg-emerald-50 text-emerald-600 transition disabled:opacity-50"
+                            >
+                              <CheckCircle size={18} />
+                            </button>
+
+                            <button
+                              onClick={() => openRejectModal(item)}
+                              disabled={actionLoadingId === item.id}
+                              title="Từ chối đơn"
+                              className="p-2 rounded-full hover:bg-red-50 text-red-600 transition disabled:opacity-50"
+                            >
+                              <XCircle size={18} />
+                            </button>
+
+                          </>
+                        )}
+
+                        <button className="p-2 rounded-full hover:bg-gray-100 transition" title="Xem chi tiết">
+                          <Eye size={18} />
+                        </button>
+
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -509,6 +611,54 @@ export default function LeavePage() {
           </div>
         </div>
       </div>
+      
+      {/** Modal từ chối đơn */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+            <div className="border-b px-5 py-4">
+              <h3 className="text-lg font-semibold text-gray-800">Từ chối đơn xin nghỉ</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {selectedLeave?.student?.full_name || "Sinh viên"} - {selectedLeave?.student?.student_code || ""}
+              </p>
+            </div>
+
+            <div className="px-5 py-4">
+              <label className="mb-2 block text-sm font-medium text-gray-700">Lý do từ chối</label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                placeholder="Nhập lý do từ chối (tối thiểu 10 ký tự)"
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              />
+
+              {rejectError && (
+                <p className="mt-2 text-sm text-red-600">{rejectError}</p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t px-5 py-4">
+              <button
+                onClick={closeRejectModal}
+                disabled={actionLoadingId === selectedLeave?.id}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+
+              <button
+                onClick={submitRejectLeave}
+                disabled={actionLoadingId === selectedLeave?.id}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {actionLoadingId === selectedLeave?.id ? "Đang xử lý..." : "Xác nhận từ chối"}
+              </button>
+              
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

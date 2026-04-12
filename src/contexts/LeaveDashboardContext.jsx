@@ -11,6 +11,13 @@ const DEFAULT_SUMMARY = {
   rejected: 0,
 };
 
+const buildSummaryFromLeaves = (items = []) => ({
+  total: items.length,
+  pending: items.filter((item) => item?.status === 'pending').length,
+  approved: items.filter((item) => item?.status === 'approved').length,
+  rejected: items.filter((item) => item?.status === 'rejected').length,
+});
+
 export const LeaveDashboardProvider = ({ children }) => {
 
   const [teacher, setTeacher] = useState(null);
@@ -20,6 +27,8 @@ export const LeaveDashboardProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
+  
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const fetchLeaveDashboard = useCallback(async (forceRefresh = false) => {
     const CACHE_DURATION = 3 * 60 * 1000;
@@ -69,6 +78,88 @@ export const LeaveDashboardProvider = ({ children }) => {
     return fetchLeaveDashboard(true);
   }, [fetchLeaveDashboard]);
 
+  const approveLeaveRequest = useCallback(async (leaveRequestId) => {
+    if (!leaveRequestId) {
+      return { success: false, error: 'Thiếu mã đơn nghỉ' };
+    }
+
+    setActionLoadingId(leaveRequestId);
+
+    try {
+      const response = await leaveRequestService.approveLeaveRequest(leaveRequestId);
+
+      if (!response.success) {
+        const message = response.message || 'Không thể duyệt đơn nghỉ';
+        toast.error(message);
+        return { success: false, error: message };
+      }
+
+      const updatedLeave = response.data;
+
+      setLeaves((prev) => {
+        const nextLeaves = prev.map((item) => (item.id === updatedLeave.id ? updatedLeave : item));
+        
+        setSummary(buildSummaryFromLeaves(nextLeaves));
+
+        return nextLeaves;
+      });
+
+      toast.success(response.message || 'Đã duyệt đơn nghỉ');
+      return { success: true, data: updatedLeave };
+
+    } catch (err) {
+      const errorMessage = err.message || 'Không thể duyệt đơn nghỉ';
+      toast.error(errorMessage);
+
+      return { success: false, error: errorMessage };
+
+    } finally {
+      setActionLoadingId(null);
+    }
+  }, []);
+
+  const rejectLeaveRequest = useCallback(async (leaveRequestId, rejectedReason) => {
+    if (!leaveRequestId) {
+      return { success: false, error: 'Thiếu mã đơn nghỉ' };
+    }
+
+    if (!rejectedReason || String(rejectedReason).trim().length < 10) {
+      return { success: false, error: 'Lý do từ chối phải có ít nhất 10 ký tự' };
+    }
+
+    setActionLoadingId(leaveRequestId);
+
+    try {
+      const response = await leaveRequestService.rejectLeaveRequest(leaveRequestId, String(rejectedReason).trim());
+
+      if (!response.success) {
+        const message = response.message || 'Không thể từ chối đơn nghỉ';
+        toast.error(message);
+        return { success: false, error: message };
+      }
+
+      const updatedLeave = response.data;
+
+      setLeaves((prev) => {
+        const nextLeaves = prev.map((item) => (item.id === updatedLeave.id ? updatedLeave : item));
+        
+        setSummary(buildSummaryFromLeaves(nextLeaves));
+        
+        return nextLeaves;
+      });
+
+      toast.success(response.message || 'Đã từ chối đơn nghỉ');
+      return { success: true, data: updatedLeave };
+
+    } catch (err) {
+      const errorMessage = err.message || 'Không thể từ chối đơn nghỉ';
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setActionLoadingId(null);
+    }
+  }, []);
+
   const clearLeaveDashboard = useCallback(() => {
     setTeacher(null);
     setSummary(DEFAULT_SUMMARY);
@@ -77,6 +168,7 @@ export const LeaveDashboardProvider = ({ children }) => {
     setLoading(false);
     setError(null);
     setLastFetched(null);
+    setActionLoadingId(null);
   }, []);
 
   const statistics = useMemo(() => {
@@ -99,10 +191,13 @@ export const LeaveDashboardProvider = ({ children }) => {
     semesters,
     leaves,
     loading,
+    actionLoadingId,
     error,
     lastFetched,
     fetchLeaveDashboard,
     refreshLeaveDashboard,
+    approveLeaveRequest,
+    rejectLeaveRequest,
     clearLeaveDashboard,
   };
 

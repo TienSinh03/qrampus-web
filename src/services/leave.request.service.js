@@ -16,6 +16,37 @@ class LeaveRequestService {
     }
   }
 
+  async approveLeaveRequest(leaveRequestId) {
+    try {
+      const response = await axiosClient.put(LEAVE_REQUEST_ENDPOINTS.APPROVE(leaveRequestId));
+
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || '',
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async rejectLeaveRequest(leaveRequestId, rejectedReason) {
+    try {
+      const response = await axiosClient.put(LEAVE_REQUEST_ENDPOINTS.REJECT(leaveRequestId), {
+        rejected_reason: rejectedReason,
+      });
+
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || '',
+      };
+    } catch (error) {      
+      throw this.handleError(error);
+    }  
+  }
+
+
   handleError(error) {
     const message = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra';
     const status = error.response?.status || 500;
