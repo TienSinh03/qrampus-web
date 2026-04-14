@@ -15,6 +15,7 @@ export { SURVEY_ENDPOINTS } from './survey.endpoints';
 export { STUDENT_ENDPOINTS } from './student.endpoints';
 export { TEACHER_ENDPOINTS } from './teacher.endpoints';
 export { REPORT_ENDPOINTS } from './report.endpoints';
+export { NOTIFICATION_ENDPOINTS } from './notification.endpoints';
 
 // Health check
 export const HEALTH_ENDPOINT = '/health';

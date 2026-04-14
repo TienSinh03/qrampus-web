@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,9 +7,9 @@ import {
   Search,
   MessageSquare,
   CheckCircle,
-  BarChart3,
-  Rocket,
   Mail,
+  AlertCircle,
+  Loader2,
   ChevronDown,
   UserCheck,
   UserLock,
@@ -17,12 +17,67 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@contexts/AuthContext";
+import { useNotification } from "@contexts/NotificationContext";
 import { ROLE_LABELS } from "@constants/roles";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
+const formatNotificationTime = (sentAt) => {
+  if (!sentAt) return "--:--";
+
+  const date = new Date(sentAt);
+  if (Number.isNaN(date.getTime())) return "--:--";
+
+  return date.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getNotificationInitials = (notification) => {
+  const source =
+    notification?.metadata?.student_name ||
+    notification?.title ||
+    "TB";
+
+  const parts = String(source).trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) return "TB";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
+const getNotificationIcon = (notification) => {
+  if (notification?.type === "leave_request") {
+    return <MessageSquare className="w-4 h-4 text-blue-600" />;
+  }
+
+  if (notification?.type === "attendance_success") {
+    return <CheckCircle className="w-4 h-4 text-emerald-600" />;
+  }
+
+  if (notification?.priority === "high") {
+    return <AlertCircle className="w-4 h-4 text-red-600" />;
+  }
+
+  return <Mail className="w-4 h-4 text-slate-600" />;
+};
+
 const Header = ({ toggleSidebar }) => {
   const { t } = useTranslation();
-  const { user, logout, activeRole, getActiveRoleLabel, needsRoleSelection } = useAuth();
+  const { user, logout, activeRole, needsRoleSelection } = useAuth();
+  const {
+    notifications,
+    pagination,
+    unreadCount,
+    loading: notificationsLoading,
+    loadingMore: notificationsLoadingMore,
+    fetchNotifications,
+    loadMoreNotifications,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+  } = useNotification();
+
   const navigate = useNavigate();
 
   const [openUserMenu, setOpenUserMenu] = useState(false);
@@ -38,89 +93,39 @@ const Header = ({ toggleSidebar }) => {
     return ROLE_LABELS[user.roles[0]] || user.roles[0];
   };
 
-  // Số thông báo chưa đọc (bạn có thể lấy từ API sau)
-  const unreadCount = 2;  
+  useEffect(() => {
+    if (!openNotif) {
+      return;
+    }
 
-  const notifications = [
-    {
-      id: 1,
-      maHP: "INT3306",
-      lop: "20TCLC_DT3",
-      title: "Hạn chót nộp bài tập lớn – Nhóm 5 chưa nộp",
-      desc: "Nhóm 5 (21010611...) chưa nộp bài tập lớn môn INT3306",
-      time: "02:46",
-      sender: "Hệ thống Moodle",
-      unread: true,
-      label: "urgent",
-      initials: "HM",
-      icon: <Rocket className="w-4 h-4 text-red-600" />,
-    },
-    {
-      id: 2,
-      maHP: "WEB301",
-      lop: "21TCLC_DT1",
-      title: "Phản hồi bài kiểm tra giữa kỳ đã được gửi",
-      desc: "Em cảm ơn thầy đã chấm bài rất chi tiết...",
-      time: "02:58",
-      sender: "Nguyễn Văn A",
-      unread: true,
-      label: "personal",
-      initials: "NA",
-      icon: <CheckCircle className="w-4 h-4 text-green-600" />,
-    },
-    {
-      id: 3,
-      maHP: "INT3306",
-      lop: "20TCLC_DT3",
-      title: "Thông báo nghỉ học – Trần Thị Bình",
-      desc: "Em xin phép nghỉ buổi hôm nay do bị ốm...",
-      time: "04:04",
-      sender: "Trần Thị Bình",
-      unread: false,
-      label: "important",
-      avatar: "https://randomuser.me/api/portraits/women/12.jpg",
-      icon: <MessageSquare className="w-4 h-4 text-blue-600" />,
-    },
-    {
-      id: 4,
-      maHP: "AI402",
-      lop: "22TCLC_AI1",
-      title: "Câu hỏi về đề cương môn AI",
-      desc: "Thầy ơi phần CNN có thi không ạ?",
-      time: "06:02",
-      sender: "Lê Văn Cường",
-      unread: false,
-      label: "question",
-      initials: "LC",
-      icon: <MessageSquare className="w-4 h-4 text-indigo-600" />,
-    },
-    {
-      id: 5,
-      maHP: "PRJ301",
-      lop: "21TCLC_DT5",
-      title: "Lịch bảo vệ đồ án đợt 1",
-      desc: "Lịch bảo vệ đã được xếp, xem chi tiết...",
-      time: "06:12",
-      sender: "Phòng Đào tạo",
-      unread: false,
-      label: "official",
-      initials: "PT",
-      icon: <BarChart3 className="w-4 h-4 text-purple-600" />,
-    },
-    {
-      id: 6,
-      maHP: "INT3306",
-      lop: "20TCLC_DT3",
-      title: "Slide buổi 12 đã cập nhật",
-      desc: "Đã upload slide React Native lên Drive",
-      time: "07:25",
-      sender: "Bạn (giáo viên)",
-      unread: false,
-      label: "info",
-      initials: "GV",
-      icon: <Rocket className="w-4 h-4 text-indigo-500" />,
-    },
-  ];
+    fetchNotifications({ limit: 20, offset: 0 });
+  }, [openNotif, fetchNotifications]);
+
+  const handleNotificationScroll = useCallback((event) => {
+    const element = event.currentTarget;
+    const threshold = 24;
+
+    const reachedBottom =
+      element.scrollTop + element.clientHeight >= element.scrollHeight - threshold;
+
+    if (!reachedBottom || notificationsLoading || notificationsLoadingMore) {
+      return;
+    }
+
+    const total = Number(pagination?.total || 0);
+
+    if (notifications.length >= total) {
+      return;
+    }
+
+    loadMoreNotifications();
+  }, [
+    notificationsLoading,
+    notificationsLoadingMore,
+    pagination?.total,
+    notifications.length,
+    loadMoreNotifications,
+  ]);
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 bg z-60">
@@ -185,56 +190,95 @@ const Header = ({ toggleSidebar }) => {
                     </div>
 
                     {/* List */}
-                    <div className="max-h-96 overflow-y-auto">
-                      {notifications.map((notif, index) => (
-                        <div
-                          key={notif.id || index}
-                          className="flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition border-b border-gray-50 last:border-0"
-                        >
-                          {/* Avatar or Initials */}
-                          {notif.avatar ? (
-                            <img
-                              src={notif.avatar}
-                              alt=""
-                              className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-600 flex-shrink-0">
-                              {notif.initials}
-                            </div>
-                          )}
+                    <div
+                      className="max-h-96 overflow-y-auto"
+                      onScroll={handleNotificationScroll}
+                    >
+                      {notificationsLoading && notifications.length === 0 && (
+                        <div className="px-6 py-8 flex items-center justify-center gap-2 text-sm text-gray-500">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Dang tai thong bao...
+                        </div>
+                      )}
 
-                          {/* Content */}
+                      {!notificationsLoading && notifications.length === 0 && (
+                        <div className="px-6 py-8 text-center text-sm text-gray-500">
+                          Chua co thong bao nao.
+                        </div>
+                      )}
+
+                      {notifications.map((notif) => (
+                        <button
+                          key={notif.id}
+                          type="button"
+                          onClick={() => {
+                            if (!notif.is_read) {
+                              markNotificationAsRead(notif.id);
+                            }
+                          }}
+                          className={`w-full text-left flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition border-b border-gray-50 last:border-0 ${
+                            notif.is_read ? "bg-white" : "bg-blue-100/50"
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-600 flex-shrink-0">
+                            {getNotificationInitials(notif)}
+                          </div>
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-3">
-                              <p className="text-sm font-semibold text-gray-900">
+                              <p className="text-sm font-semibold text-gray-900 line-clamp-2">
                                 {notif.title}
                               </p>
-                              {notif.icon}
+                              {getNotificationIcon(notif)}
                             </div>
-                            {notif.desc && (
-                              <p className="text-sm text-gray-600 mt-0.5">
-                                {notif.desc}
-                              </p>
-                            )}
+                            <div className="flex flex-row justify-between">
+
+                              {notif.message && (
+                                <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+                                  {notif.message}
+                                </p>
+                              )}
+
+                              {!notif.is_read && (
+                                <div className="w-2.5 h-2.5 bg-blue-900 rounded-full mt-2 flex-shrink-0" />
+                              )}
+                            </div>
                             <p className="text-xs text-gray-400 mt-1">
-                              {notif.time}
+                              {formatNotificationTime(notif.sent_at)}
                             </p>
                           </div>
 
-                          {/* Unread dot */}
-                          {index < unreadCount && (
-                            <div className="w-2.5 h-2.5 bg-blue-900 rounded-full mt-2 flex-shrink-0" />
-                          )}
-                        </div>
+                        </button>
                       ))}
+
+                      {notificationsLoadingMore && notifications.length > 0 && (
+                        <div className="px-6 py-3 flex items-center justify-center gap-2 text-xs text-gray-500">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Dang tai them thong bao...
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer */}
                     <div className="p-4 border-t border-gray-100">
-                      <button className="w-full py-3 text-sm font-bold text-white bg-blue-900 hover:bg-blue-800 rounded-xl transition">
-                        View All Notifications
-                      </button>
+                      <div className="grid grid-cols-1 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => navigate("/dashboard/notifications")}
+                          className="w-full py-3 text-sm font-bold text-white bg-blue-900 hover:bg-blue-800 rounded-xl transition"
+                        >
+                          Xem tat ca thong bao
+                        </button>
+                        {unreadCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={markAllNotificationsAsRead}
+                            className="w-full py-2.5 text-sm font-semibold text-blue-900 bg-blue-50 hover:bg-blue-100 rounded-xl transition"
+                          >
+                            Danh dau tat ca da doc
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
