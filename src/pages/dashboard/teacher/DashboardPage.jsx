@@ -1,12 +1,36 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { Calendar, Bell, Clock, Ellipsis, RefreshCw } from "lucide-react";
 import { useTeacherSchedule } from "@contexts/TeacherScheduleContext";
+import { usePersonnelProfile } from "@contexts/PersonnelProfileContext";
 import { useNavigate } from "react-router-dom";
 
 const formatTime = (timeValue) => {
   if (!timeValue) return "--:--";
   return String(timeValue).slice(0, 5);
 };
+
+const formatDate = (dateValue) => {
+  if (!dateValue) return "--";
+
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "--";
+
+  return date.toLocaleDateString("vi-VN");
+};
+
+const getUserStatusLabel = (status) => {
+  if (status === "active") return "Đang hoạt động";
+  if (status === "inactive") return "Ngưng hoạt động";
+  return "--";
+};
+
+const getRoleLabel = (role) => {
+  if (!role) return "--";
+  if (role === "admin") return "Quản trị viên";
+  if (role === "teacher") return "Giảng viên";
+  if (role === "attendance_staff") return "Nhân viên điểm danh";
+  return role;
+}
 
 const getRoomInfo = (schedule) => {
   const roomName =
@@ -32,13 +56,27 @@ export default function Dashboard() {
     refreshTodaySchedules,
   } = useTeacherSchedule();
 
+  const {
+    profile,
+    loading: profileLoading,
+    error: profileError,
+    fetchProfile,
+  } = usePersonnelProfile();
+
   const hasLoadedTodaySchedules = useRef(false);
+  const hasLoadedProfile = useRef(false);
 
   useEffect(() => {
     if (hasLoadedTodaySchedules.current) return;
     hasLoadedTodaySchedules.current = true;
     fetchTodaySchedules();
   }, [fetchTodaySchedules]);
+
+  useEffect(() => {
+    if (hasLoadedProfile.current) return;
+    hasLoadedProfile.current = true;
+    fetchProfile();
+  }, [fetchProfile]);
 
   const sortedTodaySchedules = useMemo(() => {
     if (!Array.isArray(todaySchedules)) return [];
@@ -53,6 +91,16 @@ export default function Dashboard() {
   const handleRefreshTodaySchedules = () => {
     refreshTodaySchedules();
   };
+
+  const roleDisplay = useMemo(() => {
+    const roles = profile?.user?.roles;
+    if (!Array.isArray(roles) || roles.length === 0) return "--";
+    return roles.map((role) => role?.name).filter(Boolean).join(", ");
+  }, [profile]);
+
+  const profileAvatar =
+    profile?.avatar_url ||
+    "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png";
 
   return (
     <div className="min-h-screen">
@@ -73,8 +121,8 @@ export default function Dashboard() {
                   <div className="flex flex-col items-center text-center">
                     <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg mb-4 transition-all transform hover:scale-105">
                       <img
-                        src="https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png"
-                        alt="Student"
+                        src={profileAvatar}
+                        alt="Teacher avatar"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -93,23 +141,23 @@ export default function Dashboard() {
                 <div className="md:col-span-1 space-y-3">
                   <div>
                     <span className="text-gray-600">Mã nhân sự:</span>
-                    <span className="ml-2 font-semibold">0111111</span>
+                    <span className="ml-2 font-semibold">{profile?.teacher_code || "--"}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Họ tên:</span>
-                    <span className="ml-2 font-semibold">Trần Minh Tiến</span>
+                    <span className="ml-2 font-semibold">{profile?.full_name || "--"}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Giới tính:</span>
-                    <span className="ml-2">Nam</span>
+                    <span className="text-gray-600">Email:</span>
+                    <span className="ml-2">{profile?.email || "--"}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Ngày sinh:</span>
-                    <span className="ml-2">04/11/2003</span>
+                    <span className="ml-2">{formatDate(profile?.dob)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Nơi sinh:</span>
-                    <span className="ml-2">Đồng Tháp</span>
+                    <span className="text-gray-600">Trạng thái:</span>
+                    <span className="ml-2">{getUserStatusLabel(profile?.user?.status)}</span>
                   </div>
                 </div>
 
@@ -117,26 +165,34 @@ export default function Dashboard() {
                 <div className="md:col-span-1 space-y-3">
                   <div>
                     <span className="text-gray-600">Khoa:</span>
-                    <span className="ml-2 font-semibold">Công nghệ thông tin</span>
+                    <span className="ml-2 font-semibold">{profile?.department || "--"}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Số điện thoại:</span>
-                    <span className="ml-2">0123456789</span>
+                    <span className="ml-2">{profile?.phone || "--"}</span>
                   </div>
+                  {/* <div>
+                    <span className="text-gray-600">Giờ làm việc:</span>
+                    <span className="ml-2">{profile?.office_hours || "--"}</span>
+                  </div> */}
                   <div>
-                    <span className="text-gray-600">Học vị:</span>
-                    <span className="ml-2">Thạc sĩ</span>
+                    <span className="text-gray-600">Vai trò:</span>
+                    <span className="ml-2">{getRoleLabel(roleDisplay)}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Loại hình đào tạo:</span>
-                    <span className="ml-2">Chính quy</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Ngành:</span>
-                    <span className="ml-2">Kỹ thuật phần mềm</span>
-                  </div>
+                  {/* <div>
+                    <span className="text-gray-600">Tên đăng nhập:</span>
+                    <span className="ml-2">{profile?.user?.user_name || "--"}</span>
+                  </div> */}
                 </div>
               </div>
+
+              {profileLoading && (
+                <p className="mt-4 text-xs text-slate-400">Đang tải thông tin giảng viên...</p>
+              )}
+
+              {profileError && !profileLoading && (
+                <p className="mt-4 text-xs text-red-500">{profileError}</p>
+              )}
 
               {/* Bottom Section: Notifications & Schedule */}
               <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
