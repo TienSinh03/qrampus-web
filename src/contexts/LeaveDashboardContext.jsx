@@ -33,7 +33,7 @@ export const LeaveDashboardProvider = ({ children }) => {
   const fetchLeaveDashboard = useCallback(async (forceRefresh = false) => {
     const CACHE_DURATION = 3 * 60 * 1000;
 
-    if (!forceRefresh && lastFetched && leaves.length > 0) {
+    if (!forceRefresh && lastFetched) {
       const timeSinceLastFetch = Date.now() - lastFetched;
       if (timeSinceLastFetch < CACHE_DURATION) {
         return { success: true, data: { teacher, summary, semesters, leaves } };

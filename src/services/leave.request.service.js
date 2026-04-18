@@ -2,6 +2,20 @@ import axiosClient from '@api/axiosClient';
 import { LEAVE_REQUEST_ENDPOINTS } from '@constants/endpoints/leave-request.endpoints';
 
 class LeaveRequestService {
+  async getTeacherLeaves(params = {}) {
+    try {
+      const response = await axiosClient.get(LEAVE_REQUEST_ENDPOINTS.TEACHER_BASE, { params });
+
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || '',
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getTeacherLeaveDashboard() {
     try {
       const response = await axiosClient.get(LEAVE_REQUEST_ENDPOINTS.TEACHER_DASHBOARD);

@@ -11,4 +11,6 @@ export const TEACHER_ENDPOINTS = {
   CLASS_SESSION_STUDENTS: (classSessionId) => `${API_VERSION}/teachers/class-sessions/${classSessionId}/students`,
   COURSE_SECTION_STUDENTS: (courseSectionCode) => `${API_VERSION}/teachers/course-sections/${encodeURIComponent(courseSectionCode)}/students`,
   ME_SCHEDULE_TODAY: `${API_VERSION}/teachers/me/schedule/today`,
+  CLASS_SESSION_OVERVIEW: (classSessionId) => `${API_VERSION}/teachers/class-sessions/${classSessionId}/overview`,
+
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
   Eye,
@@ -8,15 +8,24 @@ import {
   AlertCircle,
   Star, ArrowDown, ArrowUp, FileSpreadsheet, File, FilterX, FileSearchIcon
 } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useLeaveDashboard } from "@contexts/LeaveDashboardContext";
 import ModalViewLeaveRequest from "@components/modal/ModalViewLeaveRequest";
 
 const toLower = (value) => String(value || "").toLowerCase().trim();
 
 export default function LeavePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [selectedSemester, setSelectedSemester] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [expanded, setExpanded] = useState(false);
+
+  const classSessionIdFromQuery = useMemo(() => {
+    const queryParams = new URLSearchParams(location.search);
+    return String(queryParams.get("classSessionId") || "").trim();
+  }, [location.search]);
 
   const {
     leaves,
@@ -24,11 +33,14 @@ export default function LeavePage() {
     semesters: semesterValues,
     loading,
     error,
+    lastFetched,
     fetchLeaveDashboard,
     approveLeaveRequest,
     rejectLeaveRequest,
     actionLoadingId,
   } = useLeaveDashboard();
+
+  const hasRequestedDashboardRef = useRef(false);
 
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
@@ -57,8 +69,13 @@ export default function LeavePage() {
   });
 
   useEffect(() => {
+    if (hasRequestedDashboardRef.current || loading || lastFetched) {
+      return;
+    }
+
+    hasRequestedDashboardRef.current = true;
     fetchLeaveDashboard();
-  }, [fetchLeaveDashboard]);
+  }, [fetchLeaveDashboard, lastFetched, loading]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -82,6 +99,10 @@ export default function LeavePage() {
     setStatusFilter("all");
     setFilters(resetValue);
     setAppliedFilters(resetValue);
+
+    if (classSessionIdFromQuery) {
+      navigate("/dashboard/leave-management", { replace: true });
+    }
   };
 
   const openRejectModal = (leaveItem) => {
@@ -172,6 +193,11 @@ export default function LeavePage() {
       const className = item?.student?.class_name || "";
       const studentCode = item?.student?.student_code || "";
       const studentName = item?.student?.full_name || "";
+      const classSessionId = item?.classSession?.id || "";
+
+      if (classSessionIdFromQuery && classSessionId !== classSessionIdFromQuery) {
+        return false;
+      }
 
       if (selectedSemester !== "all" && semester !== selectedSemester) {
         return false;
@@ -207,7 +233,7 @@ export default function LeavePage() {
 
       return true;
     });
-  }, [appliedFilters, leaves, selectedSemester, statusFilter]);
+  }, [appliedFilters, classSessionIdFromQuery, leaves, selectedSemester, statusFilter]);
 
   const semesterOptions = useMemo(() => {
     const values = Array.isArray(semesterValues) ? semesterValues
@@ -309,6 +335,12 @@ export default function LeavePage() {
 
           </div>
         </div>
+
+        {classSessionIdFromQuery && (
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            Đang hiển thị đơn nghỉ của buổi học được chọn từ màn Study Session.
+          </div>
+        )}
       </div>
       <div className="bg-white border  p-6">
         {/* Header */}
