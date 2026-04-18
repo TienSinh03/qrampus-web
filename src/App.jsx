@@ -8,6 +8,7 @@ import { TeacherScheduleProvider } from '@contexts/TeacherScheduleContext';
 import { ClassSessionStudentsProvider } from '@contexts/ClassSessionStudentsContext';
 import { AttendanceProvider } from '@contexts/AttendanceContext';
 import { LeaveDashboardProvider } from '@contexts/LeaveDashboardContext';
+import { StudySessionOverviewProvider } from '@contexts/StudySessionOverviewContext';
 
 import { Toaster } from "sonner";
 
@@ -20,8 +21,10 @@ function App() {
             <ClassSessionStudentsProvider>
               <AttendanceProvider>
                 <LeaveDashboardProvider>
-                  <AppRoutes />
-                  <Toaster position="top-right" richColors />
+                  <StudySessionOverviewProvider>
+                    <AppRoutes />
+                    <Toaster position="top-right" richColors />
+                  </StudySessionOverviewProvider>
                 </LeaveDashboardProvider>
               </AttendanceProvider>
             </ClassSessionStudentsProvider>
