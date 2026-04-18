@@ -1,29 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import Select from "react-select";
 import { Send, Users, Info } from "lucide-react";
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-
-const lecturerOptions = [
-  { value: "gv1", label: "GV. Nguyễn Văn A" },
-  { value: "gv2", label: "GV. Trần Thị B" },
-];
-
-const subjectOptions = [
-  { value: "hp1", label: "Lập trình Web - Nhóm 01" },
-  { value: "hp2", label: "Cơ sở dữ liệu - Nhóm 05" },
-];
-
-const studentOptions = [
-  { value: "sv1", label: "SV. Nguyễn Minh Anh - 22110001" },
-  { value: "sv2", label: "SV. Trần Quốc Bảo - 22110002" },
-  { value: "sv3", label: "SV. Lê Khánh Chi - 22110003" },
-];
+import teacherService from "@services/teacher.service";
+import studentService from "@services/student.service";
+import courseService from "@services/course.service";
+import notificationService from "@services/notification.service";
+import { useAuth } from "@contexts/AuthContext";
+import { ROLE_LABELS } from "@constants/roles";
+import { toast } from "sonner";
 
 const AdminAnnouncementPage = () => {
+  const { user, activeRole, getActiveRoleLabel } = useAuth();
+  const [activeTab, setActiveTab] = useState("lecturer");
+
   const [lecturerType, setLecturerType] = useState("all");
   const [studentTargetType, setStudentTargetType] = useState("all");
+
+  const [lecturerOptions, setLecturerOptions] = useState([]);
+  const [lecturerSearch, setLecturerSearch] = useState("");
+  const [isLoadingLecturers, setIsLoadingLecturers] = useState(false);
+
+  const [studentOptions, setStudentOptions] = useState([]);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+
+  const [subjectGroupOptions, setSubjectGroupOptions] = useState([]);
+  const [isLoadingSubjectGroups, setIsLoadingSubjectGroups] = useState(false);
 
   const [selectedLecturers, setSelectedLecturers] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -31,6 +36,20 @@ const AdminAnnouncementPage = () => {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [isSending, setIsSending] = useState(false);
+
+  const senderDisplayName =
+    user?.profile?.full_name ||
+    user?.full_name ||
+    user?.name ||
+    user?.user_name ||
+    user?.userName ||
+    "--";
+
+  const senderRoleLabel =
+    getActiveRoleLabel?.() ||
+    ROLE_LABELS[activeRole] ||
+    (Array.isArray(user?.roles) && user.roles.length > 0 ? ROLE_LABELS[user.roles[0]] || user.roles[0] : "--");
 
   // Custom style cho React Select để hạn chế bo góc và trông chuyên nghiệp hơn
   const customSelectStyles = {
@@ -48,10 +67,382 @@ const AdminAnnouncementPage = () => {
     })
   };
 
+  useEffect(() => {
+    if (lecturerType !== "specific") {
+      return;
+    }
+
+    const debounceTimer = setTimeout(async () => {
+      try {
+        setIsLoadingLecturers(true);
+
+        const params = {
+          page: 1,
+          limit: 50,
+        };
+
+        if (lecturerSearch.trim()) {
+          params.search = lecturerSearch.trim();
+        }
+
+        const response = await teacherService.getAllTeachers(params);
+        const teachers = Array.isArray(response?.data) ? response.data : [];
+
+        setLecturerOptions(
+          teachers.map((teacher) => ({
+            value: teacher.id || teacher.teacher_code,
+            label: teacher.teacher_code
+              ? `${teacher.full_name || "Không rõ tên"} - ${teacher.teacher_code}`
+              : teacher.full_name || "Không rõ tên",
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch teachers:", error);
+        setLecturerOptions([]);
+      } finally {
+        setIsLoadingLecturers(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(debounceTimer);
+  }, [lecturerType, lecturerSearch]);
+
+  useEffect(() => {
+    if (lecturerType !== "specific") {
+      setSelectedLecturers([]);
+      setLecturerSearch("");
+      setLecturerOptions([]);
+    }
+  }, [lecturerType]);
+
+  useEffect(() => {
+    if (studentTargetType !== "students") {
+      return;
+    }
+
+    const debounceTimer = setTimeout(async () => {
+      try {
+        setIsLoadingStudents(true);
+
+        const params = {
+          page: 1,
+          limit: 10,
+        };
+
+        if (studentSearch.trim()) {
+          params.search = studentSearch.trim();
+        }
+
+        const response = await studentService.getAllStudents(params);
+        const students = Array.isArray(response?.data) ? response.data : [];
+
+        setStudentOptions(
+          students.map((student) => ({
+            value: student.id,
+            label: student.student_code
+              ? `${student.full_name || "Không rõ tên"} - ${student.student_code}`
+              : student.full_name || "Không rõ tên",
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch students:", error);
+        setStudentOptions([]);
+      } finally {
+        setIsLoadingStudents(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(debounceTimer);
+  }, [studentTargetType, studentSearch]);
+
+  useEffect(() => {
+    if (studentTargetType !== "students") {
+      setSelectedStudents([]);
+      setStudentSearch("");
+      setStudentOptions([]);
+    }
+  }, [studentTargetType]);
+
+  useEffect(() => {
+    if (studentTargetType !== "subjects") {
+      setSelectedSubjects([]);
+      setSubjectGroupOptions([]);
+      return;
+    }
+
+    const fetchSubjectGroups = async () => {
+      try {
+        setIsLoadingSubjectGroups(true);
+        const response = await courseService.getCourseSectionRows({ page: 1, limit: 200 });
+        const rows = Array.isArray(response?.data) ? response.data : [];
+
+        const options = rows
+          .filter((row) => row?.code)
+          .map((row) => {
+            const isTheory = row?.type === "LT";
+            const modeLabel = isTheory
+              ? "Lý thuyết"
+              : `Thực hành - Nhóm ${row?.number_group ?? "?"}`;
+
+            return {
+              value: `${row.course_section_id || row.code}:${row.group_id || "LT"}`,
+              label: `${row.name || "Không rõ tên"} - ${row.code} - ${modeLabel}`,
+              payload: {
+                courseSectionCode: row.code,
+                courseSectionId: row.course_section_id,
+                practiceGroupId: isTheory ? null : row.group_id,
+                learningType: row.type,
+                numberGroup: row.number_group || null,
+              },
+            };
+          });
+
+        setSubjectGroupOptions(options);
+      } catch (error) {
+        console.error("Failed to fetch course section groups:", error);
+        setSubjectGroupOptions([]);
+      } finally {
+        setIsLoadingSubjectGroups(false);
+      }
+    };
+
+    fetchSubjectGroups();
+  }, [studentTargetType]);
+
+  const getPlainTextFromHtml = (html) =>
+    (html || "")
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+
+  const fetchAllTeacherIds = async () => {
+    const allIds = [];
+    const pageSize = 200;
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const response = await teacherService.getAllTeachers({ page, limit: pageSize });
+      const teachers = Array.isArray(response?.data) ? response.data : [];
+      allIds.push(...teachers.map((teacher) => teacher?.id).filter(Boolean));
+
+      totalPages = Number(response?.pagination?.totalPages) || 1;
+      page += 1;
+    } while (page <= totalPages);
+
+    return [...new Set(allIds)];
+  };
+
+  const fetchAllStudentIds = async () => {
+    const allIds = [];
+    const pageSize = 200;
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const response = await studentService.getAllStudents({ page, limit: pageSize });
+      const students = Array.isArray(response?.data) ? response.data : [];
+      allIds.push(...students.map((student) => student?.id).filter(Boolean));
+
+      totalPages = Number(response?.meta?.totalPages || response?.pagination?.totalPages) || 1;
+      page += 1;
+    } while (page <= totalPages);
+
+    return [...new Set(allIds)];
+  };
+
+  const handleSendAnnouncement = async () => {
+    const normalizedTitle = title.trim();
+    const plainTextContent = getPlainTextFromHtml(content);
+
+    if (!normalizedTitle) {
+      toast.error("Vui lòng nhập tiêu đề thông báo.");
+      return;
+    }
+
+    if (!plainTextContent) {
+      toast.error("Vui lòng nhập nội dung thông báo.");
+      return;
+    }
+
+    try {
+      setIsSending(true);
+
+      if (activeTab === "lecturer") {
+        if (lecturerType === "all") {
+          const targetIds = await fetchAllTeacherIds();
+
+          if (targetIds.length === 0) {
+            toast.error("Không tìm thấy giảng viên để gửi thông báo.");
+            return;
+          }
+
+          const response = await notificationService.createBulkByTargetType({
+            title: normalizedTitle,
+            message: content,
+            target_type: "teacher",
+            target_ids: targetIds,
+            metadata: {
+              sender_name: senderDisplayName,
+              sender_role: senderRoleLabel,
+              sender_user_id: user?.id || null,
+            },
+          });
+
+          const recipientCount = response?.data?.summary?.recipient_count || targetIds.length;
+          toast.success(response?.message || `Đã gửi thông báo cho ${recipientCount} giảng viên.`);
+        } else {
+          const targetIds = [...new Set((selectedLecturers || []).map((item) => item?.value).filter(Boolean))];
+
+          if (targetIds.length === 0) {
+            toast.error("Vui lòng chọn ít nhất 1 giảng viên.");
+            return;
+          }
+
+          const payload = {
+            title: normalizedTitle,
+            message: content,
+            target_type: "teacher",
+            target_ids: targetIds,
+            metadata: {
+              sender_name: senderDisplayName,
+              sender_role: senderRoleLabel,
+              sender_user_id: user?.id || null,
+            },
+          };
+
+          const response = await notificationService.createBulkByTargetType(payload);
+          const recipientCount = response?.data?.summary?.recipient_count || targetIds.length;
+          toast.success(response?.message || `Đã gửi thông báo cho ${recipientCount} giảng viên.`);
+        }
+      } else {
+        if (studentTargetType === "subjects") {
+          const selectedGroups = [
+            ...new Map(
+              (selectedSubjects || [])
+                .map((item) => item?.payload)
+                .filter((payload) => payload?.courseSectionCode)
+                .map((payload) => [
+                  `${payload.courseSectionCode}:${payload.practiceGroupId || "LT"}`,
+                  payload,
+                ])
+            ).values(),
+          ];
+
+          if (selectedGroups.length === 0) {
+            toast.error("Vui lòng chọn ít nhất 1 nhóm học phần.");
+            return;
+          }
+
+          const studentResults = await Promise.all(
+            selectedGroups.map((group) => {
+              const params = group.practiceGroupId
+                ? { practiceGroupId: group.practiceGroupId }
+                : {};
+              return teacherService.getStudentsInCourseSection(group.courseSectionCode, params);
+            })
+          );
+
+          const targetIds = [
+            ...new Set(
+              studentResults
+                .flatMap((result) => (Array.isArray(result?.data?.students) ? result.data.students : []))
+                .map((student) => student?.studentId || student?.id)
+                .filter(Boolean)
+            ),
+          ];
+
+          if (targetIds.length === 0) {
+            toast.error("Không tìm thấy sinh viên trong nhóm học phần đã chọn.");
+            return;
+          }
+
+          const response = await notificationService.createBulkByTargetType({
+            title: normalizedTitle,
+            message: content,
+            target_type: "student",
+            target_ids: targetIds,
+            metadata: {
+              sender_name: senderDisplayName,
+              sender_role: senderRoleLabel,
+              sender_user_id: user?.id || null,
+              subject_groups: selectedGroups.map((group) => ({
+                course_section_code: group.courseSectionCode,
+                learning_type: group.learningType,
+                practice_group_id: group.practiceGroupId,
+              })),
+            },
+          });
+
+          const recipientCount = response?.data?.summary?.recipient_count || targetIds.length;
+          toast.success(response?.message || `Đã gửi thông báo cho ${recipientCount} sinh viên theo nhóm học phần.`);
+        } else if (studentTargetType === "all") {
+          const targetIds = await fetchAllStudentIds();
+
+          if (targetIds.length === 0) {
+            toast.error("Không tìm thấy sinh viên để gửi thông báo.");
+            return;
+          }
+
+          const response = await notificationService.createBulkByTargetType({
+            title: normalizedTitle,
+            message: content,
+            target_type: "student",
+            target_ids: targetIds,
+            metadata: {
+              sender_name: senderDisplayName,
+              sender_role: senderRoleLabel,
+              sender_user_id: user?.id || null,
+            },
+          });
+
+          const recipientCount = response?.data?.summary?.recipient_count || targetIds.length;
+          toast.success(response?.message || `Đã gửi thông báo cho ${recipientCount} sinh viên.`);
+        }
+
+        if (studentTargetType === "students") {
+          const targetIds = [...new Set((selectedStudents || []).map((item) => item?.value).filter(Boolean))];
+
+          if (targetIds.length === 0) {
+            toast.error("Vui lòng chọn ít nhất 1 sinh viên.");
+            return;
+          }
+
+          const response = await notificationService.createBulkByTargetType({
+            title: normalizedTitle,
+            message: content,
+            target_type: "student",
+            target_ids: targetIds,
+            metadata: {
+              sender_name: senderDisplayName,
+              sender_role: senderRoleLabel,
+              sender_user_id: user?.id || null,
+            },
+          });
+
+          const recipientCount = response?.data?.summary?.recipient_count || targetIds.length;
+          toast.success(response?.message || `Đã gửi thông báo cho ${recipientCount} sinh viên.`);
+        }
+      }
+
+      setTitle("");
+      setContent("");
+      setSelectedLecturers([]);
+      setLecturerSearch("");
+      setSelectedStudents([]);
+      setStudentSearch("");
+      setSelectedSubjects([]);
+    } catch (error) {
+      toast.error(error.message || "Không thể gửi thông báo. Vui lòng thử lại.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className="bg-[#f9fafb] min-h-screen text-slate-700">
-      <div className="max-w-7xl mx-auto">
-        <Tabs.Root defaultValue="lecturer">
+      <div className="mx-auto">
+        <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
           {/* TAB HEADER - Cắt góc vuông vức */}
           <Tabs.List className="flex bg-white border-b border-gray-200">
             <Tabs.Trigger
@@ -97,8 +488,24 @@ const AdminAnnouncementPage = () => {
                           options={lecturerOptions}
                           isMulti
                           styles={customSelectStyles}
+                          value={selectedLecturers}
                           placeholder="Tìm tên giảng viên..."
-                          onChange={setSelectedLecturers}
+                          inputValue={lecturerSearch}
+                          onInputChange={(value, actionMeta) => {
+                            if (actionMeta.action === "input-change") {
+                              setLecturerSearch(value);
+                            }
+                            return value;
+                          }}
+                          onChange={(value) => setSelectedLecturers(value || [])}
+                          isLoading={isLoadingLecturers}
+                          loadingMessage={() => "Đang tải danh sách giảng viên..."}
+                          noOptionsMessage={() =>
+                            isLoadingLecturers
+                              ? "Đang tải..."
+                              : "Không tìm thấy giảng viên"
+                          }
+                          filterOption={null}
                           className="text-sm"
                         />
                       </div>
@@ -140,8 +547,24 @@ const AdminAnnouncementPage = () => {
                           options={studentOptions}
                           isMulti
                           styles={customSelectStyles}
+                          value={selectedStudents}
                           placeholder="Tìm và chọn sinh viên..."
-                          onChange={setSelectedStudents}
+                          inputValue={studentSearch}
+                          onInputChange={(value, actionMeta) => {
+                            if (actionMeta.action === "input-change") {
+                              setStudentSearch(value);
+                            }
+                            return value;
+                          }}
+                          onChange={(value) => setSelectedStudents(value || [])}
+                          isLoading={isLoadingStudents}
+                          loadingMessage={() => "Đang tải danh sách sinh viên..."}
+                          noOptionsMessage={() =>
+                            isLoadingStudents
+                              ? "Đang tải..."
+                              : "Không tìm thấy sinh viên"
+                          }
+                          filterOption={null}
                           className="text-sm"
                         />
                       </div>
@@ -149,13 +572,19 @@ const AdminAnnouncementPage = () => {
 
                     {studentTargetType === "subjects" ? (
                       <div className="animate-in fade-in duration-500">
-                        <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Danh sách học phần / lớp</label>
+                        <label className="text-xs font-semibold text-slate-500 uppercase mb-1 block">Danh sách nhóm học phần (LT/TH)</label>
                         <Select
-                          options={subjectOptions}
+                          options={subjectGroupOptions}
                           isMulti
                           styles={customSelectStyles}
-                          placeholder="Chọn một hoặc nhiều học phần..."
-                          onChange={setSelectedSubjects}
+                          value={selectedSubjects}
+                          placeholder="Chọn một hoặc nhiều nhóm học phần..."
+                          onChange={(value) => setSelectedSubjects(value || [])}
+                          isLoading={isLoadingSubjectGroups}
+                          loadingMessage={() => "Đang tải danh sách nhóm học phần..."}
+                          noOptionsMessage={() =>
+                            isLoadingSubjectGroups ? "Đang tải..." : "Không có nhóm học phần"
+                          }
                           className="text-sm"
                         />
                       </div>
@@ -187,8 +616,8 @@ const AdminAnnouncementPage = () => {
                       <h3 className="font-bold text-slate-800 uppercase text-sm tracking-tight border-l-4 border-emerald-500 pl-3">Soạn thảo nội dung</h3>
                     </div>
                     <div className="flex items-center gap-6 text-[11px] uppercase font-bold text-slate-400 tracking-widest">
-                      <p>Người gửi: <span className="text-slate-700">ABCXDRFXYX</span></p>
-                      <p>Quyền: <span className="text-slate-700">Quản trị viên</span></p>
+                      <p>Người gửi: <span className="text-slate-700">{senderDisplayName}</span></p>
+                      <p>Quyền: <span className="text-slate-700">{senderRoleLabel}</span></p>
                     </div>
                   </div>
                 </div>
@@ -222,9 +651,13 @@ const AdminAnnouncementPage = () => {
                   <div className="text-xs text-slate-400 italic">
                     * Nhấn Gửi để xác nhận tác vụ.
                   </div>
-                  <button className="flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-sm font-bold uppercase text-xs tracking-widest transition-all shadow-lg active:transform active:scale-95">
+                  <button
+                    onClick={handleSendAnnouncement}
+                    disabled={isSending}
+                    className="flex items-center gap-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-sm font-bold uppercase text-xs tracking-widest transition-all shadow-lg active:transform active:scale-95"
+                  >
                     <Send size={16} />
-                    Gửi thông báo ngay
+                    {isSending ? "Đang gửi..." : "Gửi thông báo ngay"}
                   </button>
                 </div>
               </div>

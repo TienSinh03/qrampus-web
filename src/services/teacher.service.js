@@ -181,6 +181,30 @@ class TeacherService {
   }
 
   /**
+   * Get students by authenticated teacher token
+   * @returns {Promise<{success:boolean,data:{teacher?:Object,totalClassSessions:number,totalStudents:number,students:Array},message:string}>}
+   */
+  async getMyStudents() {
+    try {
+      const response = await axiosClient.get(TEACHER_ENDPOINTS.ME_STUDENTS);
+      const payload = response?.data || {};
+
+      return {
+        success: response.success || true,
+        data: {
+          teacher: payload.teacher || null,
+          totalClassSessions: payload.totalClassSessions || 0,
+          totalStudents: payload.totalStudents || 0,
+          students: Array.isArray(payload.students) ? payload.students : [],
+        },
+        message: response.message || ''
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Get current teacher's schedule for today
    * @returns 
    */
@@ -212,6 +236,43 @@ class TeacherService {
       return {
         success: response.success || true,
         data: response.data || {},
+        message: response.message || ''
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get students in a course section (LT/TH)
+   * - LT: do not pass practiceGroupId
+   * - TH: pass practiceGroupId to filter by specific practice group
+   * @param {string} courseSectionCode - Mã học phần
+   * @param {Object} params - Query params
+   * @param {string} params.practiceGroupId - Practice group id (optional)
+   * @param {string} params.status - Enrollment status (optional)
+   * @returns {Promise<{success:boolean,data:{totalStudents:number,students:Array},message:string}>}
+   */
+  async getStudentsInCourseSection(courseSectionCode, params = {}) {
+    try {
+      const response = await axiosClient.get(
+        TEACHER_ENDPOINTS.COURSE_SECTION_STUDENTS(courseSectionCode),
+        { params }
+      );
+
+      const payload = response?.data?.students || response?.data || {};
+      const students = Array.isArray(payload?.students)
+        ? payload.students
+        : Array.isArray(payload)
+          ? payload
+          : [];
+
+      return {
+        success: response.success || true,
+        data: {
+          totalStudents: payload?.totalStudents || students.length,
+          students,
+        },
         message: response.message || ''
       };
     } catch (error) {

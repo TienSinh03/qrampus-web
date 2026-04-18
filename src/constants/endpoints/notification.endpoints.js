@@ -5,6 +5,7 @@ import { API_VERSION } from '../config';
  */
 export const NOTIFICATION_ENDPOINTS = {
   BASE: `${API_VERSION}/notifications`,
+  BULK_TARGET_TYPE: `${API_VERSION}/notifications/bulk-target-type`,
   UNREAD_COUNT: `${API_VERSION}/notifications/unread-count`,
   MARK_READ: (id) => `${API_VERSION}/notifications/${id}/read`,
   MARK_ALL_READ: `${API_VERSION}/notifications/read-all`,

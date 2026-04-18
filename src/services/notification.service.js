@@ -2,6 +2,24 @@ import axiosClient from '@api/axiosClient';
 import { NOTIFICATION_ENDPOINTS } from '@constants/endpoints';
 
 class NotificationService {
+  async createNotification(payload) {
+    try {
+      const response = await axiosClient.post(NOTIFICATION_ENDPOINTS.BASE, payload);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async createBulkByTargetType(payload) {
+    try {
+      const response = await axiosClient.post(NOTIFICATION_ENDPOINTS.BULK_TARGET_TYPE, payload);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getNotifications(params = {}) {
     try {
       const response = await axiosClient.get(NOTIFICATION_ENDPOINTS.BASE, { params });
