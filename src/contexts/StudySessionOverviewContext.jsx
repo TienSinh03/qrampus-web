@@ -16,10 +16,7 @@ const DEFAULT_OVERVIEW = {
     estimatedEndDate: null,
   },
   leaveEvidence: {
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
+    total: 0
   },
 };
 
