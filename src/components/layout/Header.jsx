@@ -20,6 +20,7 @@ import { useAuth } from "@contexts/AuthContext";
 import { useNotification } from "@contexts/NotificationContext";
 import { ROLE_LABELS } from "@constants/roles";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+import DOMPurify from 'dompurify';
 
 const formatNotificationTime = (sentAt) => {
   if (!sentAt) return "--:--";
@@ -180,11 +181,11 @@ const Header = ({ toggleSidebar }) => {
                     {/* Header */}
                     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                       <h3 className="text-lg font-semibold text-gray-900">
-                        Notifications
+                        Thông báo của bạn
                       </h3>
                       {unreadCount > 0 && (
                         <span className="px-3 py-1 text-xs font-bold text-white bg-[#153898] rounded-full">
-                          {unreadCount} New
+                          {unreadCount}  thông báo mới
                         </span>
                       )}
                     </div>
@@ -197,14 +198,22 @@ const Header = ({ toggleSidebar }) => {
                       {notificationsLoading && notifications.length === 0 && (
                         <div className="px-6 py-8 flex items-center justify-center gap-2 text-sm text-gray-500">
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Dang tai thong bao...
+                          Đang tải thông báo...
                         </div>
                       )}
 
                       {!notificationsLoading && notifications.length === 0 && (
-                        <div className="px-6 py-8 text-center text-sm text-gray-500">
-                          Chua co thong bao nao.
+                      <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+                        <div className="mb-3 text-gray-300">
+                          <img
+                            src="/assets/images/svg_notification.svg"
+                            alt="Không có thông báo"
+                            className="w-24 h-24 object-contain"
+                          />
                         </div>
+                        
+                        <p className="text-sm text-gray-500">Chưa có thông báo</p>
+                      </div>
                       )}
 
                       {notifications.map((notif) => (
@@ -234,9 +243,10 @@ const Header = ({ toggleSidebar }) => {
                             <div className="flex flex-row justify-between">
 
                               {notif.message && (
-                                <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
-                                  {notif.message}
-                                </p>
+                                  <p 
+                                    className="text-sm text-gray-600 mt-0.5 line-clamp-2"
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(notif.message) }}
+                                  />
                               )}
 
                               {!notif.is_read && (
@@ -254,7 +264,7 @@ const Header = ({ toggleSidebar }) => {
                       {notificationsLoadingMore && notifications.length > 0 && (
                         <div className="px-6 py-3 flex items-center justify-center gap-2 text-xs text-gray-500">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          Dang tai them thong bao...
+                          Đang tải thêm thông báo...
                         </div>
                       )}
                     </div>
@@ -267,7 +277,7 @@ const Header = ({ toggleSidebar }) => {
                           onClick={() => navigate("/dashboard/notifications")}
                           className="w-full py-3 text-sm font-bold text-white bg-blue-900 hover:bg-blue-800 rounded-xl transition"
                         >
-                          Xem tat ca thong bao
+                          Xem tất cả thông báo
                         </button>
                         {unreadCount > 0 && (
                           <button
@@ -275,7 +285,7 @@ const Header = ({ toggleSidebar }) => {
                             onClick={markAllNotificationsAsRead}
                             className="w-full py-2.5 text-sm font-semibold text-blue-900 bg-blue-50 hover:bg-blue-100 rounded-xl transition"
                           >
-                            Danh dau tat ca da doc
+                            Đánh dấu tất cả đã đọc
                           </button>
                         )}
                       </div>

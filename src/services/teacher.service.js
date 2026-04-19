@@ -29,7 +29,7 @@ class TeacherService {
         success: response.success || true,
         data: Array.isArray(response.data) ? response.data : [],
         message: response.message || '',
-        pagination: response.pagination || {
+        pagination: response.meta || response.pagination || {
           total: 0,
           page: params.page || 1,
           limit: params.limit || 10,

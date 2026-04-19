@@ -165,7 +165,7 @@ export const NotificationProvider = ({ children }) => {
       const response = await notificationService.markAsRead(notificationId);
 
       if (!response?.success) {
-        const message = response?.message || 'Khong the danh dau da doc';
+        const message = response?.message || 'Không thể đánh dấu đã đọc';
         return { success: false, error: message };
       }
 
@@ -199,7 +199,7 @@ export const NotificationProvider = ({ children }) => {
 
       return { success: true };
     } catch (err) {
-      return { success: false, error: err.message || 'Khong the danh dau tat ca da doc' };
+      return { success: false, error: err.message || 'Không thể đánh dấu tất cả đã đọc' };
     }
   }, []);
 
