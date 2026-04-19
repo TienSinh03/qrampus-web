@@ -298,6 +298,21 @@ class TeacherService {
     }
   }
 
+  
+  async getTeacherClassSessionOverview(classSessionId) {
+    try {
+      const response = await axiosClient.get(TEACHER_ENDPOINTS.CLASS_SESSION_OVERVIEW(classSessionId));
+
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || '',
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   /**
    * Handle errors from API
    * @param {Error} error - Error object
@@ -314,6 +329,8 @@ class TeacherService {
     return formattedError;
   }
 }
+
+
 
 // Export singleton instance
 const teacherService = new TeacherService();

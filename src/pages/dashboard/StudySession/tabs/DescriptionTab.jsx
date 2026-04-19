@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     SquareCheck,
     SquareUser,
@@ -9,12 +10,20 @@ import {
     FileText,
     MapPin,
     Clock,
-    Users,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useStudySessionOverview } from "@contexts/StudySessionOverviewContext";
 
 const DescriptionTab = ({ schedule }) => {
+    const navigate = useNavigate();
+    const {
+        overview,
+        loading: overviewLoading,
+        error: overviewError,
+        fetchOverview,
+    } = useStudySessionOverview();
+
     const activities = [
         {
             dotColor: "bg-violet-500",
@@ -37,13 +46,30 @@ const DescriptionTab = ({ schedule }) => {
         },
     ];
 
-    // Calculate attendance stats from schedule data
-    const attendedSessions = schedule?.session_number || 0;
-    const totalSessions = 40; // This should come from course data
-    const percentage = Math.round((attendedSessions / totalSessions) * 100);
+    useEffect(() => {
+        if (!schedule?.id) {
+            return;
+        }
+        fetchOverview(schedule.id);
+    }, [fetchOverview, schedule?.id]);
+
+    const courseProgress = overview?.courseProgress || {};
+    const leaveEvidence = overview?.leaveEvidence || {};
+
+    const attendedSessions = Number(courseProgress.learnedSessions || 0);
+    const totalSessions = Number(courseProgress.totalSessions || 0);
+    const remainingSessions = Number(courseProgress.remainingSessions || 0);
+    const percentage = totalSessions > 0
+        ? Math.round((attendedSessions / totalSessions) * 100)
+        : 0;
+    const safePercentage = Math.min(Math.max(percentage, 0), 100);
+    const leaveEvidenceTotal = Number(leaveEvidence.total || 0);
+    const estimatedEndDate = courseProgress.estimatedEndDate
+        ? format(parseISO(courseProgress.estimatedEndDate), "dd/MM/yyyy", { locale: vi })
+        : "Chưa xác định";
 
     const circumference = 2 * Math.PI * 72;
-    const strokeDashoffset = circumference - (circumference * percentage) / 100;
+    const strokeDashoffset = circumference - (circumference * safePercentage) / 100;
 
     // Format time
     const formatTime = (time) => {
@@ -65,6 +91,13 @@ const DescriptionTab = ({ schedule }) => {
     };
 
     const statusBadge = schedule ? getStatusBadge(schedule.status) : null;
+
+    const openLeaveEvidence = () => {
+        if (!schedule?.id) {
+            return;
+        }
+        navigate(`/dashboard/leave-management?classSessionId=${encodeURIComponent(schedule.id)}`);
+    };
 
     return (
         <div className="grid gap-6 md:grid-cols-3">
@@ -331,7 +364,7 @@ const DescriptionTab = ({ schedule }) => {
                                 {/* Phần trăm + text ở giữa */}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                                     <span className="text-5xl font-bold bg-gradient-to-br from-blue-600 to-emerald-500 bg-clip-text text-transparent">
-                                        {percentage}%
+                                        {safePercentage}%
                                     </span>
                                     <span className="text-sm text-slate-500 mt-1">đã hoàn thành</span>
                                 </div>
@@ -361,11 +394,18 @@ const DescriptionTab = ({ schedule }) => {
                                 <p className="text-sm text-slate-600 font-medium">
                                     Còn lại{" "}
                                     <span className="text-xl font-bold text-blue-600">
-                                        {totalSessions - attendedSessions}
+                                        {remainingSessions}
                                     </span>{" "}
                                     buổi • Kết thúc dự kiến:{" "}
-                                    <span className="text-emerald-600 font-semibold">15/01/2026</span>
+                                    <span className="text-emerald-600 font-semibold">{estimatedEndDate}</span>
                                 </p>
+
+                                {overviewLoading && (
+                                    <p className="text-xs text-slate-500">Đang tải dữ liệu tiến độ...</p>
+                                )}
+                                {overviewError && (
+                                    <p className="text-xs text-red-600">{overviewError}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -379,9 +419,12 @@ const DescriptionTab = ({ schedule }) => {
                                     Minh chứng phép
                                 </p>
 
-                                <p className="my-3 text-5xl font-bold text-yellow-600">0</p>
+                                <p className="my-3 text-5xl font-bold text-yellow-600">{leaveEvidenceTotal}</p>
 
-                                <button className="text-xs font-semibold text-blue-600 hover:text-yellow-700 transition">
+                                <button
+                                    onClick={openLeaveEvidence}
+                                    className="text-xs font-semibold text-blue-600 hover:text-yellow-700 transition"
+                                >
                                     Xem chi tiết →
                                 </button>
                             </div>
