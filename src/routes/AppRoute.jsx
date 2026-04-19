@@ -56,6 +56,7 @@ import { PrivateRoute } from "./PrivateRoute";
 import { RoleRoute } from "./RoleRoute";
 import RoleSwitchPage from "@pages/dashboard/RoleSwitchPage";
 import DashboardRedirect from "../components/common/DashboardRedirect";
+import ContentNotification from "../components/common/ContentNotification";
 
 import LayoutMain from "@components/layout/LayoutMain";
 import { ROLES } from "@constants/roles";
@@ -214,6 +215,10 @@ const router = createBrowserRouter([
       {
         path: "notifications",
         element: <AnnouncementPage />,
+      },
+      {
+        path: "notifications/:id",
+        element: <ContentNotification />,
       },
       // TEACHER ROUTES - Settings
       {

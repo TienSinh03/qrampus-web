@@ -224,6 +224,8 @@ const Header = ({ toggleSidebar }) => {
                             if (!notif.is_read) {
                               markNotificationAsRead(notif.id);
                             }
+                            navigate(`/dashboard/notifications/${notif.id}`);
+                            setOpenNotif(false);
                           }}
                           className={`w-full text-left flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition border-b border-gray-50 last:border-0 ${
                             notif.is_read ? "bg-white" : "bg-blue-100/50"

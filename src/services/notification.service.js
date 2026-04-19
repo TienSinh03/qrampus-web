@@ -29,6 +29,15 @@ class NotificationService {
     }
   }
 
+  async getNotificationById(notificationId) {
+    try {
+      const response = await axiosClient.get(NOTIFICATION_ENDPOINTS.DETAIL(notificationId));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getUnreadCount() {
     try {
       const response = await axiosClient.get(NOTIFICATION_ENDPOINTS.UNREAD_COUNT);
