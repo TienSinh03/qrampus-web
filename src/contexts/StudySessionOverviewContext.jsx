@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import teacherService from '@services/teacher.service';
@@ -18,7 +19,42 @@ const DEFAULT_OVERVIEW = {
   leaveEvidence: {
     total: 0
   },
+  attendanceOverview: {
+    totalStudents: 0,
+    attendanceSessionCount: 0,
+    qrGeneratedCount: 0,
+    latestSession: {
+      id: null,
+      status: null,
+      created_at: null,
+      expires_at: null,
+      attendedCount: 0,
+      absentCount: 0,
+      strangeDeviceCount: 0,
+    },
+  },
 };
+
+const normalizeOverview = (payload = {}) => ({
+  ...DEFAULT_OVERVIEW,
+  ...payload,
+  courseProgress: {
+    ...DEFAULT_OVERVIEW.courseProgress,
+    ...(payload?.courseProgress || {}),
+  },
+  leaveEvidence: {
+    ...DEFAULT_OVERVIEW.leaveEvidence,
+    ...(payload?.leaveEvidence || {}),
+  },
+  attendanceOverview: {
+    ...DEFAULT_OVERVIEW.attendanceOverview,
+    ...(payload?.attendanceOverview || {}),
+    latestSession: {
+      ...DEFAULT_OVERVIEW.attendanceOverview.latestSession,
+      ...(payload?.attendanceOverview?.latestSession || {}),
+    },
+  },
+});
 
 export const StudySessionOverviewProvider = ({ children }) => {
   const [overview, setOverview] = useState(DEFAULT_OVERVIEW);
@@ -52,7 +88,7 @@ export const StudySessionOverviewProvider = ({ children }) => {
         return { success: false, error: message };
       }
 
-      const nextOverview = response.data || DEFAULT_OVERVIEW;
+      const nextOverview = normalizeOverview(response.data || {});
 
       setOverview(nextOverview);
       setCurrentClassSessionId(classSessionId);
