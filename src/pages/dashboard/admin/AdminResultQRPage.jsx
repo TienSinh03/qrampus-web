@@ -198,7 +198,7 @@ const AdminResultQRPage = () => {
   };
 
   return (
-    <div className="min-h-screen space-y-6 bg-slate-50">
+    <div className="min-h-screen space-y-6 md:space-y-0 bg-slate-50">
       {/* TOP SECTION */}
       <div className="grid gap-6 lg:grid-cols-12">
         
