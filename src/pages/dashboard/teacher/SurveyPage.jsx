@@ -1,74 +1,168 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Calendar,
-  Users,
   Star,
   TrendingUp,
-  Filter,
-  ChevronDown,
-  CheckCircle2,
-  Eye, ArrowDownToLine, FileSpreadsheet, FilterX, File, Settings, X, Camera,
-  Printer, FileSearchIcon
+  Eye,
+  FileSpreadsheet,
+  FilterX,
+  X,
+  FileSearchIcon,
+  AlertCircle,
 } from "lucide-react";
+import { useSurveyDashboard } from "@contexts/SurveyDashboardContext";
+
+const toLower = (value) => String(value || "").toLowerCase().trim();
 
 export default function LecturerSurveyManagement() {
+  const {
+    items,
+    summary,
+    loading,
+    error,
+    lastFetched,
+    fetchSurveyStatistics,
+    refreshSurveyStatistics,
+  } = useSurveyDashboard();
+
+  const hasRequestedRef = useRef(false);
+
   const [selectedSemester, setSelectedSemester] = useState("all");
 
-  const semesters = [
-    { value: "all", label: "Tất cả học kỳ" },
-    { value: "hk1-2024-2025", label: "Học kỳ 1 - 2024/2025" },
-    { value: "hk2-2023-2024", label: "Học kỳ 2 - 2023/2024" },
-    { value: "hk1-2023-2024", label: "Học kỳ 1 - 2023/2024" },
-  ];
+  const [filters, setFilters] = useState({
+    courseCode: "",
+    courseName: "",
+    classType: "all",
+  });
 
-  const surveyData = [
-    {
-      id: 1,
-      course_section_code: "4203001549",
-      course_section_name: "Lập trình thiết bị di động",
-      semester: "hk1-2024-2025",
-      total_students_surveyed: 68,
-      total_survey_students: 64,
-      avg_rating: 94,
-      practice_group_id: null,
-    },
-    {
-      id: 2,
-      course_section_code: "4203002009",
-      course_section_name: "Phát triển ứng dụng Web",
-      semester: "hk1-2024-2025",
-      total_students_surveyed: 54,
-      total_survey_students: 48,
-      avg_rating: 89,
-      practice_group_id: 1,
-    },
-    {
-      id: 3,
-      course_section_code: "4203003259",
-      course_section_name: "Nhập môn AI",
-      semester: "hk1-2024-2025",
-      total_students_surveyed: 42,
-      total_survey_students: 28,
-      avg_rating: 67,
-      practice_group_id: 2,
-    },
-  ];
-
-  const filtered =
-    selectedSemester === "all"
-      ? surveyData
-      : surveyData.filter((i) => i.semester === selectedSemester);
-
-  const totalSV = filtered.reduce((s, i) => s + i.total_students_surveyed, 0);
-  const totalKS = filtered.reduce((s, i) => s + i.total_survey_students, 0);
-  const avgRate = totalSV ? Math.round((totalKS / totalSV) * 100) : 0;
-  const avgScore = filtered.length
-    ? (filtered.reduce((s, i) => s + (i.practice_group_id || 0), 0) / filtered.length).toFixed(1)
-    : "0.0";
+  const [appliedFilters, setAppliedFilters] = useState({
+    courseCode: "",
+    courseName: "",
+    classType: "all",
+  });
 
   // drawer xuất excel
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const closeDrawer = () => setIsDrawerOpen(false);
+
+  useEffect(() => {
+    if (hasRequestedRef.current || loading || lastFetched) {
+      return;
+    }
+
+    hasRequestedRef.current = true;
+    fetchSurveyStatistics();
+  }, [fetchSurveyStatistics, lastFetched, loading]);
+
+  const semesterOptions = useMemo(() => {
+    const semesters = [...new Set((items || []).map((item) => item?.semester).filter(Boolean))];
+    return [
+      { value: "all", label: "Tất cả học kỳ" },
+      ...semesters.map((semester) => ({ value: semester, label: semester })).sort((a, b) => {
+        const [yearA, termA] = a.value.split("-");
+        const [yearB, termB] = b.value.split("-");
+        if (yearA !== yearB) {
+          return Number(yearB) - Number(yearA);
+        }
+        return termB.localeCompare(termA);
+      }),
+    ];
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    return (items || []).filter((item) => {
+      if (selectedSemester !== "all" && item.semester !== selectedSemester) {
+        return false;
+      }
+
+      if (appliedFilters.classType !== "all" && item.class_type !== appliedFilters.classType) {
+        return false;
+      }
+
+      if (
+        appliedFilters.courseCode &&
+        !toLower(item.course_section_code).includes(toLower(appliedFilters.courseCode))
+      ) {
+        return false;
+      }
+
+      if (
+        appliedFilters.courseName &&
+        !toLower(item.course_section_name).includes(toLower(appliedFilters.courseName))
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [appliedFilters.classType, appliedFilters.courseCode, appliedFilters.courseName, items, selectedSemester]);
+
+  const displaySummary = useMemo(() => {
+    if (!filtered.length) {
+      return {
+        totalStudentsTargeted: 0,
+        totalStudentsParticipated: 0,
+        participationRate: 0,
+        averageRating: "0.0",
+        surveyedCourseSections: 0,
+      };
+    }
+
+    const totalStudentsTargeted = filtered.reduce(
+      (sum, item) => sum + Number(item.students_enrolled || 0), 0
+    );
+
+    const totalStudentsParticipated = filtered.reduce(
+      (sum, item) => sum + Number(item.students_participated || 0), 0
+    );
+
+    // tỷ lệ phần trăm
+    const participationRate =
+      totalStudentsTargeted > 0 ? Number((totalStudentsParticipated / totalStudentsTargeted) * 100).toFixed(2) : 0;
+
+    // điểm đánh giá trung bình
+    const ratingItems = filtered.filter(
+      (item) => typeof item.average_rating === "number" && !Number.isNaN(item.average_rating)
+    );
+
+    const averageRating =
+      ratingItems.length > 0 
+        ? ( ratingItems.reduce((sum, item) => sum + Number(item.average_rating || 0), 0) /ratingItems.length).toFixed(1) : "0.0";
+
+    const surveyedCourseSections = new Set(filtered.map((item) => item.course_section_id)).size;
+
+    return {
+      totalStudentsTargeted,
+      totalStudentsParticipated,
+      participationRate,
+      averageRating,
+      surveyedCourseSections,
+    };
+  }, [filtered]);
+
+  const effectiveSummary = filtered.length > 0 || appliedFilters.courseCode || appliedFilters.courseName || appliedFilters.classType !== "all" || selectedSemester !== "all"
+    ? displaySummary
+    : {
+        totalStudentsTargeted: Number(summary?.total_students_targeted || 0),
+        totalStudentsParticipated: Number(summary?.total_students_participated || 0),
+        participationRate: Math.round(Number(summary?.participation_rate_percent || 0)),
+        averageRating: Number(summary?.average_rating || 0).toFixed(2),
+        surveyedCourseSections: Number(summary?.surveyed_course_sections || 0),
+      };
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSearch = () => {
+    setAppliedFilters(filters);
+  };
+
+  const handleResetFilters = () => {
+    const initial = { courseCode: "", courseName: "", classType: "all" };
+    setSelectedSemester("all");
+    setFilters(initial);
+    setAppliedFilters(initial);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -98,7 +192,7 @@ export default function LecturerSurveyManagement() {
 
               <div className="bg-blue-50 rounded-xl p-4">
                 <p className="text-3xl font-bold text-blue-600">
-                  {totalSV}
+                  {effectiveSummary.totalStudentsParticipated}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
                   SV khảo sát
@@ -107,7 +201,7 @@ export default function LecturerSurveyManagement() {
 
               <div className="bg-emerald-50 rounded-xl p-4">
                 <p className="text-3xl font-bold text-emerald-600">
-                  {avgRate}%
+                  {effectiveSummary.participationRate}%
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
                   Tỷ lệ
@@ -116,7 +210,7 @@ export default function LecturerSurveyManagement() {
 
               <div className="bg-amber-50 rounded-xl p-4">
                 <p className="text-3xl font-bold text-amber-600 flex items-center justify-center gap-1">
-                  {avgScore}
+                  {effectiveSummary.averageRating}
                   <Star size={18} />
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
@@ -126,7 +220,7 @@ export default function LecturerSurveyManagement() {
 
               <div className="bg-purple-50 rounded-xl p-4">
                 <p className="text-3xl font-bold text-purple-600">
-                  {filtered.length}
+                  {effectiveSummary.surveyedCourseSections}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
                   Học phần
@@ -160,6 +254,8 @@ export default function LecturerSurveyManagement() {
               </label>
               <input
                 type="text"
+                value={filters.courseCode}
+                onChange={(e) => handleFilterChange("courseCode", e.target.value)}
                 placeholder="Ví dụ: 4203001549"
                 className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -170,6 +266,8 @@ export default function LecturerSurveyManagement() {
               </label>
               <input
                 type="text"
+                value={filters.courseName}
+                onChange={(e) => handleFilterChange("courseName", e.target.value)}
                 placeholder="Ví dụ: Lập trình thiết bị di động"
                 className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -180,13 +278,12 @@ export default function LecturerSurveyManagement() {
                 Hình thức học
               </label>
               <select
+                value={filters.classType}
+                onChange={(e) => handleFilterChange("classType", e.target.value)}
                 className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option key="LT" value="LT">
-                    LÝ THUYẾT
-                  </option>
-                  <option key="TH" value="TH">
-                    THỰC HÀNH
-                  </option>
+                  <option value="all">Tất cả hình thức</option>
+                  <option value="LÝ THUYẾT">LÝ THUYẾT</option>
+                  <option value="THỰC HÀNH">THỰC HÀNH</option>
               </select>
             </div>
             <div>
@@ -197,7 +294,7 @@ export default function LecturerSurveyManagement() {
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value)}
                 className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                {semesters.map((s) => (
+                {semesterOptions.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
                   </option>
@@ -211,7 +308,10 @@ export default function LecturerSurveyManagement() {
           {/* Actions - đã bỏ phần hiển thị cột */}
           <div className="mt-6 flex flex-wrap items-center justify-start md:justify-end gap-4">
             <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
-              <button className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200" >
+              <button
+                onClick={handleSearch}
+                className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
+              >
                 <FileSearchIcon className="w-5 h-5" />
                 Tìm kiếm
               </button>
@@ -219,13 +319,31 @@ export default function LecturerSurveyManagement() {
                 <FileSpreadsheet className="w-5 h-5" />
                 Tải Excel
               </button>
-              <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200"
+              >
                 <FilterX className="w-5 h-5" />
                 Xóa bộ lọc
               </button>
             </div>
           </div>
         </div>
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-red-700 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              <span>{error}</span>
+            </div>
+            <button
+              onClick={() => refreshSurveyStatistics()}
+              className="text-sm text-red-700 font-medium hover:underline"
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
 
         {/* ===== TABLE - cột cố định, không còn visibleCols ===== */}
         <div className="bg-white shadow-lg overflow-hidden">
@@ -244,8 +362,16 @@ export default function LecturerSurveyManagement() {
               </thead>
 
               <tbody className="divide-y">
+                {loading && (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-gray-500">
+                      Đang tải dữ liệu thống kê khảo sát...
+                    </td>
+                  </tr>
+                )}
+
                 {filtered.map(item => (
-                  <tr key={item.id} className="hover:bg-gray-50">
+                  <tr key={item.survey_id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium">
                       {item.course_section_code}
                     </td>
@@ -253,13 +379,13 @@ export default function LecturerSurveyManagement() {
                       {item.course_section_name}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {item.total_survey_students}/{item.total_students_surveyed}
+                      {item.students_participated}/{item.students_enrolled}
                     </td>
                     <td className="px-6 py-4 text-center font-bold">
-                      {item.avg_rating}%
+                      {Number(item.participation_rate_percent || 0).toFixed(1)}%
                     </td>
                     <td className="px-6 py-4 text-center text-amber-600 font-bold">
-                      {item.practice_group_id !== null ? item.practice_group_id : "—"}
+                      {item.practice_group_number != null ? item.practice_group_number : "—"}
                     </td>
 
                     <td className="px-6 py-4 text-center">
@@ -274,10 +400,10 @@ export default function LecturerSurveyManagement() {
                   </tr>
                 ))}
 
-                {filtered.length === 0 && (
+                {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-10 text-center text-gray-500">
-                      Không có dữ liệu trong học kỳ được chọn
+                    <td colSpan={7} className="py-10 text-center text-gray-500">
+                      Không có dữ liệu phù hợp với bộ lọc
                     </td>
                   </tr>
                 )}

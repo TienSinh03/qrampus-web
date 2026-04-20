@@ -2,6 +2,20 @@ import axiosClient from '@api/axiosClient';
 import { SURVEY_ENDPOINTS } from '@constants/endpoints';
 
 class SurveyService {
+  async getTeacherSurveyStatistics() {
+    try {
+      const response = await axiosClient.get(SURVEY_ENDPOINTS.TEACHER_STATISTICS);
+
+      return {
+        success: response?.success ?? true,
+        message: response?.message || '',
+        data: response?.data || { summary: {}, items: [] },
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   normalizeSurveyItem(item = {}) {
     const courseSection = item.courseSection || {};
     const scheduleTemplates = Array.isArray(courseSection.scheduleTemplates)
