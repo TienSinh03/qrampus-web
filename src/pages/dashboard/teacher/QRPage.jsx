@@ -19,6 +19,7 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAttendance } from "@contexts/AttendanceContext";
 import { useTeacherSchedule } from "@contexts/TeacherScheduleContext";
+import { useStudySessionOverview } from "@contexts/StudySessionOverviewContext";
 
 import { QRCodeSVG } from "qrcode.react";
 
@@ -34,6 +35,15 @@ const QRPage = () => {
     fetchTodaySchedules,
     refreshTodaySchedules,
   } = useTeacherSchedule();
+
+  const {
+    overview: classSessionOverview,
+    loading: classSessionOverviewLoading,
+    error: classSessionOverviewError,
+    currentClassSessionId: overviewClassSessionId,
+    fetchOverview: fetchClassSessionOverview,
+    refreshOverview: refreshClassSessionOverview,
+  } = useStudySessionOverview();
 
   // const { t } = useTranslation();
   const schedule = location.state?.schedule;
@@ -65,6 +75,11 @@ const QRPage = () => {
   const classSessionId = currentSchedule?.id || currentSchedule?.class_session_id || null;
   const practiceGroupName = currentSchedule?.practiceGroup?.group_name || currentSchedule?.practiceGroup?.groupName || "Chưa phân nhóm";
 
+  useEffect(() => {
+    if (!classSessionId) return;
+    fetchClassSessionOverview(classSessionId);
+  }, [classSessionId, fetchClassSessionOverview]);
+
   const sortedTodaySchedules = useMemo(() => {
     if (!Array.isArray(todaySchedules)) return [];
 
@@ -86,6 +101,11 @@ const QRPage = () => {
     sessionStorage.setItem('attendanceSchedule', JSON.stringify(scheduleItem));
     setLiveStats(null);
     setStatsError(null);
+
+    const nextClassSessionId = scheduleItem?.id || scheduleItem?.class_session_id;
+    if (nextClassSessionId) {
+      refreshClassSessionOverview(nextClassSessionId);
+    }
   };
 
   const persistAttendanceSchedule = () => {
@@ -149,6 +169,18 @@ const QRPage = () => {
     ? Math.round((sessionElapsedSeconds / sessionTotalSeconds) * 100)
     : 0;
   const completedSnapshot = getLatestCompletedSessionSnapshot(classSessionId);
+
+  useEffect(() => {
+    if (!classSessionId || !hasActiveSession) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      refreshClassSessionOverview(classSessionId);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [classSessionId, hasActiveSession, refreshClassSessionOverview]);
 
   useEffect(() => {
     const currentKey = toSessionKey(classSessionId);
@@ -280,20 +312,49 @@ const QRPage = () => {
     });
   };
 
-  const classSize = Number(effectiveStats?.stats?.total ?? currentSchedule?.courseSection?.max_students ?? 50);
-  const successCount = Number(effectiveStats?.stats?.attended ?? attendanceRows.length ?? 0);
-  const absentCount = Math.max(0, classSize - successCount);
-  const strangeDeviceCount = attendanceRows.filter(
-    (item) => item?.device_match === false || item?.device_verified === false
-  ).length;
-  const qrCreatedCount = Number(effectiveStats?.stats?.qr_generated ?? 1);
-  const attendedSessionCount = 12;
+  //helper number
+  const toCount = (value, fallback = 0) => {
+    const parsedValue = Number(value);
+
+    return Number.isFinite(parsedValue) ? parsedValue : fallback;
+  };
+
+  const attendanceOverview = classSessionOverview?.attendanceOverview || {};
+  const latestSessionOverview = attendanceOverview?.latestSession || {};
+
+  const classSize = toCount(
+    attendanceOverview?.totalStudents,
+    toCount(classSessionOverview?.classSession?.totalStudents, toCount(currentSchedule?.courseSection?.max_students, 0))
+  );
+
+  const computedStrangeDeviceCount = attendanceRows.filter((item) => item?.device_match === false || item?.device_verified === false).length;
+
+  // Điểm danh thành công
+  const successCount = hasActiveSession 
+    ? toCount(effectiveStats?.stats?.attended, toCount(attendanceRows.length, 0))
+    : toCount(latestSessionOverview?.attendedCount, toCount(effectiveStats?.stats?.attended, toCount(attendanceRows.length, 0)));
+
+  // Vắng mặt
+  const absentCount = hasActiveSession
+    ? Math.max(0, classSize - successCount)
+    : Math.max(0, toCount(latestSessionOverview?.absentCount, classSize - successCount));
+
+  // Thiết bị lạ
+  const strangeDeviceCount = hasActiveSession
+    ? (computedStrangeDeviceCount > 0 ? computedStrangeDeviceCount : toCount(latestSessionOverview?.strangeDeviceCount, 0))
+    : toCount(latestSessionOverview?.strangeDeviceCount, computedStrangeDeviceCount);
+
+  // Số QR đã tạo
+  const qrCreatedCount = hasActiveSession
+    ? toCount(effectiveStats?.stats?.qr_generated, toCount(attendanceOverview?.qrGeneratedCount, 0))
+    : toCount(attendanceOverview?.qrGeneratedCount, toCount(effectiveStats?.stats?.qr_generated, 0));
+
+  // Số phiên điểm danh đã tạo  
+  const attendedSessionCount = toCount(attendanceOverview?.attendanceSessionCount, 0);
   const capturedImageCount = Number(effectiveStats?.stats?.captured_images ?? effectiveStats?.stats?.photos ?? attendanceRows.length);
 
   const isSessionEnded = classSessionId ? !hasActiveSession : currentSchedule?.attendanceSession?.status === "ended";
-  const locationStatsCount = attendanceRows.filter(
-    (item) => item?.location_match === true || item?.location_verified === true
-  ).length || successCount;
+  const locationStatsCount = attendanceRows.filter((item) => item?.location_match === true || item?.location_verified === true).length || successCount;
 
   if (!currentSchedule) {
     return (
@@ -384,15 +445,25 @@ const QRPage = () => {
   return (
     <div className="space-y-6">
 
+      {classSessionOverviewError && overviewClassSessionId === classSessionId ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+          {classSessionOverviewError}
+        </div>
+      ) : null}
+
+      {classSessionOverviewLoading ? (
+        <p className="text-xs text-slate-400">Đang tải tổng quan buổi học...</p>
+      ) : null}
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
         <StatsCard
           title="SĨ SỐ"
           value={classSize.toLocaleString("vi-VN")}
-          percent="(Học phần)"
+          percent="(Buổi này)"
           positive={true}
-          subtitle="Tổng số sinh viên học phần"
+          subtitle="SV đã đăng ký (LT/TH tách riêng)"
           icon={<Users className="w-6 h-6 text-purple-600" />}
           iconBg="bg-purple-100"
         />
@@ -400,19 +471,19 @@ const QRPage = () => {
         <StatsCard
           title="SỐ QR ĐÃ TẠO"
           value={qrCreatedCount.toLocaleString("vi-VN")}
-          percent="(Hiện tại)"
+          percent="(Buổi này)"
           positive={true}
-          subtitle="Mã QR đã tạo cho buổi học"
+          subtitle="Tổng QR qua các phiên điểm danh"
           icon={<UserPlus className="w-6 h-6 text-rose-600" />}
           iconBg="bg-rose-100"
         />
 
         <StatsCard
-          title="SỐ BUỔI ĐÃ ĐIỂM DANH"
+          title="SỐ PHIÊN ĐIỂM DANH"
           value={attendedSessionCount.toLocaleString("vi-VN")}
-          percent="(Học kỳ)"
+          percent="(Buổi này)"
           positive={true}
-          subtitle="Tổng buổi đã thực hiện điểm danh"
+          subtitle="Số phiên điểm danh đã tạo"
           icon={<CalendarClock className="w-6 h-6 text-green-600" />}
           iconBg="bg-green-100"
         />
