@@ -10,6 +10,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useSurveyDashboard } from "@contexts/SurveyDashboardContext";
+import ModalViewTeacherSurvey from "@components/modal/ModalViewTeacherSurvey";
 
 const toLower = (value) => String(value || "").toLowerCase().trim();
 
@@ -44,6 +45,19 @@ export default function LecturerSurveyManagement() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const closeDrawer = () => setIsDrawerOpen(false);
 
+  const [surveySelected, setSurveySelected] = useState(null);
+  const [openedModal, setOpenedModal] = useState(false);
+
+  const handleOpenDetailModal = (item) => {
+    setOpenedModal(true);
+    setSurveySelected(item);
+  };
+
+  const handleCloseDetailModal = () => {
+    setOpenedModal(false);
+    setSurveySelected(null);
+  };
+
   useEffect(() => {
     if (hasRequestedRef.current || loading || lastFetched) {
       return;
@@ -69,7 +83,7 @@ export default function LecturerSurveyManagement() {
   }, [items]);
 
   const filtered = useMemo(() => {
-    return (items || []).filter((item) => {
+    let result = (items || []).filter((item) => {
       if (selectedSemester !== "all" && item.semester !== selectedSemester) {
         return false;
       }
@@ -93,6 +107,16 @@ export default function LecturerSurveyManagement() {
       }
 
       return true;
+    });
+
+    return result.sort((a, b) => {
+      const semesterCompare = b.semester.localeCompare(a.semester);
+      
+      if (semesterCompare !== 0) {
+        return semesterCompare;
+      }
+
+      return a.course_section_name.localeCompare(b.course_section_name);
     });
   }, [appliedFilters.classType, appliedFilters.courseCode, appliedFilters.courseName, items, selectedSemester]);
 
@@ -354,6 +378,7 @@ export default function LecturerSurveyManagement() {
                   <th className="px-6 py-4 text-left text-sm font-semibold">Mã học phần</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Tên học phần</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold">SV khảo sát</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">Đánh giá</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold">Tỷ lệ</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold">Nhóm</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold">Học kỳ</th>
@@ -364,7 +389,7 @@ export default function LecturerSurveyManagement() {
               <tbody className="divide-y">
                 {loading && (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-gray-500">
+                    <td colSpan={8} className="py-10 text-center text-gray-500">
                       Đang tải dữ liệu thống kê khảo sát...
                     </td>
                   </tr>
@@ -382,6 +407,9 @@ export default function LecturerSurveyManagement() {
                       {item.students_participated}/{item.students_enrolled}
                     </td>
                     <td className="px-6 py-4 text-center font-bold">
+                      {Number(item.average_rating || 0).toFixed(1)} <Star size={14} className="inline-block text-amber-500" />
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold">
                       {Number(item.participation_rate_percent || 0).toFixed(1)}%
                     </td>
                     <td className="px-6 py-4 text-center text-amber-600 font-bold">
@@ -393,7 +421,12 @@ export default function LecturerSurveyManagement() {
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      <button className="p-2 rounded-full hover:bg-gray-100">
+                      <button
+                        className="p-2 rounded-full hover:bg-gray-100"
+                        onClick={() => handleOpenDetailModal(item)}
+                        title="Xem chi tiết khảo sát"
+                        aria-label="Xem chi tiết khảo sát"
+                      >
                         <Eye size={18} />
                       </button>
                     </td>
@@ -402,7 +435,7 @@ export default function LecturerSurveyManagement() {
 
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-gray-500">
+                    <td colSpan={8} className="py-10 text-center text-gray-500">
                       Không có dữ liệu phù hợp với bộ lọc
                     </td>
                   </tr>
@@ -499,6 +532,13 @@ export default function LecturerSurveyManagement() {
           </div>
         </>
       )}
+
+      
+      <ModalViewTeacherSurvey
+        isOpen={openedModal}
+        onClose={handleCloseDetailModal}
+        surveyData={surveySelected}
+      />
     </div>
   );
 }
