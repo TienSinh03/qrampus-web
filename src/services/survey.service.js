@@ -69,6 +69,7 @@ class SurveyService {
       course_section_id,
       course_name,
       personnel_code,
+      is_active,
     } = options;
 
     const params = {
@@ -79,6 +80,7 @@ class SurveyService {
       course_section_id,
       course_name,
       personnel_code,
+      is_active,
     };
 
     Object.keys(params).forEach((key) => {
@@ -193,6 +195,82 @@ class SurveyService {
           total: normalizedTotal,
           totalPages: normalizedTotalPages,
         },
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getSurveyResults(options = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      course_code,
+      course_name,
+      teacher_code,
+      teacher_name,
+      semester,
+      class_type,
+      course_section_id,
+    } = options;
+
+    const params = {
+      page,
+      limit,
+      course_code,
+      course_name,
+      teacher_code,
+      teacher_name,
+      semester,
+      class_type,
+      course_section_id,
+    };
+
+    Object.keys(params).forEach((key) => {
+      if (params[key] === undefined || params[key] === null || params[key] === '') {
+        delete params[key];
+      }
+    });
+
+    try {
+      const response = await axiosClient.get(SURVEY_ENDPOINTS.ADMIN_SUMMARY_COURSE_SECTION, { params });
+
+      const payload = response?.data?.data || response?.data || {};
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      const rawPagination = payload?.pagination || response?.meta || {};
+
+      const normalizedPage = Number(rawPagination.page ?? page) || Number(page) || 1;
+      const normalizedLimit = Number(rawPagination.limit ?? limit) || Number(limit) || 10;
+      const normalizedTotal = Number(rawPagination.total ?? payload?.total_surveys ?? items.length) || 0;
+      const normalizedTotalPages = Number(rawPagination.totalPages ?? rawPagination.total_pages) ||
+        (normalizedTotal > 0 ? Math.ceil(normalizedTotal / normalizedLimit) : 1);
+
+      return {
+        success: response?.success ?? true,
+        message: response?.message || '',
+        data: {
+          ...payload,
+          items,
+          pagination: {
+            page: normalizedPage,
+            limit: normalizedLimit,
+            total: normalizedTotal,
+            totalPages: normalizedTotalPages,
+          },
+        },
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getAdminSummaryById(surveyId) {
+    try {
+      const response = await axiosClient.get(SURVEY_ENDPOINTS.ADMIN_SUMMARY_BY_ID(surveyId));
+      return {
+        success: response?.success ?? true,
+        message: response?.message || '',
+        data: response?.data || null,
       };
     } catch (error) {
       throw this.handleError(error);
