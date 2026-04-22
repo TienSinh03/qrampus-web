@@ -6,6 +6,7 @@ import {
     FilterX,
     Settings, X, FileSearchIcon
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAttendance } from "@contexts/AttendanceContext";
 import Pagination from "../../../../components/common/Pagination";
 
@@ -34,6 +35,8 @@ const getScheduleTypeLabel = (scheduleType) => {
 };
 
 const QRCodeTab = ({ schedule }) => {
+    const navigate = useNavigate();
+
     const {
         history,
         historyLoading,
@@ -171,6 +174,41 @@ const QRCodeTab = ({ schedule }) => {
         1 +
         Object.values(visibleCols).filter(Boolean).length +
         (visibleCols.diemdanhthatbai ? 1 : 0);
+
+    const handleOpenSessionDetail = (sessionItem) => {
+        if (!sessionItem) return;
+
+        const selectedClassSessionId = sessionItem.class_session_id || schedule?.id || null;
+
+        const schedulePayload = {
+            ...schedule,
+            id: selectedClassSessionId,
+            class_session_id: selectedClassSessionId,
+            class_date: sessionItem.class_date || schedule?.class_date || schedule?.classDate,
+            start_hour: sessionItem.start_hour || schedule?.start_hour,
+            session_number: sessionItem.session_number || schedule?.session_number,
+            room: {
+                ...(schedule?.room || {}),
+                room_name: sessionItem.room_name || schedule?.room?.room_name,
+            },
+            attendanceSession: {
+                ...(schedule?.attendanceSession || {}),
+                id: sessionItem.id,
+                status: sessionItem.status,
+                created_at: sessionItem.created_at,
+                expires_at: sessionItem.expires_at,
+                session_duration_minutes: sessionItem.session_duration_minutes,
+                qr_interval: sessionItem.qr_interval,
+                quorum_met: sessionItem.quorum_met,
+            },
+            selectedHistorySession: sessionItem,
+        };
+
+        sessionStorage.setItem("attendanceSchedule", JSON.stringify(schedulePayload));
+        navigate("/dashboard/qrcode", {
+            state: { schedule: schedulePayload },
+        });
+    };
 
 
 
@@ -540,7 +578,11 @@ const QRCodeTab = ({ schedule }) => {
 
                                     {visibleCols.hanhdong && (
                                         <td className="border-b border-gray-100 px-4 py-3 text-center">
-                                            <button className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOpenSessionDetail(item)}
+                                                className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                                            >
                                                 Xem chi tiết
                                             </button>
                                         </td>
