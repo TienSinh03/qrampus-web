@@ -75,6 +75,21 @@ class AttendanceService {
   }
 
   /**
+   * Lấy tiến độ điểm danh của 1 sinh viên trong 1 học phần cụ thể (cho giảng viên)
+   */
+  async getStudentAttendanceHistory(studentId, params) {
+    try {
+      const response = await axiosClient.get(
+        ATTENDANCE_ENDPOINTS.STUDENT_ATTENDANCE_HISTORY(studentId),
+        { params }
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Khởi tạo/làm mới kết quả chốt điểm danh theo buổi học
    * @param {Object} payload - { class_session_id, attendance_session_id?, overwrite_non_finalized? }
    * @returns {Promise} Attendance results initialize response

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
-    Edit, Eye, IdCard, Table2,
+    Eye, IdCard, Table2,
     ArrowDown, ArrowUp, FileSpreadsheet, FilterX,
     FileSearchIcon, Loader2
 } from "lucide-react";
@@ -35,6 +35,27 @@ const StudentStudySession = ({ schedule }) => {
     });
 
     const { students, loading, error, fetchStudents } = useClassSessionStudents();
+
+    const handleOpenStudentProgress = (student) => {
+        const courseSectionId = schedule?.course_section_id || schedule?.courseSection?.id || null;
+        const schedulePracticeGroupId = schedule?.practice_group_id || schedule?.practiceGroup?.id || null;
+        const practiceGroupId = schedule?.schedule_type === 'theory' ? null : schedulePracticeGroupId;
+
+        if (!student?.studentId || !courseSectionId) {
+            return;
+        }
+
+        navigate('/dashboard/results-qr-detail-user', {
+            state: {
+                detailPayload: {
+                    student,
+                    schedule,
+                    courseSectionId,
+                    practiceGroupId,
+                },
+            },
+        });
+    };
 
     useEffect(() => {
         if (schedule?.id) {
@@ -334,8 +355,9 @@ const StudentStudySession = ({ schedule }) => {
                     {[
                         { type: "table", icon: Table2, label: "Table" },
                         { type: "card", icon: IdCard, label: "Card" },
-                    ].map(({ type, icon: Icon, label }) => {
+                    ].map(({ type, icon, label }) => {
                         const active = view === type;
+                        const IconComponent = icon;
 
                         return (
                             <button
@@ -347,7 +369,7 @@ const StudentStudySession = ({ schedule }) => {
                                         : "text-gray-700 hover:bg-gray-300"
                                     }`}
                             >
-                                <Icon className="w-4 h-4 mr-2" />
+                                <IconComponent className="w-4 h-4 mr-2" />
                                 {label}
                             </button>
                         );
@@ -382,7 +404,7 @@ const StudentStudySession = ({ schedule }) => {
                                     <tr 
                                         key={student.studentId} 
                                         className="hover:bg-gray-50"
-                                        onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                                        onClick={() => handleOpenStudentProgress(student)}
                                         style={{ cursor: "pointer" }}
                                     >
                                         <td className="py-3 px-4">
@@ -434,7 +456,7 @@ const StudentStudySession = ({ schedule }) => {
                             <div 
                                 key={student.studentId} 
                                 className="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition"
-                                onClick={() => navigate('/dashboard/results-qr-detail-user')}
+                                onClick={() => handleOpenStudentProgress(student)}
                                 style={{ cursor: "pointer" }}
                             >
                                 <div className="flex items-center mb-4">

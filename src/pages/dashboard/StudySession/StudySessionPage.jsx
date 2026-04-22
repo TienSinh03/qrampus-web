@@ -20,7 +20,6 @@ const StudySessionPage = () => {
     const [schedule, setSchedule] = useState(scheduleFromState || null);
     const [hasActiveSession, setHasActiveSession] = useState(schedule?.has_active_session || false);
     const [checkingSession, setCheckingSession] = useState(false);
-
     // If no schedule in state, you might want to redirect or fetch it
     useEffect(() => {
         if (!scheduleFromState) {

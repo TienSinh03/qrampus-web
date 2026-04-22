@@ -433,6 +433,58 @@ export const AttendanceProvider = ({ children }) => {
     });
   }, []);
 
+  /**
+   * Lấy tiến độ điểm danh của sinh viên theo học phần cụ thể (cho màn chi tiết giảng viên)
+   */
+  const fetchStudentAttendanceProgress = useCallback(async ({
+    studentId,
+    courseSectionId,
+    practiceGroupId,
+    semester,
+    status,
+    fromDate,
+    toDate,
+    page = 1,
+    limit = 20,
+  }) => {
+
+    try {
+      const params = {
+        course_section_id: courseSectionId,
+        page,
+        limit,
+      };
+
+      if (practiceGroupId === null) {
+        params.practice_group_id = 'null';
+      } else if (practiceGroupId !== undefined && practiceGroupId !== '') {
+        params.practice_group_id = practiceGroupId;
+      }
+
+      if (semester) params.semester = semester;
+      if (status) params.status = status;
+      if (fromDate) params.from_date = fromDate;
+      if (toDate) params.to_date = toDate;
+
+      const response = await AttendanceService.getStudentAttendanceHistory(studentId, params);
+
+      if (response?.success) {
+        return {
+          success: true,
+          data: response.data,
+        };
+      }
+
+      const message = response?.message || 'Không thể lấy tiến độ điểm danh sinh viên';
+      return { success: false, error: message };
+    } catch (error) {
+      return {
+        success: false,
+        error: error?.message || 'Không thể lấy tiến độ điểm danh sinh viên',
+      };
+    }
+  }, []);
+
 
   /**
    * Clear active session
@@ -589,6 +641,7 @@ export const AttendanceProvider = ({ children }) => {
     getStats,
     initializeAttendanceResults,
     fetchSessionHistory,
+    fetchStudentAttendanceProgress,
     clearSessionHistory,
     clearSession,
     checkActiveSession,
