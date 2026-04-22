@@ -7,6 +7,7 @@ import ModalEditSurvey from "../../../components/modal/ModalEditSurvey";
 import ModalViewSurvey from "../../../components/modal/ModalViewSurvey";
 import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
 import ModalCourseSurveyList from "../../../components/modal/ModalCourseSurveyList";
+import ModalSurveyResultsPage from "../../../components/modal/ModalSurveyResultsPage";
 import reportService from "../../../services/report.service";
 import surveyService from "../../../services/survey.service";
 import LoadingSpinner from "@components/layout/LoadingSpinner";
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 
 import {
   CirclePlus,
+  BarChart,
   Trash2,
   LockKeyhole,
   CloudUpload,
@@ -30,8 +32,9 @@ import {
   Lock,
   File, Camera, FileSearchIcon,
   GitPullRequest,
-  ArrowUpWideNarrow, Settings
+  ArrowUpWideNarrow, Settings,
 } from "lucide-react";
+
 import StatsCard from "../../../components/common/StatsCard";
 const AdminSurveyPage = () => {
 
@@ -49,6 +52,8 @@ const AdminSurveyPage = () => {
   const [excludedIds, setExcludedIds] = useState([]);
   const [cardLoading, setCardLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [filterIsActive, setFilterIsActive] = useState('');
   const hasFetchedCardRef = useRef(false);
   const [cardStats, setCardStats] = useState({
     surveys: {
@@ -72,6 +77,8 @@ const AdminSurveyPage = () => {
     actionType: "",
     surveyData: null,
   });
+
+
 
   // Modal handlers
   const openAddSurveyModal = () => {
@@ -114,6 +121,8 @@ const AdminSurveyPage = () => {
     setModalConfirmAction({ isOpen: false, actionType: "", surveyData: null });
   };
 
+  const [modalSurveyResults, setModalSurveyResults] = useState({ isOpen: false, surveyData: null });
+
   const fetchCardSurvey = async () => {
     try {
       setCardLoading(true);
@@ -151,6 +160,7 @@ const AdminSurveyPage = () => {
       const response = await surveyService.getAllSurvey({
         page: currentPage,
         limit: pagination.limit,
+        ...(filterIsActive !== '' && { is_active: filterIsActive }),
       });
 
       setSurvey(Array.isArray(response?.data) ? response.data : []);
@@ -192,7 +202,7 @@ const AdminSurveyPage = () => {
 
   useEffect(() => {
     fetchSurveyList();
-  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentPage, filterIsActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectAllPages && survey.length > 0) {
@@ -475,11 +485,14 @@ const AdminSurveyPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Trạng thái
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Đến hạn khảo sát</option>
-                    <option>Đang mở</option>
-                    <option>Đã khóa</option>
-                    <option>Đang lên lịch</option>
+                  <select
+                    value={filterIsActive}
+                    onChange={(e) => { setFilterIsActive(e.target.value); setCurrentPage(1); }}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="true">Đang mở</option>
+                    <option value="false">Đã đóng</option>
                   </select>
                 </div>
                 <div>
@@ -601,6 +614,51 @@ const AdminSurveyPage = () => {
                   >
                     <ArrowUpWideNarrow className="w-5 h-5" />
                   </button>
+
+                  <button
+                    onClick={() => {
+                      setModalSurveyResults({ isOpen: true, surveyData: null });
+                    }}
+                    className="flex items-center gap-2 border border-green-400 text-green-600 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-green-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-offset-1 transition-all duration-200"
+                    title="Kết quả khảo sát"
+                  >
+                    <BarChart className="w-5 h-5" />
+                  </button>
+
+                  {/* TÍNH kết quả khảosát hết hạn */}
+                  <button
+                    onClick={async () => {
+                      if (selectedIds.length === 0) {
+                        toast.error("Vui lòng chọn ít nhất một khảo sát");
+                        return;
+                      }
+                      setSummaryLoading(true);
+                      try {
+                        const results = await Promise.allSettled(
+                          selectedIds.map((id) => surveyService.getAdminSummaryById(id))
+                        );
+                        const failed = results.filter((r) => r.status === "rejected");
+                        if (failed.length === 0) {
+                          toast.success("Tính điểm khảo sát thành công!");
+                        } else if (failed.length < results.length) {
+                          toast.warning(`Tính điểm thành công ${results.length - failed.length}/${results.length} khảo sát`);
+                        } else {
+                          toast.error(failed[0].reason?.message || "Tính điểm khảo sát thất bại");
+                        }
+                      } catch (error) {
+                        toast.error(error.message || "Tính điểm khảo sát thất bại");
+                      } finally {
+                        setSummaryLoading(false);
+                      }
+                    }}
+                    disabled={summaryLoading || tableLoading}
+                    className="flex items-center gap-2 border border-blue-400 text-blue-600 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Tính điểm khảo sát đã hết hạn"
+                  >
+                    <CheckLine className="w-5 h-5" />
+                    {selectedIds.length > 0 && <span className="text-sm">({selectedIds.length})</span>}
+                  </button>
+
 
                   {/* soạn bộ câu hỏi */}
 
@@ -1059,7 +1117,10 @@ const AdminSurveyPage = () => {
               userData={modalConfirmAction.surveyData}
               onConfirm={handleConfirmAction}
             />
-
+            <ModalSurveyResultsPage
+              isOpen={modalSurveyResults.isOpen}
+              onClose={() => setModalSurveyResults({ isOpen: false, surveyData: null })}
+            />
           </div>
         </div>
       </div>
