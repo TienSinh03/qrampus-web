@@ -184,9 +184,9 @@ const QRCodeTab = ({ schedule }) => {
             ...schedule,
             id: selectedClassSessionId,
             class_session_id: selectedClassSessionId,
-            class_date: sessionItem.class_date || schedule?.class_date || schedule?.classDate,
-            start_hour: sessionItem.start_hour || schedule?.start_hour,
-            session_number: sessionItem.session_number || schedule?.session_number,
+            class_date: sessionItem.class_date,
+            start_hour: sessionItem.start_hour,
+            session_number: sessionItem.session_number,
             room: {
                 ...(schedule?.room || {}),
                 room_name: sessionItem.room_name || schedule?.room?.room_name,
@@ -204,9 +204,16 @@ const QRCodeTab = ({ schedule }) => {
             selectedHistorySession: sessionItem,
         };
 
+        const sessionDetailPayload = {
+            schedule: schedulePayload,
+            session: sessionItem,
+        };
+
         sessionStorage.setItem("attendanceSchedule", JSON.stringify(schedulePayload));
-        navigate("/dashboard/qrcode", {
-            state: { schedule: schedulePayload },
+        sessionStorage.setItem("attendanceSessionDetail", JSON.stringify(sessionDetailPayload));
+
+        navigate("/dashboard/qrcode-session-detail", {
+            state: { sessionDetail: sessionDetailPayload },
         });
     };
 

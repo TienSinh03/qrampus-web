@@ -12,6 +12,7 @@ import ChangePasswordPage from "@pages/dashboard/AccountSetting/ChangePasswordPa
 import DashboardPage from "@pages/dashboard/teacher/DashboardPage";
 import SchedulePage from "@pages/dashboard/teacher/SchedulePage";
 import QRPage from "@pages/dashboard/teacher/QRPage";
+import QRSessionDetailPage from "@pages/dashboard/teacher/QRSessionDetailPage";
 import StudySessionPage from "@pages/dashboard/StudySession/StudySessionPage";
 import ResultQRPage from "@pages/dashboard/ResultsQR/ResultQRPage";
 import ResultQRDetailUserPage from "../pages/dashboard/ResultsQR/ResultQRDetailUserPage";
@@ -131,6 +132,14 @@ const router = createBrowserRouter([
         element: (
           <RoleRoute requiredRoles={[ROLES.TEACHER]}>
             <QRPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "qrcode-session-detail",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <QRSessionDetailPage />
           </RoleRoute>
         ),
       },
