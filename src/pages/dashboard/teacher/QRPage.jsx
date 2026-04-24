@@ -703,8 +703,14 @@ const QRPage = () => {
               Điểm danh hôm nay
             </h2>
             {/* mở ra danh sách KQ hôm đó */}
-            <button onClick={() => navigate('/dashboard/results-qr')} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"   title="Xem danh sách điểm danh hôm nay" disabled={!hasActiveSession}>
-              <View className="w-4 h-4" />
+            <button
+              onClick={() => navigate('/dashboard/results-qr')}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Xem danh sách điểm danh hôm nay"
+              disabled={!hasActiveSession}
+            >
+              <View className="h-4 w-4" />
+              Xem danh sách
             </button>
           </div>
           <div className="mb-4 flex gap-2 text-xs font-medium">

@@ -141,7 +141,7 @@ export default function LecturerSurveyManagement() {
 
     // tỷ lệ phần trăm
     const participationRate =
-      totalStudentsTargeted > 0 ? Number((totalStudentsParticipated / totalStudentsTargeted) * 100).toFixed(2) : 0;
+      totalStudentsTargeted > 0 ? Number((totalStudentsParticipated / totalStudentsTargeted) * 100).toFixed(1) : 0;
 
     // điểm đánh giá trung bình
     const ratingItems = filtered.filter(

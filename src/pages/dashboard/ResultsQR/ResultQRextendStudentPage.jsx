@@ -231,9 +231,9 @@ const FinalAttendancePage = () => {
     };
 
     const qrSize = Math.min(
-        screen.w * 0.85,
-        screen.h * 0.6,
-        600
+        screen.w * 0.9,
+        screen.h * 0.8,
+        900
     );
 
     // load lỗi
@@ -367,11 +367,31 @@ const FinalAttendancePage = () => {
                             </div>
                         </div>
 
-                        <div className="text-right">
-                            <p className="text-xs text-slate-400">Thời gian</p>
-                            <div className={`text-2xl font-semibold ${timeLeft < 60 ? 'text-red-500' : ''}`}>
-                                {formatTime(timeLeft)}
-                            </div>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={handleStop}
+                                disabled={closeLoading}
+                                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+                            >
+                                {closeLoading ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        Đang đóng...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Square size={14} />
+                                        Dừng phiên
+                                    </>
+                                )}
+                            </button>
+
+                            <div className="text-right">
+                                <p className="text-xs text-slate-400">Thời gian</p>
+                                <div className={`text-2xl font-semibold ${timeLeft < 60 ? 'text-red-500' : ''}`}>
+                                    {formatTime(timeLeft)}
+                                </div>
+                            </div>                            
                         </div>
                     </div>
 
@@ -389,7 +409,7 @@ const FinalAttendancePage = () => {
                                         course_section_id: schedule?.course_section_id,
                                     })}
                                     size={qrSize}
-                                    level="H"
+                                    level="M"
                                 />
                             ) : (
                                 <div 
@@ -424,27 +444,6 @@ const FinalAttendancePage = () => {
                                 />
                             </div>
                         </div>
-                    </div>
-
-                    {/* STOP */}
-                    <div className="pb-6 pt-2 flex justify-center">
-                        <button
-                            onClick={handleStop}
-                            disabled={closeLoading}
-                            className="text-sm text-slate-400 hover:text-red-500 flex items-center gap-2 disabled:opacity-50"
-                        >
-                            {closeLoading ? (
-                                <>
-                                    <Loader2 size={14} className="animate-spin" />
-                                    Đang đóng...
-                                </>
-                            ) : (
-                                <>
-                                    <Square size={14} />
-                                    Dừng phiên
-                                </>
-                            )}
-                        </button>
                     </div>
 
                 </div>
