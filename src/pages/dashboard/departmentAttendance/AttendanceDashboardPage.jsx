@@ -1,353 +1,286 @@
-import React from "react";
-import { Calendar, Bell, Clock, User, Ellipsis } from "lucide-react";
-export default function AttendanceDashboardPage() {
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Users, GraduationCap, BookOpen, Building2, FileText, AlertCircle,
+  CheckCircle, Calendar, Hand, ArrowUpRight, ArrowDownRight,
+  PlusCircle, History, Calendar as CalendarIcon
+} from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, 
+PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend as RechartsLegend
+} from 'recharts';
+import { useAuth } from "@contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import reportService from "@services/report.service";
+
+// --- Sub-Components ---
+const GrowthIndicator = ({ growth }) => {
+  const n = Number(growth || 0);
+  const isPositive = n > 0;
+  const isNegative = n < 0;
+
+  if (isPositive || isNegative) {
+    return (
+      <div className="flex items-center gap-1">
+        {isPositive ? <ArrowUpRight className="w-4 h-4 text-emerald-500" /> : <ArrowDownRight className="w-4 h-4 text-rose-500" />}
+        <span className={`text-sm font-medium ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+          {isPositive ? `+${n.toFixed(1)}%` : `${n.toFixed(1)}%`}
+        </span>
+        <span className="text-xs text-gray-500 ml-1">so với tháng trước</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen">
-      <div className="bg-gray-50 p-1">
-        <div className="mx-auto">
-          {/* Header */}
-          <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+    <div className="flex items-center gap-1">
+      <span className="text-sm text-gray-500 font-medium">Không đổi</span>
+      <span className="text-xs text-gray-500 ml-1">so với tháng trước</span>
+    </div>
+  );
+};
 
-          <h1 className="text-xl font-bold text-blue-700 mb-6">
-            Dshboard bộ phận chấm công
-          </h1>
+export default function AttendanceDashboardPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6 md:p-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Left: Avatar + Basic Info */}
-                <div className="md:col-span-1 flex justify-center items-center">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg mb-4 transition-all transform hover:scale-105">
-                      <img
-                        src="https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png"
-                        alt="Student"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <a
-                      href="#"
-                      className="text-sm text-blue-600 hover:underline hover:text-blue-800 transition-colors"
-                    >
-                      Xem chi tiết
-                    </a>
-                  </div>
-                </div>
+  const [dashboardStats, setDashboardStats] = useState({
+    students: { total: 0, growth: 0 },
+    teachers: { total: 0, growth: 0 },
+    courses: { total: 0, growth: 0 },
+    rooms: { total: 0, growth: 0 },
+  });
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [statsError, setStatsError] = useState("");
 
+  // Dữ liệu giả lập cho Biểu đồ (Bạn có thể fetch từ API sau)
+  const chartData = useMemo(() => {
+    return Array.from({ length: 31 }, (_, i) => {
+      const day = i + 1;
+      return {
+        date: `${day < 10 ? '0' + day : day}/04`,
+        success: Math.floor(Math.random() * 20) + 10, // Tạo số ngẫu nhiên từ 10-30
+        missed: Math.floor(Math.random() * 10),      // Tạo số ngẫu nhiên từ 0-10
+      };
+    });
+  }, []);
 
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        setIsLoadingStats(true);
+        const response = await reportService.getDashboardStats();
+        if (response?.success && response?.data) {
+          setDashboardStats({
+            students: { total: response.data.students?.total || 0, growth: response.data.students?.growth || 0 },
+            teachers: { total: response.data.teachers?.total || 0, growth: response.data.teachers?.growth || 0 },
+            courses: { total: response.data.courses?.total || 0, growth: response.data.courses?.growth || 0 },
+            rooms: { total: response.data.rooms?.total || 0, growth: response.data.rooms?.growth || 0 },
+          });
+        } else {
+          setStatsError("Không thể tải thống kê dashboard");
+        }
+      } catch (error) {
+        setStatsError(error.message || "Lỗi kết nối hệ thống");
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+    fetchDashboardStats();
+  }, []);
 
-                {/* Center: Main Info */}
-                <div className="md:col-span-1 space-y-3">
-                  <div>
-                    <span className="text-gray-600">Mã nhân sự:</span>
-                    <span className="ml-2 font-semibold">0111111</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Họ tên:</span>
-                    <span className="ml-2 font-semibold">Trần Minh Tiến</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Giới tính:</span>
-                    <span className="ml-2">Nam</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Ngày sinh:</span>
-                    <span className="ml-2">04/11/2003</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Nơi sinh:</span>
-                    <span className="ml-2">Đồng Tháp</span>
-                  </div>
-                </div>
+  const statCardsConfigs = useMemo(() => [
+    { label: "Tổng số Công đã tạo", value: dashboardStats.students.total, growth: dashboardStats.students.growth, icon: GraduationCap, color: "from-blue-500 to-blue-600", path: "/dashboard/admin/students" },
+    { label: "Tổng số Công chưa tạo", value: dashboardStats.teachers.total, growth: dashboardStats.teachers.growth, icon: Users, color: "from-purple-500 to-purple-600", path: "/dashboard/admin/teachers" },
+    { label: "Tổng ........", value: dashboardStats.courses.total, growth: dashboardStats.courses.growth, icon: BookOpen, color: "from-amber-500 to-amber-600", path: "/dashboard/admin/courses" },
+    { label: "Tổng .........", value: dashboardStats.rooms.total, growth: dashboardStats.rooms.growth, icon: Building2, color: "from-rose-500 to-rose-600", path: "/dashboard/admin/rooms" }
+  ], [dashboardStats]); 
 
-                {/* Right: Academic Info */}
-                <div className="md:col-span-1 space-y-3">
-                  <div>
-                    <span className="text-gray-600">Khoa:</span>
-                    <span className="ml-2 font-semibold">Công nghệ thông tin</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Số điện thoại:</span>
-                    <span className="ml-2">0123456789</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Học vị:</span>
-                    <span className="ml-2">Thạc sĩ</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Loại hình đào tạo:</span>
-                    <span className="ml-2">Chính quy</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Ngành:</span>
-                    <span className="ml-2">Kỹ thuật phần mềm</span>
-                  </div>
-                </div>
-              </div>
+  const quickActions = [
+    { label: 'Quản lý tài khoản', sub: 'Thêm, sửa, xóa user', icon: Users, color: 'bg-blue-100', text: 'text-blue-600', path: '/dashboard/admin/accounts' },
+    { label: 'Quản lý khóa học', sub: 'Thêm môn học mới', icon: BookOpen, color: 'bg-purple-100', text: 'text-purple-600', path: '/dashboard/admin/courses' },
+    { label: 'Quản lý lịch học', sub: 'Xếp lịch học, thi', icon: Calendar, color: 'bg-amber-100', text: 'text-amber-600', path: '/dashboard/admin/schedules' },
+    { label: 'Quản lý khảo sát', sub: 'Tạo khảo sát mới', icon: FileText, color: 'bg-emerald-100', text: 'text-emerald-600', path: '/dashboard/admin/surveys' },
+  ];
 
-              {/* Bottom Section: Notifications & Schedule */}
-              <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Notifications */}
-                <div className="bg-green-50 rounded-lg p-6 text-center border-2 border-green-200">
-                  <div className="flex justify-center mb-3">
-                    <div className="relative">
-                      <Bell className="w-8 h-8 text-green-600" />
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        0
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-gray-600 text-sm">
-                    Nhắc nhắc mới, chưa xem
-                  </p>
-                  <p className="text-4xl font-bold text-green-700 mt-2">0</p>
-                  <a href="#" className="text-sm text-green-600 hover:underline mt-3 inline-block">
-                    Xem chi tiết
-                  </a>
-                </div>
-
-                {/* Weekly Classes */}
-                <div className="bg-blue-50 rounded-lg p-6 text-center border-2 border-blue-200">
-                  <div className="flex justify-center mb-3">
-                    <Clock className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <p className="text-gray-700 font-medium">Lịch học trong tuần</p>
-                  <p className="text-4xl font-bold text-blue-700 mt-2">0</p>
-                  <a href="#" className="text-sm text-blue-600 hover:underline mt-3 inline-block">
-                    Xem chi tiết
-                  </a>
-                </div>
-
-                {/* Weekly Exams */}
-                <div className="bg-orange-50 rounded-lg p-6 text-center border-2 border-orange-200">
-                  <div className="flex justify-center mb-3">
-                    <Calendar className="w-8 h-8 text-orange-600" />
-                  </div>
-                  <p className="text-gray-700 font-medium">Lịch thi trong tuần</p>
-                  <p className="text-4xl font-bold text-orange-700 mt-700 mt-2">0</p>
-                  <a href="#" className="text-sm text-orange-600 hover:underline mt-3 inline-block">
-                    Xem chi tiết
-                  </a>
-                </div>
-              </div>
-            </div>
+  return (
+    <div className="bg-gray-50 p-4 font-sans">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="h-1 bg-[#153898] mb-6 rounded-full" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Dashboard Bộ phận Quản lý Công</h1>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100">
+            <Calendar className="w-4 h-4 text-[#153898]" />
+            <span className="capitalize">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
         </div>
       </div>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 p-1 mt-6">
 
-        {/* TRANSACTIONS */}
+      {/* Main Statistics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        {statCardsConfigs.map((card, idx) => (
+          <div
+            key={idx}
+            className="group bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all active:scale-[0.98] cursor-pointer"
+            onClick={() => navigate(card.path)}
+          >
+            <div className="flex justify-between items-start">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-500 mb-1 truncate">{card.label}</p>
+                <h3 className="text-2xl md:text-3xl font-extrabold text-gray-800">
+                  {isLoadingStats ? <span className="animate-pulse">...</span> : card.value.toLocaleString()}
+                </h3>
+                <div className="mt-2 min-h-[20px]">
+                  {!isLoadingStats && <GrowthIndicator growth={card.growth} />}
+                </div>
+              </div>
+              <div className={`h-11 w-11 md:h-12 md:w-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform`}>
+                <card.icon className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
-        <div className="lg:row-span-2 rounded-2xl p-4 sm:p-5 md:p-6 shadow-sm border border-rose-100/70 bg-gradient-to-br from-rose-50 via-white to-rose-100/60">
-          {/* HEADER */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-            <div>
-              <p className="text-ms uppercase tracking-wide text-rose-400 mb-1">
-                Học phần
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* --- PHẦN BIỂU ĐỒ VÀ CARD ĐIỂM DANH --- */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Sub-cards Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-indigo-50 rounded-lg text-indigo-600"><Calendar size={20} /></div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">Tổng công dạy hôm nay</p>
+                <p className="text-xl font-bold text-gray-800">24</p>
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-emerald-50 rounded-lg text-emerald-600"><CheckCircle size={20} /></div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium"> Công dạy đã tạo</p>
+                <p className="text-xl font-bold text-gray-800">156</p>
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-amber-50 rounded-lg text-amber-600"><PlusCircle size={20} /></div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">Công dạy chưa tạo</p>
+                <p className="text-xl font-bold text-gray-800">12</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Chart Card */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <History className="w-5 h-5 text-indigo-600" />
+                  Thống kê Công dạy
+                </h3>
+                <p className="text-xs text-gray-500 italic mt-1">* Dữ liệu tối đa 31 ngày gần nhất</p>
+              </div>
+              <div className="flex items-center gap-4">
+
+              </div>
+              <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
+                <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors bg-green-50 px-3 py-1 border border-gray-200 hover:bg-gray-100">
+                  <ArrowUpRight className="w-4 h-4" />
+                  Xuất Excel
+                </button>
+                <input type="date" className="bg-transparent border-none text-xs focus:ring-0 cursor-pointer text-gray-600" defaultValue="2024-04-01" />
+                <span className="text-gray-400 text-xs font-bold">→</span>
+                <input type="date" className="bg-transparent border-none text-xs focus:ring-0 cursor-pointer text-gray-600" defaultValue="2024-04-30" />
+              </div>
+            </div>
+
+            <div className="h-[320px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <Tooltip 
+                    cursor={{ fill: '#f9fafb' }} 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                  <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: '20px', fontSize: '12px' }} />
+                  <Bar dataKey="success" name="Đã tạo" stackId="a" fill="#10b981" barSize={32} radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="missed" name="Chưa tạo" stackId="a" fill="#f59e0b" barSize={32} radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-6 self-start">
+          
+          {/* 1. Quick Actions Grid 2x2 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="grid grid-cols-2 gap-3"> 
+                {quickActions.map((action, i) => (
+                  <button
+                    key={i}
+                    onClick={() => navigate(action.path)}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all text-left group"
+                  >
+                    {/* Icon nằm bên trái */}
+                    <div className={`h-10 w-10 rounded-lg ${action.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-sm`}>
+                      <action.icon className={`w-5 h-5 ${action.text}`} />
+                    </div>
+                    
+                    {/* Text nằm bên phải */}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-800 leading-tight truncate">
+                        {action.label}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 hidden sm:block">
+                        Quản lý
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          {/* 2. Pie Chart: Tỉ lệ điểm danh */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Đã tạo', value: 156 },
+                      { name: 'Chưa tạo', value: 12 },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60} // Tạo hình Donut cho hiện đại
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    <Cell fill="#10b981" /> {/* Xanh - Đã tạo */}
+                    <Cell fill="#f59e0b" /> {/* Vàng - Chưa tạo */}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <RechartsLegend verticalAlign="bottom" height={36}/>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 text-center">
+              <p className="text-sm text-gray-500">
+                Hiệu suất tạo phiên: <span className="font-bold text-emerald-600">92.8%</span>
               </p>
-              <h2 className="text-sm md:text-base font-semibold text-rose-600">
-                Học phần dạy kỳ này
-              </h2>
             </div>
-
-            <button className="self-start md:self-auto px-3 py-1.5 rounded-full text-xs font-medium bg-rose-500 text-white shadow-sm hover:bg-rose-600 transition">
-              Xem tất cả
-            </button>
           </div>
 
-          {/* DANH SÁCH CUỘN DỌC */}
-          <div className="relative max-h-64 overflow-y-auto pr-1 space-y-3">
-            {/* item 1 */}
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-rose-100 hover:bg-rose-50 transition">
-              <div className="mt-0.5 h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-400 flex items-center justify-center text-white shadow-sm">
-                <span className="text-lg">🎓</span>
-              </div>
-              <div className="text-xs sm:text-sm leading-snug text-slate-700">
-                <div className="font-semibold">
-                  Lập trình hướng đối tượng
-                </div>
-                <div className="text-[11px] sm:text-xs text-slate-400">
-                  3 tín chỉ • 45 tiết • Lý thuyết + thực hành
-                </div>
-              </div>
-            </div>
-
-            {/* item 2 */}
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-rose-100 hover:bg-rose-50 transition">
-              <div className="mt-0.5 h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-400 flex items-center justify-center text-white shadow-sm">
-                <span className="text-lg">💻</span>
-              </div>
-              <div className="text-xs sm:text-sm leading-snug text-slate-700">
-                <div className="font-semibold">
-                  Cấu trúc dữ liệu & Giải thuật
-                </div>
-                <div className="text-[11px] sm:text-xs text-slate-400">
-                  3 tín chỉ • 45 tiết
-                </div>
-              </div>
-            </div>
-
-            {/* item 3 */}
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-rose-100 hover:bg-rose-50 transition">
-              <div className="mt-0.5 h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white shadow-sm">
-                <span className="text-lg">📊</span>
-              </div>
-              <div className="text-xs sm:text-sm leading-snug text-slate-700">
-                <div className="font-semibold">
-                  Cơ sở dữ liệu
-                </div>
-                <div className="text-[11px] sm:text-xs text-slate-400">
-                  3 tín chỉ • Thực hành trên SQL
-                </div>
-              </div>
-            </div>
-
-            {/* item 4 (ví dụ thêm cho đủ scroll) */}
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/80 border border-rose-100 hover:bg-rose-50 transition">
-              <div className="mt-0.5 h-10 w-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white shadow-sm">
-                <span className="text-lg">📱</span>
-              </div>
-              <div className="text-xs sm:text-sm leading-snug text-slate-700">
-                <div className="font-semibold">
-                  Phát triển ứng dụng di động
-                </div>
-                <div className="text-[11px] sm:text-xs text-slate-400">
-                  2 tín chỉ • Project cuối kỳ
-                </div>
-              </div>
-            </div>
-
-            {/* thêm nhiều item nữa nếu muốn để scrollbar hiện rõ hơn */}
-          </div>
         </div>
-
-
-
-
-        {/* LOGISTICS */}
-        <div className="rounded-xl bg-white p-4 shadow">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-2xl bg-rose-500" />
-              <span className="text-0.5xl font-semibold">Số giờ dạy trong tuần</span>
-            </div>
-            <div className="text-slate-400 text-xs">
-              <Ellipsis w-5 h-5 />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold">18h</span>
-            <span className="text-sm text-emerald-500">89%</span>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Xem chi tiết</p>
-        </div>
-
-        {/* REPORTS */}
-        <div className="rounded-xl bg-white p-4 shadow">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-2xl bg-amber-400" />
-              <span className="text-0.5xl font-semibold">Số giờ dạy trong tháng</span>
-            </div>
-            <div className="text-slate-400 text-xs">
-              <Ellipsis w-5 h-5 />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold">268h</span>
-            <span className="text-sm text-rose-500">89%</span>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Xem chi tiết</p>
-        </div>
-
-        {/* WEBSITE STATS */}
-        <div className="lg:row-span-2 rounded-xl bg-white p-4 shadow">
-          <div className="flex items-start justify-between mb-4">
-            <span className="text-0.5xl font-semibold">Quá trình chấm công của bạn</span>
-            <div className="text-slate-400 text-xs">
-              <Ellipsis w-5 h-5 />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-4xl font-semibold">150h</span>
-            <div className="flex h-20 items-end gap-1">
-
-            </div>
-          </div>
-          <p className="text-xs text-slate-400 mb-4">Trạng thái chấm công</p>
-
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span>Thành công</span>
-              </div>
-              <div className="flex gap-6">
-                <span>86,471</span>
-                <span>15%</span>
-              </div>
-            </div>
-
-            <div className="flex justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-violet-400" />
-                <span>Thất bại</span>
-              </div>
-              <div className="flex gap-6">
-                <span>86,471</span>
-                <span>15%</span>
-              </div>
-            </div>
-
-            <div className="flex justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-400" />
-                <span >Thủ công</span>
-              </div>
-              <div className="flex gap-6">
-                <span>86,471</span>
-                <span>15%</span>
-              </div>
-            </div>
-
-            <div className="flex justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-rose-400" />
-                <span>Chưa chấm công</span>
-              </div>
-              <div className="flex gap-6">
-                <span>86,471</span>
-                <span>15%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* NEW VISITORS */}
-        <div className="lg:col-span-2 rounded-xl bg-rose-50 p-4 md:p-6 shadow">
-          <div className="flex flex-col md:flex-row items-center md:items-stretch justify-between gap-4">
-            {/* Text bên trái */}
-            <div className="flex-1">
-              <h3 className="text-sm md:text-base font-semibold text-rose-500 mb-1">
-                Trong trường hợp Giảng viên, chưa điểm danh, không tạo phiên điểm danh
-              </h3>
-              <p className="text-xs md:text-sm text-slate-600 mb-4">
-                Giảng viên vui lòng liên hệ phòng đào tạo để được hỗ trợ thêm về việc chấm công giảng dạy.
-              </p>
-              <button className="inline-flex items-center px-4 py-2 rounded-md bg-rose-500 text-white text-xs font-semibold shadow-sm hover:bg-rose-600">
-                Liên hệ phòng đào tạo
-              </button>
-            </div>
-
-            {/* Hình bên phải */}
-            <div className="w-32 h-24 md:w-40 md:h-28 rounded-lg bg-rose-100 flex items-center justify-center">
-              {/* Đổi emoji này thành <img src="..." /> nếu bạn có file hình */}
-              <span className="text-5xl">🧑🏻‍💻</span>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );

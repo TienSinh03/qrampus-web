@@ -29,6 +29,15 @@ class NotificationService {
     }
   }
 
+  async getMyCreatedNotifications(params = {}) {
+    try {
+      const response = await axiosClient.get(NOTIFICATION_ENDPOINTS.MY_CREATED, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getNotificationById(notificationId) {
     try {
       const response = await axiosClient.get(NOTIFICATION_ENDPOINTS.DETAIL(notificationId));

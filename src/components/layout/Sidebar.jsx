@@ -87,11 +87,17 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       path: '/dashboard/leave-management',
       roles: [ROLES.TEACHER]
     },
-    { 
-      icon: Bell, 
-      label: 'Thông báo', 
+    {
+      icon: Bell,
+      label: 'Tạo thông báo',
       path: '/dashboard/notifications',
-      roles: [ROLES.TEACHER, ROLES.ATTENDANCE_STAFF]
+      roles: [ROLES.TEACHER]
+    },
+    {
+      icon: Bell,
+      label: 'Quản lý thông báo',
+      path: '/dashboard/manage-notifications',
+      roles: [ROLES.TEACHER]
     },
     { 
       icon: Settings, 
@@ -103,8 +109,14 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     // ==================== ADMIN DASHBOARD & MENU ====================
     {
       icon: Bell,
-      label: 'Thông báo',
+      label: 'Tạo thông báo',
       path: '/dashboard/admin/announcement',
+      roles: [ROLES.ADMIN]
+    },
+    {
+      icon: Bell,
+      label: 'Quản lý thông báo',
+      path: '/dashboard/manage-notifications',
       roles: [ROLES.ADMIN]
     },
     { 
@@ -203,13 +215,18 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       roles: [ROLES.ATTENDANCE_STAFF]
     },
     //quản lý điểm danh
-    {
-      icon: ScanQrCode,
-      label: 'Kết quả Điểm danh',
-      path: '/dashboard/attendance-results',
-      roles: [ROLES.ATTENDANCE_STAFF]
-
-    }
+    // {
+    //   icon: ScanQrCode,
+    //   label: 'Kết quả Điểm danh',
+    //   path: '/dashboard/attendance-results',
+    //   roles: [ROLES.ATTENDANCE_STAFF]
+    // },
+    // {
+    //   icon: Bell,
+    //   label: 'Quản lý thông báo',
+    //   path: '/dashboard/manage-notifications',
+    //   roles: [ROLES.ATTENDANCE_STAFF]
+    // }
   ], [t]);
 
   // Filter menu items dựa trên activeRole của user

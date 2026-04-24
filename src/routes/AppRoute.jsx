@@ -59,7 +59,7 @@ import { RoleRoute } from "./RoleRoute";
 import RoleSwitchPage from "@pages/dashboard/RoleSwitchPage";
 import DashboardRedirect from "../components/common/DashboardRedirect";
 import ContentNotification from "../components/common/ContentNotification";
-
+import NotificationPage from "../components/common/NotificationPage";
 import LayoutMain from "@components/layout/LayoutMain";
 import { ROLES } from "@constants/roles";
 
@@ -435,6 +435,14 @@ const router = createBrowserRouter([
             <AttendanceSessionQRPage />
           </RoleRoute>
         )
+      },
+      {
+        path: "manage-notifications",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER, ROLES.ADMIN, ROLES.ATTENDANCE_STAFF]}>
+            <NotificationPage />
+          </RoleRoute>
+        ),
       }
 
 
