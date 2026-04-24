@@ -31,7 +31,7 @@
     "title": "Bảng điều khiển",
     "overview": "Tổng quan",
     "users": "Người dùng",
-    "schedule": "Lịch học",
+    "schedule": "Lịch dạy",
     "reports": "Báo cáo",
     "statistics": "Thống kê",
     "qrcode": "Điểm danh"
@@ -39,7 +39,7 @@
   "sidebar": {
     "dashboard": "Trang chủ",
     "users": "Quản lý người dùng",
-    "schedule": "Lịch học",
+    "schedule": "Lịch dạy",
     "reports": "Báo cáo",
     "settings": "Cài đặt",    
     "qrcode": "Điểm danh"
