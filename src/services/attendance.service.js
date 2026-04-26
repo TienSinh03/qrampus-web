@@ -134,6 +134,25 @@ class AttendanceService {
   }
 
   /**
+   * Kết quả chấm công của giảng viên đang đăng nhập theo khoảng ngày
+   * @param {string} fromDate - YYYY-MM-DD
+   * @param {string} toDate   - YYYY-MM-DD
+   * Response: { overview: { total_sessions, total_created, total_not_created, week_sessions },
+   *             data: [{ date, day_of_week, total, created, not_created, sessions[] }] }
+   */
+  async getTeacherAttendanceWorkload(fromDate, toDate) {
+    try {
+      const params = {};
+      if (fromDate) params.from_date = fromDate;
+      if (toDate) params.to_date = toDate;
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.TEACHER_WORKLOAD, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Thống kê nhanh số buổi hôm nay đã/chưa tạo phiên điểm danh
    */
   async getScheduleTodayStats() {

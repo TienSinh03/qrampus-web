@@ -1,9 +1,14 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { Calendar, Bell, Clock, Ellipsis, RefreshCw } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Calendar, Bell, Clock, RefreshCw } from "lucide-react";
 import AttendanceCalendar from "@components/teacher/AttendanceCalendar";
 import { useTeacherSchedule } from "@contexts/TeacherScheduleContext";
 import { usePersonnelProfile } from "@contexts/PersonnelProfileContext";
 import { useNavigate } from "react-router-dom";
+import attendanceService from "@services/attendance.service";
+
+const _now = new Date();
+const FIRST_OF_MONTH = new Date(_now.getFullYear(), _now.getMonth(), 1).toISOString().slice(0, 10);
+const LAST_OF_MONTH = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toISOString().slice(0, 10);
 
 const formatTime = (timeValue) => {
   if (!timeValue) return "--:--";
@@ -64,8 +69,32 @@ export default function Dashboard() {
     fetchProfile,
   } = usePersonnelProfile();
 
+  const [calFrom, setCalFrom] = useState(FIRST_OF_MONTH);
+  const [calTo, setCalTo] = useState(LAST_OF_MONTH);
+  const [workload, setWorkload] = useState(null);
+  const [workloadLoading, setWorkloadLoading] = useState(false);
+
+  const fetchWorkload = useCallback(async (from, to) => {
+    setWorkloadLoading(true);
+    try {
+      const res = await attendanceService.getTeacherAttendanceWorkload(from, to);
+      setWorkload(res?.data || res);
+    } catch {
+      setWorkload(null);
+    } finally {
+      setWorkloadLoading(false);
+    }
+  }, []);
+
+  const handleCalFilter = useCallback((from, to) => {
+    setCalFrom(from);
+    setCalTo(to);
+    fetchWorkload(from, to);
+  }, [fetchWorkload]);
+
   const hasLoadedTodaySchedules = useRef(false);
   const hasLoadedProfile = useRef(false);
+  const hasLoadedWorkload = useRef(false);
 
   useEffect(() => {
     if (hasLoadedTodaySchedules.current) return;
@@ -78,6 +107,12 @@ export default function Dashboard() {
     hasLoadedProfile.current = true;
     fetchProfile();
   }, [fetchProfile]);
+
+  useEffect(() => {
+    if (hasLoadedWorkload.current) return;
+    hasLoadedWorkload.current = true;
+    fetchWorkload(FIRST_OF_MONTH, LAST_OF_MONTH);
+  }, [fetchWorkload]);
 
   const sortedTodaySchedules = useMemo(() => {
     if (!Array.isArray(todaySchedules)) return [];
@@ -221,23 +256,25 @@ export default function Dashboard() {
                   <div className="flex justify-center mb-3">
                     <Clock className="w-8 h-8 text-blue-600" />
                   </div>
-                  <p className="text-gray-700 font-medium">Lịch học trong tuần</p>
-                  <p className="text-4xl font-bold text-blue-700 mt-2">0</p>
-                  <a href="#" className="text-sm text-blue-600 hover:underline mt-3 inline-block">
-                    Xem chi tiết
-                  </a>
+                  <p className="text-gray-700 font-medium">Buổi dạy trong tuần</p>
+                  <p className="text-4xl font-bold text-blue-700 mt-2">
+                    {workloadLoading ? '...' : (workload?.overview?.week_sessions ?? 0)}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">buổi học</p>
                 </div>
 
-                {/* Weekly Exams */}
+                {/* Tháng này */}
                 <div className="bg-orange-50 rounded-lg p-6 text-center border-2 border-orange-200">
                   <div className="flex justify-center mb-3">
                     <Calendar className="w-8 h-8 text-orange-600" />
                   </div>
-                  <p className="text-gray-700 font-medium">Lịch thi trong tuần</p>
-                  <p className="text-4xl font-bold text-orange-700 mt-2">0</p>
-                  <a href="#" className="text-sm text-orange-600 hover:underline mt-3 inline-block">
-                    Xem chi tiết
-                  </a>
+                  <p className="text-gray-700 font-medium">Đã tạo ĐD tháng này</p>
+                  <p className="text-4xl font-bold text-orange-700 mt-2">
+                    {workloadLoading
+                      ? '...'
+                      : `${workload?.overview?.total_created ?? 0}/${workload?.overview?.total_sessions ?? 0}`}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">buổi</p>
                 </div>
               </div>
             </div>
@@ -245,7 +282,13 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 p-1 mt-6">
-        <AttendanceCalendar />
+        <AttendanceCalendar
+          data={workload?.data || []}
+          overview={workload?.overview || {}}
+          loading={workloadLoading}
+          fromDate={calFrom}
+          onFilter={handleCalFilter}
+        />
 
 
 

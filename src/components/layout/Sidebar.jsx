@@ -46,7 +46,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     // ==================== TEACHER DASHBOARD ====================
     { 
       icon: LayoutDashboard, 
-      label: 'Teacher Dashboard', 
+      label: 'Bảng điều khiển', 
       path: '/dashboard',
       roles: [ROLES.TEACHER]
     },
@@ -122,7 +122,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     },
     { 
       icon: LayoutDashboard, 
-      label: 'Admin Dashboard', 
+      label: 'Bảng điều khiển', 
       path: '/dashboard/admin',
       roles: [ROLES.ADMIN],
       separator: true // Thêm separator trước admin section
@@ -191,7 +191,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     // ==================== ATTENDANCE STAFF DASHBOARD ====================
     { 
       icon: LayoutDashboard, 
-      label: 'Attendance Dashboard', 
+      label: 'Bảng điều khiển', 
       path: '/dashboard/attendance-dashboard',
       roles: [ROLES.ATTENDANCE_STAFF],
       separator: true // Thêm separator trước attendance section
@@ -211,7 +211,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     //lịch dạy
     {
       icon: CalendarClock,
-      label: 'Danh sách lLịch dạy',
+      label: 'Danh sách Lịch dạy',
       path: '/dashboard/attendance-schedule',
       roles: [ROLES.ATTENDANCE_STAFF]
     },
