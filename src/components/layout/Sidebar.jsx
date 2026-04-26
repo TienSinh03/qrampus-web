@@ -22,6 +22,7 @@ import {
   FolderOpenDot,
   UserStar,
   Grid2X2,
+  LucideTestTube,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useState, useMemo } from 'react';
@@ -114,9 +115,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       roles: [ROLES.ADMIN]
     },
     {
-      icon: Bell,
+      icon: LucideTestTube,
       label: 'Quản lý thông báo',
-      path: '/dashboard/manage-notifications',
+      path: '/dashboard/admin/notifications',
       roles: [ROLES.ADMIN]
     },
     { 

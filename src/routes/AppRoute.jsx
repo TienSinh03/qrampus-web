@@ -42,6 +42,8 @@ import AdminRoomPage from "../pages/dashboard/admin/AdminRoomPage";
 import AdminDetailSurveyPage from "../pages/dashboard/admin/AdminDetailSurveyPage";
 import AdminResultQRPage from "../pages/dashboard/admin/AdminResultQRPage";
 import AdminAnnouncementPage from "../pages/dashboard/admin/AdminAnnouncementPage";
+import AdminNotificationPage from "../pages/dashboard/admin/AdminNotificationPage";
+import TeacherNotificationPage from "../pages/dashboard/teacher/TeacherNotificationPage";
 
 
 // attendance 
@@ -439,8 +441,16 @@ const router = createBrowserRouter([
       {
         path: "manage-notifications",
         element: (
-          <RoleRoute requiredRoles={[ROLES.TEACHER, ROLES.ADMIN, ROLES.ATTENDANCE_STAFF]}>
-            <NotificationPage />
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <TeacherNotificationPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/notifications",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminNotificationPage />
           </RoleRoute>
         ),
       }

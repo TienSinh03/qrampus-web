@@ -4,6 +4,7 @@ import {
   Bell, Send, Clock, Users, Inbox, User,
   Calendar, BookOpen, CheckCheck, AlertCircle,
   Loader2, ChevronDown, MailOpen, Search, Hash,
+  GraduationCap, Mail, Building2,
 } from "lucide-react";
 import { useNotification } from "@contexts/NotificationContext";
 import notificationService from "@services/notification.service";
@@ -11,7 +12,7 @@ import teacherService from "@services/teacher.service";
 import { useAuth } from "@contexts/AuthContext";
 import { ROLES } from "@constants/roles";
 
-// ─── date helpers ────────────────────────────────────────────────────────────
+// ─── date helpers ─────────────────────────────────────────────────────────────
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -36,7 +37,7 @@ const timeAgo = (dateStr) => {
   return formatDate(dateStr);
 };
 
-// ─── content helpers (ported from mobile) ────────────────────────────────────
+// ─── content helpers ──────────────────────────────────────────────────────────
 
 const decodeHtml = (text = '') =>
   text
@@ -61,15 +62,14 @@ const htmlToText = (html = '') => {
 };
 
 const getNotificationText = (item = {}) => {
-  const htmlSrc =
-    item.message_html || item.html || item.content_html || '';
+  const htmlSrc = item.message_html || item.html || item.content_html || '';
   const plain = item.message || item.content || item.body || '';
   const hasHtml = typeof plain === 'string' && /<\/?[a-z][\s\S]*>/i.test(plain);
   const src = (typeof htmlSrc === 'string' && htmlSrc.trim()) || (hasHtml ? plain : '');
   return src ? htmlToText(src) : plain;
 };
 
-// ─── subject label helper (ported from mobile) ───────────────────────────────
+// ─── subject label helper ─────────────────────────────────────────────────────
 
 const extractSubjectLabels = (metadata = {}) => {
   if (Array.isArray(metadata?.subjects)) {
@@ -90,7 +90,7 @@ const extractSubjectLabels = (metadata = {}) => {
   return [];
 };
 
-// ─── grouping (ported from mobile) ───────────────────────────────────────────
+// ─── grouping for teacher (subjects / students) ───────────────────────────────
 
 const TARGET_SUBJECTS = 'subjects';
 const TARGET_STUDENTS = 'students';
@@ -118,14 +118,11 @@ const buildGroupedData = (notifications, studentByUserId) => {
     }
 
     const group = map.get(groupKey);
-
-    // student label
     const student = studentByUserId.get(String(item.target_user_id || ''));
     const recipientLabel = student
       ? `${student.studentCode || '--'} - ${student.fullName || 'Không rõ tên'}`
       : null;
     if (recipientLabel) group.recipients.add(recipientLabel);
-
     extractSubjectLabels(meta).forEach((l) => group.subjectLabels.add(l));
   });
 
@@ -142,7 +139,7 @@ const buildGroupedData = (notifications, studentByUserId) => {
 const normalizeText = (t = '') =>
   String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 
-// ─── UI components ────────────────────────────────────────────────────────────
+// ─── UI helpers ───────────────────────────────────────────────────────────────
 
 const Skeleton = () => (
   <div className="space-y-4">
@@ -188,6 +185,223 @@ const TARGET_MODE_LABEL = {
   student: 'Sinh viên',
 };
 
+// ─── Admin: teacher message card ──────────────────────────────────────────────
+
+const TeacherAvatar = ({ avatarUrl, fullName }) => {
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={fullName}
+        className="w-8 h-8 rounded-full object-cover ring-2 ring-white"
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      />
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center ring-2 ring-white">
+      <GraduationCap size={14} className="text-indigo-500" />
+    </div>
+  );
+};
+
+const AdminTeacherMessageCard = ({ item }) => {
+  const [expanded, setExpanded] = useState(false);
+  const { recipients = [], recipient_count = 0 } = item;
+  const isBulk = recipient_count > 1;
+  const PREVIEW_COUNT = 3;
+  const visibleRecipients = expanded ? recipients : recipients.slice(0, PREVIEW_COUNT);
+
+  return (
+    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-100 transition-all">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-1 gap-3">
+        <h3 className="text-base font-bold text-slate-900 leading-snug">{item.title}</h3>
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 px-2 py-1 rounded ring-1 ring-emerald-100">
+          Đã gửi
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3 mb-3">
+        <span className="text-xs text-slate-400 flex items-center gap-1">
+          <Clock size={12} /> {timeAgo(item.sent_at)}
+        </span>
+        <span className="text-xs text-slate-400 flex items-center gap-1">
+          <Calendar size={12} /> {formatDate(item.sent_at)}
+        </span>
+      </div>
+
+      {/* Message */}
+      {item.message && (
+        <p className="text-slate-600 text-sm leading-relaxed line-clamp-3 mb-4">
+          {getNotificationText(item)}
+        </p>
+      )}
+
+      {/* Recipients box */}
+      <div className="rounded-xl bg-indigo-50 px-4 py-3">
+        <p className="text-indigo-700 text-xs font-semibold mb-3 flex items-center gap-1.5">
+          <GraduationCap size={13} />
+          {isBulk
+            ? `Giảng viên nhận (${recipient_count} người)`
+            : 'Giảng viên nhận'}
+        </p>
+
+        {recipients.length === 0 ? (
+          <p className="text-indigo-400 text-xs">Không có dữ liệu giảng viên nhận.</p>
+        ) : (
+          <ul className="space-y-2">
+            {visibleRecipients.map((teacher, i) => (
+              <li key={teacher.user_id || i} className="flex items-center gap-3">
+                <TeacherAvatar avatarUrl={teacher.avatar_url} fullName={teacher.full_name} />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">
+                    {teacher.full_name || 'Không rõ tên'}
+                  </p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                    {teacher.teacher_code && (
+                      <span className="text-xs text-indigo-500 flex items-center gap-1">
+                        <Hash size={10} /> {teacher.teacher_code}
+                      </span>
+                    )}
+                    {teacher.department && (
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Building2 size={10} /> {teacher.department}
+                      </span>
+                    )}
+                    {teacher.email && (
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Mail size={10} /> {teacher.email}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {recipients.length > PREVIEW_COUNT && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-3 text-xs text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1 transition"
+          >
+            {expanded
+              ? 'Thu gọn'
+              : `Xem thêm ${recipients.length - PREVIEW_COUNT} giảng viên`}
+            <ChevronDown size={12} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── Admin sent panel ─────────────────────────────────────────────────────────
+
+const ADMIN_PAGE_SIZE = 20;
+
+const AdminSentPanel = () => {
+  const [messages, setMessages] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+  const [fetched, setFetched] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+
+  const fetchPage = useCallback(async (offset = 0, append = false) => {
+    append ? setLoadingMore(true) : setLoading(true);
+    setError(null);
+    try {
+      const res = await notificationService.getAdminTeacherMessages({
+        limit: ADMIN_PAGE_SIZE,
+        offset,
+      });
+      if (!res?.success) throw new Error(res?.message || 'Không thể tải danh sách tin nhắn');
+      const data = res.data || {};
+      const items = Array.isArray(data.messages) ? data.messages : [];
+      setMessages((prev) => append ? [...prev, ...items] : items);
+      setPagination(data.pagination || null);
+      setFetched(true);
+    } catch (err) {
+      setError(err.message || 'Đã xảy ra lỗi');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!fetched) fetchPage(0);
+  }, [fetched, fetchPage]);
+
+  const handleLoadMore = () => {
+    if (!pagination) return;
+    fetchPage(messages.length, true);
+  };
+
+  const hasMore = pagination ? messages.length < pagination.total : false;
+
+  const filtered = useMemo(() => {
+    const kw = normalizeText(searchKeyword);
+    if (!kw) return messages;
+    return messages.filter((m) => {
+      const blob = [
+        m.title,
+        m.message,
+        ...(m.recipients || []).map((r) => `${r.full_name} ${r.teacher_code} ${r.department} ${r.email}`),
+      ].join(' ');
+      return normalizeText(blob).includes(kw);
+    });
+  }, [messages, searchKeyword]);
+
+  if (loading) return <Skeleton />;
+  if (error) return <ErrorState message={error} onRetry={() => fetchPage(0)} />;
+
+  return (
+    <>
+      {/* Search */}
+      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 mb-4 w-full sm:w-80">
+        <Search size={15} className="text-slate-400 shrink-0" />
+        <input
+          value={searchKeyword}
+          onChange={(e) => setSearchKeyword(e.target.value)}
+          placeholder="Tìm tiêu đề, nội dung, giảng viên..."
+          className="flex-1 text-sm text-slate-700 placeholder-slate-400 outline-none bg-transparent"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState message={
+          searchKeyword
+            ? 'Không tìm thấy kết quả phù hợp'
+            : 'Chưa có tin nhắn nào gửi đến giảng viên'
+        } />
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((item) => (
+            <AdminTeacherMessageCard key={item.id} item={item} />
+          ))}
+
+          {hasMore && !searchKeyword && (
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="flex items-center gap-2 text-sm font-medium text-indigo-600 bg-white border border-indigo-100 hover:bg-indigo-50 px-6 py-2.5 rounded-xl shadow-sm transition disabled:opacity-50"
+              >
+                {loadingMore ? <Loader2 size={16} className="animate-spin" /> : <ChevronDown size={16} />}
+                {loadingMore ? 'Đang tải...' : 'Tải thêm'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+};
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const NotificationPage = () => {
@@ -204,21 +418,21 @@ const NotificationPage = () => {
     markAllNotificationsAsRead,
   } = useNotification();
 
-  const [tab, setTab] = useState(activeRole === ROLES.ADMIN ? 'sent' : 'received');
+  const isAdmin = activeRole === ROLES.ADMIN;
+  const [tab, setTab] = useState(isAdmin ? 'sent' : 'received');
   const [sentSubTab, setSentSubTab] = useState(TARGET_SUBJECTS);
   const [searchKeyword, setSearchKeyword] = useState('');
 
-  // raw data
+  // Teacher "sent" state
   const [allSentRaw, setAllSentRaw] = useState([]);
   const [studentByUserId, setStudentByUserId] = useState(new Map());
   const [sentLoading, setSentLoading] = useState(false);
   const [sentError, setSentError] = useState(null);
   const [sentFetched, setSentFetched] = useState(false);
 
-  const canViewSent = activeRole === ROLES.TEACHER || activeRole === ROLES.ADMIN;
-  const canViewReceived = activeRole !== ROLES.ADMIN;
+  const canViewSent = activeRole === ROLES.TEACHER || isAdmin;
+  const canViewReceived = !isAdmin;
 
-  // fetch ALL pages (like mobile) then group client-side
   const fetchAllSent = useCallback(async () => {
     const limit = 100;
     let offset = 0;
@@ -249,10 +463,10 @@ const NotificationPage = () => {
     setSentLoading(true);
     setSentError(null);
     try {
-      const tasks = [fetchAllSent()];
-      if (activeRole === ROLES.TEACHER) tasks.push(teacherService.getMyStudents());
-
-      const [rawNotifications, studentsRes] = await Promise.all(tasks);
+      const [rawNotifications, studentsRes] = await Promise.all([
+        fetchAllSent(),
+        teacherService.getMyStudents(),
+      ]);
 
       const studentsArr = Array.isArray(studentsRes?.data?.students)
         ? studentsRes.data.students
@@ -271,18 +485,16 @@ const NotificationPage = () => {
     } finally {
       setSentLoading(false);
     }
-  }, [fetchAllSent, activeRole]);
+  }, [fetchAllSent]);
 
   useEffect(() => {
-    if (tab === 'sent' && canViewSent && !sentFetched && !sentLoading) {
+    if (tab === 'sent' && activeRole === ROLES.TEACHER && !sentFetched && !sentLoading) {
       fetchSentData();
     }
-  }, [tab, canViewSent, sentFetched, sentLoading, fetchSentData]);
+  }, [tab, activeRole, sentFetched, sentLoading, fetchSentData]);
 
-  // reset search when switching sub-tab
   useEffect(() => { setSearchKeyword(''); }, [sentSubTab]);
 
-  // build grouped + filtered list
   const groupedNotifications = useMemo(
     () => buildGroupedData(allSentRaw, studentByUserId),
     [allSentRaw, studentByUserId]
@@ -297,6 +509,22 @@ const NotificationPage = () => {
 
   const hasMoreReceived = notifications.length < (pagination?.total ?? 0);
 
+  // ── Admin view (chỉ hiển thị đã gửi cho giảng viên) ──
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] sm:px-6">
+        <div className="mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Thông báo</h1>
+            <p className="text-sm text-slate-500 mt-1">Danh sách tin nhắn đã gửi đến giảng viên</p>
+          </div>
+          <AdminSentPanel />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Teacher / Student view ────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#f8fafc] sm:px-6">
       <div className="mx-auto">
@@ -430,7 +658,7 @@ const NotificationPage = () => {
             </Tabs.Content>
           )}
 
-          {/* ── TAB ĐÃ GỬI ── */}
+          {/* ── TAB ĐÃ GỬI (Teacher) ── */}
           {canViewSent && (
             <Tabs.Content value="sent" className="outline-none">
               {sentLoading ? (
@@ -464,7 +692,6 @@ const NotificationPage = () => {
                       </button>
                     </div>
 
-                    {/* Search */}
                     <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-72">
                       <Search size={15} className="text-slate-400 shrink-0" />
                       <input
@@ -495,7 +722,6 @@ const NotificationPage = () => {
                           key={group.id}
                           className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-100 transition-all"
                         >
-                          {/* Header */}
                           <div className="flex justify-between items-start mb-1 gap-3">
                             <h3 className="text-base font-bold text-slate-900 leading-snug">
                               {group.title}
@@ -514,14 +740,12 @@ const NotificationPage = () => {
                             </span>
                           </div>
 
-                          {/* Message */}
                           {group.message && (
                             <p className="text-slate-600 text-sm leading-relaxed line-clamp-3 mb-4">
                               {group.message}
                             </p>
                           )}
 
-                          {/* Info box – subjects or students */}
                           <div className="rounded-xl bg-indigo-50 px-4 py-3">
                             <p className="text-indigo-700 text-xs font-semibold mb-2 flex items-center gap-1.5">
                               {sentSubTab === TARGET_SUBJECTS

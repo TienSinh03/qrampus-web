@@ -104,6 +104,48 @@ class AttendanceService {
   }
 
   /**
+   * Tổng hợp điểm danh theo ngày cho admin
+   * @param {string} fromDate - YYYY-MM-DD
+   * @param {string} toDate   - YYYY-MM-DD
+   */
+  async getAdminAttendanceSummary(fromDate, toDate) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.ADMIN_SUMMARY, {
+        params: { from_date: fromDate, to_date: toDate },
+      });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Lấy danh sách lịch dạy cho bộ phận chấm công
+   * @param {Object} params - { course_code, course_name, teacher_code, teacher_name, room,
+   *   day_of_week, schedule_type, status, from_date, to_date, semester, page, limit }
+   */
+  async getAttendanceSchedule(params = {}) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SCHEDULE, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Thống kê nhanh số buổi hôm nay đã/chưa tạo phiên điểm danh
+   */
+  async getScheduleTodayStats() {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SCHEDULE_TODAY_STATS);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Handle API errors
    * @param {Error} error - Axios error
    * @returns {Error} Formatted error

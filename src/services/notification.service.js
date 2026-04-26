@@ -38,6 +38,15 @@ class NotificationService {
     }
   }
 
+  async getAdminTeacherMessages(params = {}) {
+    try {
+      const response = await axiosClient.get(NOTIFICATION_ENDPOINTS.ADMIN_TEACHER_MESSAGES, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getNotificationById(notificationId) {
     try {
       const response = await axiosClient.get(NOTIFICATION_ENDPOINTS.DETAIL(notificationId));

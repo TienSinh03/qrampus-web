@@ -23,4 +23,11 @@ export const ATTENDANCE_ENDPOINTS = {
 
   // Attendance results endpoints
   RESULTS_INITIALIZE: `${API_VERSION}/attendance-results/initialize`,
+
+  // Admin summary
+  ADMIN_SUMMARY: `${API_VERSION}/attendance-history/admin/summary`,
+
+  // Attendance schedule (for attendance staff)
+  SCHEDULE: `${API_VERSION}/attendance-schedule`,
+  SCHEDULE_TODAY_STATS: `${API_VERSION}/attendance-schedule/today-stats`,
 };
