@@ -11,7 +11,10 @@ import {
   Calendar
 } from "lucide-react";
 import { useAttendance } from "@contexts/AttendanceContext";
+import Pagination from "@components/common/Pagination";
 import ModalTeacherAttendanceDetail from "../../../components/modal/ModalTeacherAttendanceDetail";
+
+const MAIN_TABLE_PAGE_SIZE = 8;
 
 const normalizeCourseProgress = (course = {}) => ({
   ...course,
@@ -47,6 +50,7 @@ export default function TeacherAttendancePage() {
   });
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
   const [dashboardError, setDashboardError] = useState("");
+  const [courseCurrentPage, setCourseCurrentPage] = useState(1);
 
   const openDetailModal = (course) => {
     setSelectedCourse(course);
@@ -140,6 +144,26 @@ export default function TeacherAttendancePage() {
     );
   }, [courses]);
 
+  const totalCoursePages = useMemo(
+    () => Math.max(1, Math.ceil(courses.length / MAIN_TABLE_PAGE_SIZE)),
+    [courses.length]
+  );
+
+  const paginatedCourses = useMemo(() => {
+    const startIndex = (courseCurrentPage - 1) * MAIN_TABLE_PAGE_SIZE;
+    return courses.slice(startIndex, startIndex + MAIN_TABLE_PAGE_SIZE);
+  }, [courses, courseCurrentPage]);
+
+  useEffect(() => {
+    setCourseCurrentPage(1);
+  }, [selectedSemester, courseCodeFilter, courseNameFilter]);
+
+  useEffect(() => {
+    if (courseCurrentPage > totalCoursePages) {
+      setCourseCurrentPage(totalCoursePages);
+    }
+  }, [courseCurrentPage, totalCoursePages]);
+
   const filteredSessions = useMemo(() => {
     if (!selectedCourse?.sessions) return [];
 
@@ -171,6 +195,7 @@ export default function TeacherAttendancePage() {
     setCourseCodeFilter("");
     setCourseNameFilter("");
     setSelectedStatus("Tất cả");
+    setCourseCurrentPage(1);
   };
 
   const [visibleColsCourse, setVisibleColsCourse] = useState({
@@ -400,7 +425,7 @@ export default function TeacherAttendancePage() {
               </thead>
 
               <tbody className="divide-y divide-gray-200">
-                {courses.map((course, i) => {
+                {paginatedCourses.map((course, i) => {
                   const percent = Math.round(
                     (course.successSessions / course.totalSessions) * 100
                   );
@@ -484,8 +509,28 @@ export default function TeacherAttendancePage() {
                     </tr>
                   );
                 })}
+
+                {paginatedCourses.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-10 text-center text-gray-500">
+                      Không có học phần phù hợp bộ lọc hiện tại.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
+          </div>
+
+          <div className="flex items-center justify-between px-4 py-4 border-t bg-slate-50">
+            <span className="text-sm text-gray-500">
+              Đang hiển thị <strong>{paginatedCourses.length}</strong> / <strong>{courses.length}</strong> học phần
+            </span>
+            <Pagination
+              currentPage={courseCurrentPage}
+              totalPages={totalCoursePages}
+              onPageChange={setCourseCurrentPage}
+              disabled={isLoadingDashboard}
+            />
           </div>
         </div>
         <ModalTeacherAttendanceDetail

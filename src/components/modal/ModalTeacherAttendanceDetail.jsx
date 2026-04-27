@@ -11,6 +11,9 @@ import {
   FileSearchIcon,
   X,
 } from "lucide-react";
+import Pagination from "../common/Pagination";
+
+const MODAL_TABLE_PAGE_SIZE = 8;
 
 const formatTimeValue = (value) => {
   if (!value) return "--:--";
@@ -47,6 +50,7 @@ export default function ModalTeacherAttendanceDetail({
   const [searchGroup, setSearchGroup] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [sessionCurrentPage, setSessionCurrentPage] = useState(1);
   const [visibleCols, setVisibleCols] = useState({
     date: true,
     time: true,
@@ -144,6 +148,18 @@ export default function ModalTeacherAttendanceDetail({
     }
   };
 
+  const totalSessionPages = useMemo(
+    () => Math.max(1, Math.ceil(sessionsToRender.length / MODAL_TABLE_PAGE_SIZE)),
+    [sessionsToRender.length]
+  );
+
+  const boundedSessionCurrentPage = Math.min(sessionCurrentPage, totalSessionPages);
+
+  const paginatedSessions = useMemo(() => {
+    const startIndex = (boundedSessionCurrentPage - 1) * MODAL_TABLE_PAGE_SIZE;
+    return sessionsToRender.slice(startIndex, startIndex + MODAL_TABLE_PAGE_SIZE);
+  }, [sessionsToRender, boundedSessionCurrentPage]);
+
   if (!isOpen || !selectedCourse) return null;
 
   return (
@@ -232,14 +248,20 @@ export default function ModalTeacherAttendanceDetail({
                     <input
                       type="date"
                       value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
+                      onChange={(e) => {
+                        setFromDate(e.target.value);
+                        setSessionCurrentPage(1);
+                      }}
                       className="flex-1 outline-none min-w-0"
                     />
                     <span className="text-gray-400">&rarr;</span>
                     <input
                       type="date"
                       value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
+                      onChange={(e) => {
+                        setToDate(e.target.value);
+                        setSessionCurrentPage(1);
+                      }}
                       className="flex-1 outline-none min-w-0"
                     />
                   </div>
@@ -251,7 +273,10 @@ export default function ModalTeacherAttendanceDetail({
                   </label>
                   <select
                     value={selectedSemester}
-                    onChange={(e) => onSemesterChange(e.target.value)}
+                    onChange={(e) => {
+                      onSemesterChange(e.target.value);
+                      setSessionCurrentPage(1);
+                    }}
                     className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Tất cả</option>
@@ -269,7 +294,10 @@ export default function ModalTeacherAttendanceDetail({
                   </label>
                   <select
                     value={selectedMonth}
-                    onChange={(e) => onMonthChange(e.target.value)}
+                    onChange={(e) => {
+                      onMonthChange(e.target.value);
+                      setSessionCurrentPage(1);
+                    }}
                     className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option>Tất cả</option>
@@ -285,7 +313,10 @@ export default function ModalTeacherAttendanceDetail({
                   </label>
                   <select
                     value={selectedStatus}
-                    onChange={(e) => onStatusChange(e.target.value)}
+                    onChange={(e) => {
+                      onStatusChange(e.target.value);
+                      setSessionCurrentPage(1);
+                    }}
                     className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option>Tất cả</option>
@@ -306,7 +337,10 @@ export default function ModalTeacherAttendanceDetail({
                         placeholder="Vi du: 4203001549"
                         className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={searchCourseCode}
-                        onChange={(e) => setSearchCourseCode(e.target.value)}
+                        onChange={(e) => {
+                          setSearchCourseCode(e.target.value);
+                          setSessionCurrentPage(1);
+                        }}
                       />
                     </div>
 
@@ -319,7 +353,10 @@ export default function ModalTeacherAttendanceDetail({
                         placeholder="Vi du: Nguyen Van An"
                         className="w-full rounded-lg border px-3 py-2"
                         value={searchCreator}
-                        onChange={(e) => setSearchCreator(e.target.value)}
+                        onChange={(e) => {
+                          setSearchCreator(e.target.value);
+                          setSessionCurrentPage(1);
+                        }}
                       />
                     </div>
 
@@ -331,7 +368,10 @@ export default function ModalTeacherAttendanceDetail({
                         type="text"
                         className="w-full rounded-lg border px-3 py-2"
                         value={searchCourseName}
-                        onChange={(e) => setSearchCourseName(e.target.value)}
+                        onChange={(e) => {
+                          setSearchCourseName(e.target.value);
+                          setSessionCurrentPage(1);
+                        }}
                       />
                     </div>
 
@@ -344,7 +384,10 @@ export default function ModalTeacherAttendanceDetail({
                         placeholder="Vi du: 20TCLC_DT3"
                         className="w-full rounded-lg border px-3 py-2"
                         value={searchClassName}
-                        onChange={(e) => setSearchClassName(e.target.value)}
+                        onChange={(e) => {
+                          setSearchClassName(e.target.value);
+                          setSessionCurrentPage(1);
+                        }}
                       />
                     </div>
 
@@ -357,7 +400,10 @@ export default function ModalTeacherAttendanceDetail({
                         placeholder="Vi du: 1, 2, 3,..."
                         className="w-full rounded-lg border px-3 py-2"
                         value={searchGroup}
-                        onChange={(e) => setSearchGroup(e.target.value)}
+                        onChange={(e) => {
+                          setSearchGroup(e.target.value);
+                          setSessionCurrentPage(1);
+                        }}
                       />
                     </div>
                   </>
@@ -460,7 +506,7 @@ export default function ModalTeacherAttendanceDetail({
                 </thead>
 
                 <tbody className="divide-y divide-gray-200">
-                  {sessionsToRender.map((session, i) => (
+                  {paginatedSessions.map((session, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition">
                       {visibleCols.date && (
                         <td className="px-6 py-4 font-medium">{formatDateValue(session.classDate)}</td>
@@ -513,7 +559,7 @@ export default function ModalTeacherAttendanceDetail({
                     </tr>
                   ))}
 
-                  {sessionsToRender.length === 0 && (
+                  {paginatedSessions.length === 0 && (
                     <tr>
                       <td colSpan="9" className="px-6 py-10 text-center text-gray-500">
                         Chưa có dữ liệu chấm công cho học phần này.
@@ -522,6 +568,17 @@ export default function ModalTeacherAttendanceDetail({
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="flex items-center justify-between px-4 py-4 border-t bg-slate-50">
+              <span className="text-sm text-gray-500">
+                Đang hiển thị <strong>{paginatedSessions.length}</strong> / <strong>{sessionsToRender.length}</strong> buổi
+              </span>
+              <Pagination
+                currentPage={boundedSessionCurrentPage}
+                totalPages={totalSessionPages}
+                onPageChange={setSessionCurrentPage}
+              />
             </div>
           </div>
         </div>
