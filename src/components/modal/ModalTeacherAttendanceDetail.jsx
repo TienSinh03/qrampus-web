@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Clock,
   CheckCircle2,
@@ -12,17 +12,41 @@ import {
   X,
 } from "lucide-react";
 
+const formatTimeValue = (value) => {
+  if (!value) return "--:--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
+};
+
+const formatDateValue = (value) => {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("vi-VN");
+};
+
 export default function ModalTeacherAttendanceDetail({
   isOpen,
   selectedCourse,
   onClose,
   filteredSessions,
+  semesterOptions = [],
   selectedSemester,
   onSemesterChange,
   selectedMonth,
   onMonthChange,
+  selectedStatus,
+  onStatusChange,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [searchCourseCode, setSearchCourseCode] = useState("");
+  const [searchCreator, setSearchCreator] = useState("");
+  const [searchCourseName, setSearchCourseName] = useState("");
+  const [searchClassName, setSearchClassName] = useState("");
+  const [searchGroup, setSearchGroup] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [visibleCols, setVisibleCols] = useState({
     date: true,
     time: true,
@@ -35,12 +59,68 @@ export default function ModalTeacherAttendanceDetail({
     detail: true,
   });
 
+  const sessionsToRender = useMemo(() => {
+    const normalizedMonth = selectedMonth || "Tất cả";
+    const normalizedStatus = selectedStatus || "Tất cả";
+
+    return (filteredSessions || []).filter((session) => {
+      if (fromDate && session.classDate && session.classDate < fromDate) return false;
+      if (toDate && session.classDate && session.classDate > toDate) return false;
+
+      if (normalizedMonth !== "Tất cả") {
+        const monthLabel = new Date(`${session.classDate}T00:00:00`).toLocaleString("vi-VN", {
+          month: "long",
+        });
+        if (monthLabel !== normalizedMonth) return false;
+      }
+
+      if (normalizedStatus !== "Tất cả") {
+        const mappedStatus =
+          normalizedStatus === "Đúng giờ"
+            ? "on_time"
+            : normalizedStatus === "Trễ"
+              ? "late"
+              : normalizedStatus === "Vắng mặt"
+                ? "absent"
+                : normalizedStatus.toLowerCase();
+
+        if (String(session.lecturerAttendanceStatus || "").toLowerCase() !== mappedStatus) {
+          return false;
+        }
+      }
+
+      const code = String(session.courseCode || "").toLowerCase();
+      const creator = String(session.creatorName || session.creatorCode || "").toLowerCase();
+      const courseName = String(session.courseName || "").toLowerCase();
+      const className = String(session.className || "").toLowerCase();
+      const group = String(session.practiceGroupNumber || session.group || "").toLowerCase();
+
+      if (searchCourseCode.trim() && !code.includes(searchCourseCode.trim().toLowerCase())) return false;
+      if (searchCreator.trim() && !creator.includes(searchCreator.trim().toLowerCase())) return false;
+      if (searchCourseName.trim() && !courseName.includes(searchCourseName.trim().toLowerCase())) return false;
+      if (searchClassName.trim() && !className.includes(searchClassName.trim().toLowerCase())) return false;
+      if (searchGroup.trim() && !group.includes(searchGroup.trim().toLowerCase())) return false;
+
+      return true;
+    });
+  }, [filteredSessions, fromDate, toDate, selectedMonth, selectedStatus, searchCourseCode, searchCreator, searchCourseName, searchClassName, searchGroup]);
+
   const getStatusBadge = (status) => {
-    switch (status) {
-      case "onTime":
+    const normalized = String(status || "").toLowerCase();
+
+    switch (normalized) {
+      case "on_time":
+      case "ontime":
         return (
           <span className="flex items-center text-green-700 bg-green-100 px-3 py-1 rounded-full text-sm font-medium">
             <CheckCircle2 size={16} className="mr-1" /> Đúng giờ
+          </span>
+        );
+      case "manual_override":
+      case "manual":
+        return (
+          <span className="flex items-center text-blue-700 bg-blue-100 px-3 py-1 rounded-full text-sm font-medium">
+            <CheckCircle2 size={16} className="mr-1" /> Chấm tay
           </span>
         );
       case "late":
@@ -49,14 +129,18 @@ export default function ModalTeacherAttendanceDetail({
             <AlertTriangle size={16} className="mr-1" /> Tạo QR muộn
           </span>
         );
-      case "manual":
+      case "absent":
         return (
           <span className="flex items-center text-red-700 bg-red-100 px-3 py-1 rounded-full text-sm font-medium">
-            <AlertTriangle size={16} className="mr-1" /> Chấm tay
+            <AlertTriangle size={16} className="mr-1" /> Vắng mặt
           </span>
         );
       default:
-        return null;
+        return (
+          <span className="flex items-center text-gray-700 bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+            <AlertTriangle size={16} className="mr-1" /> Chưa chốt
+          </span>
+        );
     }
   };
 
@@ -145,9 +229,19 @@ export default function ModalTeacherAttendanceDetail({
                   </label>
 
                   <div className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2">
-                    <input type="date" className="flex-1 outline-none min-w-0" />
-                    <span className="text-gray-400">-></span>
-                    <input type="date" className="flex-1 outline-none min-w-0" />
+                    <input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      className="flex-1 outline-none min-w-0"
+                    />
+                    <span className="text-gray-400">&rarr;</span>
+                    <input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      className="flex-1 outline-none min-w-0"
+                    />
                   </div>
                 </div>
 
@@ -160,9 +254,12 @@ export default function ModalTeacherAttendanceDetail({
                     onChange={(e) => onSemesterChange(e.target.value)}
                     className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option>Học kỳ I - 2025-2026</option>
-                    <option>Học kỳ II - 2024-2025</option>
-                    <option>Học kỳ I - 2024-2025</option>
+                    <option value="">Tất cả</option>
+                    {semesterOptions.map((semester, index) => (
+                      <option key={index} value={semester}>
+                        {semester}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -186,7 +283,11 @@ export default function ModalTeacherAttendanceDetail({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Trạng thái
                   </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => onStatusChange(e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
                     <option>Tất cả</option>
                     <option>Đúng giờ</option>
                     <option>Trễ</option>
@@ -204,6 +305,8 @@ export default function ModalTeacherAttendanceDetail({
                         type="text"
                         placeholder="Vi du: 4203001549"
                         className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={searchCourseCode}
+                        onChange={(e) => setSearchCourseCode(e.target.value)}
                       />
                     </div>
 
@@ -215,6 +318,8 @@ export default function ModalTeacherAttendanceDetail({
                         type="text"
                         placeholder="Vi du: Nguyen Van An"
                         className="w-full rounded-lg border px-3 py-2"
+                        value={searchCreator}
+                        onChange={(e) => setSearchCreator(e.target.value)}
                       />
                     </div>
 
@@ -225,6 +330,8 @@ export default function ModalTeacherAttendanceDetail({
                       <input
                         type="text"
                         className="w-full rounded-lg border px-3 py-2"
+                        value={searchCourseName}
+                        onChange={(e) => setSearchCourseName(e.target.value)}
                       />
                     </div>
 
@@ -236,6 +343,8 @@ export default function ModalTeacherAttendanceDetail({
                         type="text"
                         placeholder="Vi du: 20TCLC_DT3"
                         className="w-full rounded-lg border px-3 py-2"
+                        value={searchClassName}
+                        onChange={(e) => setSearchClassName(e.target.value)}
                       />
                     </div>
 
@@ -247,6 +356,8 @@ export default function ModalTeacherAttendanceDetail({
                         type="text"
                         placeholder="Vi du: 1, 2, 3,..."
                         className="w-full rounded-lg border px-3 py-2"
+                        value={searchGroup}
+                        onChange={(e) => setSearchGroup(e.target.value)}
                       />
                     </div>
                   </>
@@ -255,7 +366,7 @@ export default function ModalTeacherAttendanceDetail({
 
               <div className="mt-5 pt-5 border-t flex flex-wrap items-center justify-between gap-4">
                 <p className="text-sm text-gray-500">
-                  Hiển thị {filteredSessions.length} buổi chấm công
+                  Hiển thị {sessionsToRender.length} buổi chấm công
                 </p>
 
                 <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
@@ -349,17 +460,17 @@ export default function ModalTeacherAttendanceDetail({
                 </thead>
 
                 <tbody className="divide-y divide-gray-200">
-                  {filteredSessions.map((session, i) => (
+                  {sessionsToRender.map((session, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition">
                       {visibleCols.date && (
-                        <td className="px-6 py-4 font-medium">{session.date}</td>
+                        <td className="px-6 py-4 font-medium">{formatDateValue(session.classDate)}</td>
                       )}
 
                       {visibleCols.time && (
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-1">
                             <Clock size={16} />
-                            {session.time}
+                            {`${formatTimeValue(session.startHour)} - ${formatTimeValue(session.endHour)}`}
                           </div>
                         </td>
                       )}
@@ -372,37 +483,37 @@ export default function ModalTeacherAttendanceDetail({
                       )}
 
                       {visibleCols.room && (
-                        <td className="px-6 py-4 text-gray-600">{session.room}</td>
+                        <td className="px-6 py-4 text-gray-600">{session.roomName || session.roomCode || "-"}</td>
                       )}
 
                       {visibleCols.createdAt && (
                         <td className="px-6 py-4">
-                          {session.createdAt ? (
-                            <span className="text-sm">{session.createdAt}</span>
+                          {session.lecturerCheckinAt ? (
+                            <span className="text-sm">{formatTimeValue(session.lecturerCheckinAt)}</span>
                           ) : (
-                            <span className="text-red-600 text-sm">- Chua tao -</span>
+                            <span className="text-red-600 text-sm">- Chưa tạo -</span>
                           )}
                         </td>
                       )}
 
                       {visibleCols.creator && (
                         <td className="px-6 py-4">
-                          <p className="font-medium">{session.name_usercreate}</p>
-                          <p className="text-sm text-gray-600">{session.id_usercreate}</p>
+                          <p className="font-medium">{session.creatorName}</p>
+                          <p className="text-sm text-gray-600">{session.creatorCode}</p>
                         </td>
                       )}
 
                       {visibleCols.group && (
-                        <td className="px-6 py-4 text-center">{session.group || "-"}</td>
+                        <td className="px-6 py-4 text-center">{session.practiceGroupNumber || "-"}</td>
                       )}
 
                       {visibleCols.status && (
-                        <td className="px-6 py-4 text-center">{getStatusBadge(session.status)}</td>
+                        <td className="px-6 py-4 text-center">{getStatusBadge(session.lecturerAttendanceStatus)}</td>
                       )}
                     </tr>
                   ))}
 
-                  {filteredSessions.length === 0 && (
+                  {sessionsToRender.length === 0 && (
                     <tr>
                       <td colSpan="9" className="px-6 py-10 text-center text-gray-500">
                         Chưa có dữ liệu chấm công cho học phần này.

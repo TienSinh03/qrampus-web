@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -10,16 +10,43 @@ import {
   FileSearchIcon,
   Calendar
 } from "lucide-react";
+import { useAttendance } from "@contexts/AttendanceContext";
 import ModalTeacherAttendanceDetail from "../../../components/modal/ModalTeacherAttendanceDetail";
 
+const normalizeCourseProgress = (course = {}) => ({
+  ...course,
+  totalSessions: course.totalTeachingSessions || 0,
+  successSessions: (course.onTimeCheckins || 0) + (course.lateCheckins || 0),
+  failedSessions: course.absentCheckins || 0,
+});
+
 export default function TeacherAttendancePage() {
+  const { fetchTeacherAttendanceDashboard } = useAttendance();
   const [selectedSemester, setSelectedSemester] = useState(
-    "Học kỳ I - 2025-2026"
+    ""
   );
   const [selectedMonth, setSelectedMonth] = useState("Tất cả");
+  const [courseCodeFilter, setCourseCodeFilter] = useState("");
+  const [courseNameFilter, setCourseNameFilter] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("Tất cả");
 
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [dashboardData, setDashboardData] = useState({
+    teacher: null,
+    summary: {
+      totalTeachingSessions: 0,
+      onTimeCheckins: 0,
+      lateCheckins: 0,
+      absentCheckins: 0,
+      manualOverrideCheckins: 0,
+      attendanceRate: 0,
+    },
+    availableSemesters: [],
+    courseProgress: [],
+  });
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
+  const [dashboardError, setDashboardError] = useState("");
 
   const openDetailModal = (course) => {
     setSelectedCourse(course);
@@ -31,93 +58,120 @@ export default function TeacherAttendancePage() {
     setIsDetailModalOpen(false);
   };
 
-  const teacherInfo = {
-    name: "TS. Nguyễn Văn An",
-    employeeCode: "GV00124",
-    totalSessions: 58,
-    onTimeSessions: 54,
-    lateOrManual: 4,
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  const sessions = [
-    {
-      date: "10/12/2025",
-      time: "07:30 - 09:10",
-      courseCode: "421234567890",
-      courseName: "Phát triển ứng dụng Web",
-      id_usercreate: "10100001",
-      name_usercreate: "Nguyễn Văn An",
-      group: "1",
-      room: "301-B3",
-      createdAt: "07:25",
-      status: "onTime",
-    },
-    {
-      date: "09/12/2025",
-      time: "09:20 - 11:00",
-      courseCode: "421234523890",
-      courseName: "Phát triển ứng dụng Web",
-      id_usercreate: "10100001",
-      name_usercreate: "Nguyễn Văn An",
-      group: "2",
-      room: "301-B3",
-      createdAt: "09:30",
-      status: "late",
-    },
-    {
-      date: "08/12/2025",
-      time: "13:30 - 15:10",
-      courseCode: "421233237890",
-      courseName: "Lập trình di động",
-      id_usercreate: "00100001",
-      name_usercreate: "Admin",
-      room: "204-B4",
-      group: "",
-      createdAt: null,
-      status: "manual",
-      note: "Đã chấm tay do quên tạo QR",
-    },
-  ];
+    const loadDashboard = async () => {
+      setIsLoadingDashboard(true);
+      setDashboardError("");
+
+      try {
+        const response = await fetchTeacherAttendanceDashboard();
+        if (!isMounted) return;
+
+        if (response?.success && response?.data) {
+          const payload = response.data;
+          const courseProgress = Array.isArray(payload.courseProgress) ? payload.courseProgress.map(normalizeCourseProgress) : [];
+
+          const availableSemesters = Array.isArray(payload.availableSemesters) ? payload.availableSemesters : [];
+
+          setDashboardData({
+            teacher: payload.teacher || null,
+            summary: payload.summary || {
+              totalTeachingSessions: 0,
+              onTimeCheckins: 0,
+              lateCheckins: 0,
+              absentCheckins: 0,
+              manualOverrideCheckins: 0,
+              attendanceRate: 0,
+            },
+            availableSemesters,
+            courseProgress,
+          });
+
+          if (availableSemesters.length > 0) {
+            setSelectedSemester((current) => current || availableSemesters[0]);
+          }
+        } else {
+          setDashboardError(response?.message || "Không thể tải dashboard chấm công");
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        setDashboardError(error?.message || "Không thể tải dashboard chấm công");
+      } finally {
+        if (isMounted) {
+          setIsLoadingDashboard(false);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchTeacherAttendanceDashboard]);
 
   const courses = useMemo(() => {
-    const grouped = {};
+    const allCourses = dashboardData.courseProgress || [];
+    const normalizedSemester = selectedSemester || "";
+    const codeQuery = courseCodeFilter.trim().toLowerCase();
+    const nameQuery = courseNameFilter.trim().toLowerCase();
 
-    sessions.forEach((s) => {
-      if (!grouped[s.courseCode]) {
-        grouped[s.courseCode] = {
-          courseCode: s.courseCode,
-          courseName: s.courseName,
-          totalSessions: 0,
-          successSessions: 0,
-          failedSessions: 0,
-        };
+    return allCourses
+      .filter((course) => {
+        if (normalizedSemester && course.semester !== normalizedSemester) return false;
+        if (codeQuery && !String(course.courseCode || "").toLowerCase().includes(codeQuery)) return false;
+        if (nameQuery && !String(course.courseName || "").toLowerCase().includes(nameQuery)) return false;
+        return true;
+      })
+      .map((course) => normalizeCourseProgress(course));
+  }, [dashboardData.courseProgress, selectedSemester, courseCodeFilter, courseNameFilter]);
+
+  const dashboardSummary = useMemo(() => {
+    return courses.reduce(
+      (acc, course) => ({
+        totalSessions: acc.totalSessions + (course.totalSessions || 0),
+        onTimeSessions: acc.onTimeSessions + (course.onTimeCheckins || 0),
+        lateOrManual: acc.lateOrManual + (course.lateCheckins || 0) + (course.manualOverrideCheckins || 0),
+        absentSessions: acc.absentSessions + (course.failedSessions || 0),
+      }),
+      { totalSessions: 0, onTimeSessions: 0, lateOrManual: 0, absentSessions: 0 }
+    );
+  }, [courses]);
+
+  const filteredSessions = useMemo(() => {
+    if (!selectedCourse?.sessions) return [];
+
+    return selectedCourse.sessions.filter((session) => {
+      if (selectedMonth !== "Tất cả") {
+        const monthName = new Date(`${session.classDate}T00:00:00`).toLocaleString("vi-VN", {
+          month: "long",
+        });
+
+        if (monthName !== selectedMonth) return false;
       }
 
-      grouped[s.courseCode].totalSessions += 1;
+      if (selectedStatus !== "Tất cả") {
+        const normalizedStatus = String(session.lecturerAttendanceStatus || "").toLowerCase();
+        const desiredStatus = selectedStatus === "Đúng giờ" ? "on_time"
+            : selectedStatus === "Trễ" ? "late"
+              : selectedStatus === "Vắng mặt" ? "absent" : selectedStatus.toLowerCase();
 
-      if (s.status === "onTime") {
-        grouped[s.courseCode].successSessions += 1;
-      } else {
-        grouped[s.courseCode].failedSessions += 1;
+        if (normalizedStatus !== desiredStatus) return false;
       }
+
+      return true;
     });
+  }, [selectedCourse, selectedMonth, selectedStatus]);
 
-    return Object.values(grouped);
-  }, [sessions]);
-
-  const filteredSessions = sessions.filter((s) => {
-    if (selectedCourse && s.courseCode !== selectedCourse.courseCode) {
-      return false;
-    }
-
-    if (selectedMonth === "Tất cả") return true;
-
-    const month = new Date(
-      s.date.split("/").reverse().join("-")
-    ).toLocaleString("vi-VN", { month: "long" });
-
-    return month === selectedMonth;
-  });
+  const handleResetFilters = () => {
+    setSelectedSemester(dashboardData.availableSemesters[0] || "");
+    setSelectedMonth("Tất cả");
+    setCourseCodeFilter("");
+    setCourseNameFilter("");
+    setSelectedStatus("Tất cả");
+  };
 
   const [visibleColsCourse, setVisibleColsCourse] = useState({
     course: true,
@@ -134,29 +188,29 @@ export default function TeacherAttendancePage() {
         <div className="bg-white border shadow-sm rounded-b-xl p-6 mb-6">
           <div className="flex flex-col lg:flex-row items-center gap-6">
             <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white shrink-0 text-3xl ">
-              {teacherInfo.name.charAt(4)}
+              {dashboardData.teacher?.fullName?.charAt(0) || "G"}
             </div>
 
             <div className="flex-1 text-center lg:text-left">
               <h2 className="text-xl font-bold text-gray-800">
-                {teacherInfo.name}
+                {dashboardData.teacher?.fullName || "Giảng viên"}
               </h2>
               <p className="text-gray-500 mt-1">
-                Mã giảng viên: {teacherInfo.employeeCode}
+                Mã giảng viên: {dashboardData.teacher?.teacherCode || "-"}
               </p>
             </div>
 
             <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 w-full lg:w-auto text-center">
               <div className="bg-blue-50 rounded-xl p-4">
                 <p className="text-3xl font-bold text-blue-600">
-                  {teacherInfo.totalSessions}
+                  {isLoadingDashboard ? "..." : dashboardSummary.totalSessions}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">Tổng tiết dạy</p>
               </div>
 
               <div className="bg-emerald-50 rounded-xl p-4">
                 <p className="text-3xl font-bold text-emerald-600">
-                  {teacherInfo.onTimeSessions}
+                  {isLoadingDashboard ? "..." : dashboardSummary.onTimeSessions}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
                   Tiết tạo QR đúng giờ
@@ -165,7 +219,7 @@ export default function TeacherAttendancePage() {
 
               <div className="bg-amber-50 rounded-xl p-4">
                 <p className="text-3xl font-bold text-amber-600 flex items-center justify-center gap-1">
-                  {teacherInfo.lateOrManual}
+                  {isLoadingDashboard ? "..." : dashboardSummary.lateOrManual}
                   <Star size={18} />
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
@@ -175,6 +229,12 @@ export default function TeacherAttendancePage() {
             </div>
           </div>
         </div>
+
+        {dashboardError ? (
+          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {dashboardError}
+          </div>
+        ) : null}
 
         {/* Filter Section */}
         <div className="bg-white border  p-6">
@@ -202,6 +262,8 @@ export default function TeacherAttendancePage() {
                     type="text"
                     placeholder="Ví dụ: 4203001549"
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={courseCodeFilter}
+                    onChange={(e) => setCourseCodeFilter(e.target.value)}
                   />
                 </div>
             <div>
@@ -211,6 +273,8 @@ export default function TeacherAttendancePage() {
               <input
                 type="text"
                 className="w-full rounded-lg border px-3 py-2"
+                value={courseNameFilter}
+                onChange={(e) => setCourseNameFilter(e.target.value)}
               />    
             </div>
 
@@ -223,9 +287,12 @@ export default function TeacherAttendancePage() {
                 onChange={(e) => setSelectedSemester(e.target.value)}
                 className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option>Học kỳ I - 2025-2026</option>
-                <option>Học kỳ II - 2024-2025</option>
-                <option>Học kỳ I - 2024-2025</option>
+                <option value="">Tất cả</option>
+                {dashboardData?.availableSemesters?.map((semester, index) => (
+                  <option key={index} value={semester}>
+                    {semester}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -233,7 +300,11 @@ export default function TeacherAttendancePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Trạng thái
               </label>
-              <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select
+                className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+              >
                 <option>Tất cả</option>
                 <option>Đúng giờ</option>
                 <option>Trễ</option>
@@ -244,17 +315,24 @@ export default function TeacherAttendancePage() {
 
           <div className="mt-6 flex flex-wrap items-center justify-start md:justify-end gap-4">
             <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
-              <button className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200">
+              <button
+                className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
+                type="button"
+              >
                 <FileSearchIcon className="w-5 h-5" />
                 Tìm kiếm
               </button>
 
-              <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200">
+              <button className="flex items-center gap-2 border border-teal-500 text-teal-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-teal-50 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-2 transition-all duration-200" type="button">
                 <FileSpreadsheet className="w-5 h-5" />
                 Tải Excel
               </button>
 
-              <button className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+              <button
+                className="flex items-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200"
+                type="button"
+                onClick={handleResetFilters}
+              >
                 <FilterX className="w-5 h-5" />
                 Xóa bộ lọc
               </button>
@@ -415,10 +493,13 @@ export default function TeacherAttendancePage() {
           selectedCourse={selectedCourse}
           onClose={closeDetailModal}
           filteredSessions={filteredSessions}
+          semesterOptions={dashboardData.availableSemesters || []}
           selectedSemester={selectedSemester}
           onSemesterChange={setSelectedSemester}
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
+          selectedStatus={selectedStatus}
+          onStatusChange={setSelectedStatus}
         />
       </div>
     </div>

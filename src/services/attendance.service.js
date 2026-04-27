@@ -75,6 +75,19 @@ class AttendanceService {
   }
 
   /**
+   * Lấy dashboard thống kê chấm công của giảng viên đăng nhập
+   * @param {Object} params - { semester?, from_date?, to_date? }
+   */
+  async getTeacherAttendanceDashboard(params) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.TEACHER_DASHBOARD, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Lấy tiến độ điểm danh của 1 sinh viên trong 1 học phần cụ thể (cho giảng viên)
    */
   async getStudentAttendanceHistory(studentId, params) {

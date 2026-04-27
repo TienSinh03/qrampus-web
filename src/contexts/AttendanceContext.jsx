@@ -67,6 +67,20 @@ export const AttendanceProvider = ({ children }) => {
     totalPages: 0,
   });
 
+  const fetchTeacherAttendanceDashboard = useCallback(async (params = {}) => {
+    try {
+      const response = await AttendanceService.getTeacherAttendanceDashboard(params);
+      return {
+        success: !!response?.success,
+        data: response?.data || null,
+        message: response?.message || '',
+      };
+    } catch (error) {
+      const message = error?.message || 'Không thể tải dashboard chấm công';
+      return { success: false, error: message, message };
+    }
+  }, []);
+
   const getValidSession = useCallback((session) => {
     if (!session?.expires_at) return null;
 
@@ -647,6 +661,7 @@ export const AttendanceProvider = ({ children }) => {
     checkActiveSession,
     getSessionTiming,
     getLatestCompletedSessionSnapshot,
+    fetchTeacherAttendanceDashboard,
   };
 
   return (
