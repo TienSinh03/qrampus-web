@@ -88,6 +88,20 @@ class AttendanceService {
   }
 
   /**
+   * Lấy danh sách buổi chấm công theo học phần cho modal chi tiết dashboard giảng viên
+   * @param {string} courseId
+   * @param {Object} params - { semester?, month?, practice_group_id?, from_date?, to_date? }
+   */
+  async getTeacherCourseSessions(courseId, params) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.TEACHER_COURSE_SESSIONS(courseId), { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Lấy tiến độ điểm danh của 1 sinh viên trong 1 học phần cụ thể (cho giảng viên)
    */
   async getStudentAttendanceHistory(studentId, params) {

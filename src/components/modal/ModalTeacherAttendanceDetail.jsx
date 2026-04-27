@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Clock,
   CheckCircle2,
@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import Pagination from "../common/Pagination";
+import { useAttendance } from "@contexts/AttendanceContext";
 
 const MODAL_TABLE_PAGE_SIZE = 8;
 
@@ -33,7 +34,6 @@ export default function ModalTeacherAttendanceDetail({
   isOpen,
   selectedCourse,
   onClose,
-  filteredSessions,
   semesterOptions = [],
   selectedSemester,
   onSemesterChange,
@@ -42,6 +42,7 @@ export default function ModalTeacherAttendanceDetail({
   selectedStatus,
   onStatusChange,
 }) {
+  const { fetchTeacherCourseAttendanceSessions } = useAttendance();
   const [expanded, setExpanded] = useState(false);
   const [searchCourseCode, setSearchCourseCode] = useState("");
   const [searchCreator, setSearchCreator] = useState("");
@@ -51,6 +52,9 @@ export default function ModalTeacherAttendanceDetail({
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [sessionCurrentPage, setSessionCurrentPage] = useState(1);
+  const [apiSessions, setApiSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState("");
   const [visibleCols, setVisibleCols] = useState({
     date: true,
     time: true,
@@ -63,20 +67,73 @@ export default function ModalTeacherAttendanceDetail({
     detail: true,
   });
 
+  const selectedCourseSectionId = selectedCourse?.courseSectionId;
+  const selectedPracticeGroupId = selectedCourse?.practiceGroupId;
+
+  const selectedMonthNumber = useMemo(() => {
+    if (!selectedMonth || selectedMonth === "Tất cả") return undefined;
+    const matched = selectedMonth.match(/\d+/);
+    if (!matched) return undefined;
+    const month = Number(matched[0]);
+    return Number.isInteger(month) && month >= 1 && month <= 12 ? month : undefined;
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    if (!isOpen || !selectedCourseSectionId) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadCourseSessions = async () => {
+      setSessionsLoading(true);
+      setSessionsError("");
+
+      const params = {};
+      if (selectedSemester) params.semester = selectedSemester;
+      if (selectedMonthNumber) params.month = String(selectedMonthNumber);
+
+      if (selectedPracticeGroupId === null) {
+        params.practice_group_id = "null";
+      } else if (selectedPracticeGroupId) {
+        params.practice_group_id = selectedPracticeGroupId;
+      }
+
+      const response = await fetchTeacherCourseAttendanceSessions(selectedCourseSectionId, params);
+
+      if (!isMounted) return;
+
+      if (response?.success) {
+        setApiSessions(Array.isArray(response?.data?.sessions) ? response.data.sessions : []);
+      } else {
+        setApiSessions([]);
+        setSessionsError(response?.message || response?.error || "Không thể tải danh sách buổi chấm công");
+      }
+
+      setSessionCurrentPage(1);
+      setSessionsLoading(false);
+    };
+
+    loadCourseSessions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    isOpen,
+    selectedCourseSectionId,
+    selectedPracticeGroupId,
+    selectedSemester,
+    selectedMonthNumber,
+    fetchTeacherCourseAttendanceSessions,
+  ]);
+
   const sessionsToRender = useMemo(() => {
-    const normalizedMonth = selectedMonth || "Tất cả";
     const normalizedStatus = selectedStatus || "Tất cả";
 
-    return (filteredSessions || []).filter((session) => {
+    return (apiSessions || []).filter((session) => {
       if (fromDate && session.classDate && session.classDate < fromDate) return false;
       if (toDate && session.classDate && session.classDate > toDate) return false;
-
-      if (normalizedMonth !== "Tất cả") {
-        const monthLabel = new Date(`${session.classDate}T00:00:00`).toLocaleString("vi-VN", {
-          month: "long",
-        });
-        if (monthLabel !== normalizedMonth) return false;
-      }
 
       if (normalizedStatus !== "Tất cả") {
         const mappedStatus =
@@ -107,7 +164,20 @@ export default function ModalTeacherAttendanceDetail({
 
       return true;
     });
-  }, [filteredSessions, fromDate, toDate, selectedMonth, selectedStatus, searchCourseCode, searchCreator, searchCourseName, searchClassName, searchGroup]);
+  }, [apiSessions, fromDate, toDate, selectedStatus, searchCourseCode, searchCreator, searchCourseName, searchClassName, searchGroup]);
+
+  const handleResetModalFilters = () => {
+    setFromDate("");
+    setToDate("");
+    setSearchCourseCode("");
+    setSearchCreator("");
+    setSearchCourseName("");
+    setSearchClassName("");
+    setSearchGroup("");
+    onMonthChange("Tất cả");
+    onStatusChange("Tất cả");
+    setSessionCurrentPage(1);
+  };
 
   const getStatusBadge = (status) => {
     const normalized = String(status || "").toLowerCase();
@@ -426,7 +496,11 @@ export default function ModalTeacherAttendanceDetail({
                     Tải Excel
                   </button>
 
-                  <button className="flex items-center justify-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200">
+                  <button
+                    className="flex items-center justify-center gap-2 border border-gray-400 text-gray-700 bg-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200"
+                    onClick={handleResetModalFilters}
+                    type="button"
+                  >
                     <FilterX className="w-5 h-5" />
                     Xóa bộ lọc
                   </button>
@@ -506,7 +580,13 @@ export default function ModalTeacherAttendanceDetail({
                 </thead>
 
                 <tbody className="divide-y divide-gray-200">
-                  {paginatedSessions.map((session, i) => (
+                  {sessionsLoading ? (
+                    <tr>
+                      <td colSpan="9" className="px-6 py-10 text-center text-gray-500">
+                        Đang tải dữ liệu...
+                      </td>
+                    </tr>
+                  ) : paginatedSessions.map((session, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition">
                       {visibleCols.date && (
                         <td className="px-6 py-4 font-medium">{formatDateValue(session.classDate)}</td>
@@ -534,8 +614,8 @@ export default function ModalTeacherAttendanceDetail({
 
                       {visibleCols.createdAt && (
                         <td className="px-6 py-4">
-                          {session.lecturerCheckinAt ? (
-                            <span className="text-sm">{formatTimeValue(session.lecturerCheckinAt)}</span>
+                          {session.firstAttendanceSessionCreatedAt || session.qrCreatedAt || session.lecturerCheckinAt ? (
+                            <span className="text-sm">{formatTimeValue(session.firstAttendanceSessionCreatedAt || session.qrCreatedAt || session.lecturerCheckinAt)}</span>
                           ) : (
                             <span className="text-red-600 text-sm">- Chưa tạo -</span>
                           )}
@@ -559,10 +639,10 @@ export default function ModalTeacherAttendanceDetail({
                     </tr>
                   ))}
 
-                  {paginatedSessions.length === 0 && (
+                  {!sessionsLoading && paginatedSessions.length === 0 && (
                     <tr>
                       <td colSpan="9" className="px-6 py-10 text-center text-gray-500">
-                        Chưa có dữ liệu chấm công cho học phần này.
+                        {sessionsError || "Chưa có dữ liệu chấm công cho học phần này."}
                       </td>
                     </tr>
                   )}

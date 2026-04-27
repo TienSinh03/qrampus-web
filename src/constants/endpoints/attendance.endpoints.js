@@ -18,6 +18,7 @@ export const ATTENDANCE_ENDPOINTS = {
   SESSION_STATS: (id) => `${API_VERSION}/attendance-sessions/${id}/stats`,
   SESSION_HISTORY: `${API_VERSION}/attendance-sessions/history`,
   TEACHER_DASHBOARD: `${API_VERSION}/attendance-sessions/teacher/dashboard`,
+  TEACHER_COURSE_SESSIONS: (courseId) => `${API_VERSION}/attendance-sessions/teacher/courses/${courseId}/sessions`,
 
   // Attendance history endpoints
   STUDENT_ATTENDANCE_HISTORY: (studentId) => `${API_VERSION}/attendance-history/students/${studentId}`,

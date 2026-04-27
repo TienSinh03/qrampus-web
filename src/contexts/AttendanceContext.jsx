@@ -81,6 +81,25 @@ export const AttendanceProvider = ({ children }) => {
     }
   }, []);
 
+  const fetchTeacherCourseAttendanceSessions = useCallback(async (courseId, params = {}) => {
+    if (!courseId) {
+      const message = 'Thiếu courseId để lấy danh sách buổi chấm công';
+      return { success: false, error: message, message };
+    }
+
+    try {
+      const response = await AttendanceService.getTeacherCourseSessions(courseId, params);
+      return {
+        success: !!response?.success,
+        data: response?.data || null,
+        message: response?.message || '',
+      };
+    } catch (error) {
+      const message = error?.message || 'Không thể tải danh sách buổi chấm công';
+      return { success: false, error: message, message };
+    }
+  }, []);
+
   const getValidSession = useCallback((session) => {
     if (!session?.expires_at) return null;
 
@@ -662,6 +681,7 @@ export const AttendanceProvider = ({ children }) => {
     getSessionTiming,
     getLatestCompletedSessionSnapshot,
     fetchTeacherAttendanceDashboard,
+    fetchTeacherCourseAttendanceSessions,
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -25,6 +25,7 @@ const normalizeCourseProgress = (course = {}) => ({
 
 export default function TeacherAttendancePage() {
   const { fetchTeacherAttendanceDashboard } = useAttendance();
+  const hasInitializedSemesterRef = useRef(false);
   const [selectedSemester, setSelectedSemester] = useState(
     ""
   );
@@ -70,7 +71,9 @@ export default function TeacherAttendancePage() {
       setDashboardError("");
 
       try {
-        const response = await fetchTeacherAttendanceDashboard();
+        const response = await fetchTeacherAttendanceDashboard(
+          selectedSemester ? { semester: selectedSemester } : {}
+        );
         if (!isMounted) return;
 
         if (response?.success && response?.data) {
@@ -93,8 +96,14 @@ export default function TeacherAttendancePage() {
             courseProgress,
           });
 
-          if (availableSemesters.length > 0) {
-            setSelectedSemester((current) => current || availableSemesters[0]);
+          if (
+            !hasInitializedSemesterRef.current && !selectedSemester && availableSemesters.length > 0
+          ) {
+
+            hasInitializedSemesterRef.current = true;
+            setSelectedSemester(availableSemesters[0]);
+          } else if (!hasInitializedSemesterRef.current) {
+            hasInitializedSemesterRef.current = true;
           }
         } else {
           setDashboardError(response?.message || "Không thể tải dashboard chấm công");
@@ -114,23 +123,21 @@ export default function TeacherAttendancePage() {
     return () => {
       isMounted = false;
     };
-  }, [fetchTeacherAttendanceDashboard]);
+  }, [fetchTeacherAttendanceDashboard, selectedSemester]);
 
   const courses = useMemo(() => {
     const allCourses = dashboardData.courseProgress || [];
-    const normalizedSemester = selectedSemester || "";
     const codeQuery = courseCodeFilter.trim().toLowerCase();
     const nameQuery = courseNameFilter.trim().toLowerCase();
 
     return allCourses
       .filter((course) => {
-        if (normalizedSemester && course.semester !== normalizedSemester) return false;
         if (codeQuery && !String(course.courseCode || "").toLowerCase().includes(codeQuery)) return false;
         if (nameQuery && !String(course.courseName || "").toLowerCase().includes(nameQuery)) return false;
         return true;
       })
       .map((course) => normalizeCourseProgress(course));
-  }, [dashboardData.courseProgress, selectedSemester, courseCodeFilter, courseNameFilter]);
+  }, [dashboardData.courseProgress, courseCodeFilter, courseNameFilter]);
 
   const dashboardSummary = useMemo(() => {
     return courses.reduce(
@@ -163,31 +170,6 @@ export default function TeacherAttendancePage() {
       setCourseCurrentPage(totalCoursePages);
     }
   }, [courseCurrentPage, totalCoursePages]);
-
-  const filteredSessions = useMemo(() => {
-    if (!selectedCourse?.sessions) return [];
-
-    return selectedCourse.sessions.filter((session) => {
-      if (selectedMonth !== "Tất cả") {
-        const monthName = new Date(`${session.classDate}T00:00:00`).toLocaleString("vi-VN", {
-          month: "long",
-        });
-
-        if (monthName !== selectedMonth) return false;
-      }
-
-      if (selectedStatus !== "Tất cả") {
-        const normalizedStatus = String(session.lecturerAttendanceStatus || "").toLowerCase();
-        const desiredStatus = selectedStatus === "Đúng giờ" ? "on_time"
-            : selectedStatus === "Trễ" ? "late"
-              : selectedStatus === "Vắng mặt" ? "absent" : selectedStatus.toLowerCase();
-
-        if (normalizedStatus !== desiredStatus) return false;
-      }
-
-      return true;
-    });
-  }, [selectedCourse, selectedMonth, selectedStatus]);
 
   const handleResetFilters = () => {
     setSelectedSemester(dashboardData.availableSemesters[0] || "");
@@ -426,9 +408,7 @@ export default function TeacherAttendancePage() {
 
               <tbody className="divide-y divide-gray-200">
                 {paginatedCourses.map((course, i) => {
-                  const percent = Math.round(
-                    (course.successSessions / course.totalSessions) * 100
-                  );
+                  const percent = course.totalSessions > 0 ? Math.round((course.successSessions / course.totalSessions) * 100) : 0;
 
                   return (
                     <tr key={i} className="hover:bg-gray-50 transition">
@@ -537,7 +517,6 @@ export default function TeacherAttendancePage() {
           isOpen={isDetailModalOpen}
           selectedCourse={selectedCourse}
           onClose={closeDetailModal}
-          filteredSessions={filteredSessions}
           semesterOptions={dashboardData.availableSemesters || []}
           selectedSemester={selectedSemester}
           onSemesterChange={setSelectedSemester}
