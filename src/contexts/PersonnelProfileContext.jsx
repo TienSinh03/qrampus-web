@@ -12,6 +12,11 @@ export const PersonnelProfileProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
 
+  const [ teachers, setTeachers ] = useState([]);
+  const [ teachersPagination, setTeachersPagination ] = useState({ total: 0, page: 1, limit: 10, totalPages: 0 });
+  const [ teachersLoading, setTeachersLoading ] = useState(false);
+  const [ teachersError, setTeachersError ] = useState(null);
+
   useEffect(() => {
     if (!isAuthenticated) {
       setProfile(null);
@@ -71,6 +76,38 @@ export const PersonnelProfileProvider = ({ children }) => {
     setLastFetched(null);
   }, []);
 
+  const fetchTeachers = useCallback(async (params = {}) => {
+    setTeachersLoading(true);
+    setTeachersError(null);
+    try {
+      const response = await personnelService.getAllTeachers(params);
+      if (response?.success) {
+        setTeachers(response.data.teachers || []);
+        setTeachersPagination(response.data.pagination || {
+          total: 0,
+          page: 1,
+          limit: 10,
+          totalPages: 0
+        });
+        return { success: true, data: response.data };
+      }
+      const message = response?.message || 'Không thể tải danh sách giảng viên';
+      setTeachersError(message);
+      return { success: false, error: message };
+
+    } catch (error) {
+      const errorMessage = error.message || 'Không thể tải danh sách giảng viên';
+      setTeachersError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setTeachersLoading(false);
+    }
+  }, []);
+
+  const refreshTeachers = useCallback(async (params) => {
+    return fetchTeachers(params);
+  }, [fetchTeachers]);
+
   const value = useMemo(() => ({
     profile,
     loading,
@@ -79,7 +116,13 @@ export const PersonnelProfileProvider = ({ children }) => {
     fetchProfile,
     refreshProfile,
     clearProfile,
-  }), [profile, loading, error, lastFetched, fetchProfile, refreshProfile, clearProfile]);
+    teachers,
+    teachersPagination,
+    teachersLoading,
+    teachersError,
+    fetchTeachers,
+    refreshTeachers,
+  }), [profile, loading, error, lastFetched, fetchProfile, refreshProfile, clearProfile, teachers, teachersPagination, teachersLoading, teachersError, fetchTeachers, refreshTeachers]);
 
   return (
     <PersonnelProfileContext.Provider value={value}>

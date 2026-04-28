@@ -1,197 +1,123 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
 import Pagination from "../../../components/common/Pagination";
-import Search from "../../../components/common/Search";
 import ModalUpload from "../../../components/common/ModalUpload";
 import {
-  CirclePlus, Trash2, LockKeyhole, CloudUpload, Eye, MoreVertical, PencilLine, Users, UserCheck, UserX, UserPlus,
+  Trash2, Users,
   QrCode, MessageSquareText, SquareCheckBig, CopyX,
-  ArrowDownToLine, FileSpreadsheet, FilterX, ArrowUp, ArrowDown
+  FileSpreadsheet, FilterX, ArrowUp, ArrowDown
 } from "lucide-react";
 import StatsCard from "../../../components/common/StatsCard";
 import { useNavigate } from "react-router-dom";
+import { usePersonnelProfile } from "../../../contexts/PersonnelProfileContext";
+import { DEPARTMENTS } from "../../../constants/departments";
+
+const ITEMS_PER_PAGE = 10;
+
+const pillStyle = {
+  active: "bg-green-100 text-green-600",
+  inactive: "bg-gray-200 text-gray-600",
+  pending: "bg-yellow-100 text-yellow-600",
+};
+
+const SkeletonRow = () => (
+  <tr className="border-b animate-pulse">
+    <td className="px-4 py-3">
+      <div className="h-4 w-24 bg-slate-200 rounded" />
+    </td>
+    <td className="px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-slate-200 shrink-0" />
+        <div className="h-4 w-36 bg-slate-200 rounded" />
+      </div>
+    </td>
+    <td className="px-4 py-3 hidden lg:table-cell">
+      <div className="h-4 w-40 bg-slate-200 rounded" />
+    </td>
+    <td className="px-4 py-3 text-center">
+      <div className="h-6 w-20 bg-slate-200 rounded-full mx-auto" />
+    </td>
+  </tr>
+);
 
 const AdminQRPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const { teachers, teachersPagination, fetchTeachers, teachersLoading } = usePersonnelProfile();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [openUpload, setOpenUpload] = useState(false);
-  const navigate = useNavigate();
 
+  const [filters, setFilters] = useState({
+    teacherCode: "",
+    fullName: "",
+    department: "",
+    status: "",
+    period: "",
+    date: "",
+  });
 
+  useEffect(() => {
+    fetchTeachers({ page: currentPage, limit: ITEMS_PER_PAGE });
+  }, [fetchTeachers, currentPage]);
 
+  const filteredTeachers = useMemo(() => {
+    return (teachers ?? []).filter((gv) => {
+      const code = (gv.teacher_code ?? "").toLowerCase();
+      const name = (gv.full_name ?? "").toLowerCase();
+      const dept = (gv.department ?? "").toLowerCase();
+      const status = (gv.user?.status ?? "").toLowerCase();
 
+      if (
+        filters.teacherCode &&
+        !code.includes(filters.teacherCode.toLowerCase())
+      )
+        return false;
 
+      if (
+        filters.fullName &&
+        !name.includes(filters.fullName.toLowerCase())
+      )
+        return false;
 
+      if (
+        filters.department &&
+        !dept.includes(filters.department.toLowerCase())
+      )
+        return false;
 
-  const totalPages = 5;
+      if (filters.status && status !== filters.status) return false;
 
-  const giangvien = [
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-      maNhanSu: "1000001",
-      hoTen: "Nguyễn Minh Tâm",
-      khoa: "Công nghệ thông tin",
-      tietDay: ["1-3", "7-9"],
-      trangthaihocphan: "Tạo thành công",
-      ngayday: "2024-06-15",
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-      maNhanSu: "1000002",
-      hoTen: "Trần Thị Thu Hà",
-      khoa: "Kinh tế",
-      tietDay: ["4-6", "10-12"],
-      trangthaihocphan: "Chưa tạo",
-      ngayday: "2024-06-15",
+      return true;
+    });
+  }, [teachers, filters]);
 
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+  };
 
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-      maNhanSu: "1000003",
-      hoTen: "Lê Quang Huy",
-      khoa: "Ngoại ngữ",
-      tietDay: ["1-3", "13-15"],
-      trangthaihocphan: "Tạo thành công",
-      ngayday: "2024-06-15",
+  const handleResetFilters = () => {
+    setFilters({
+      teacherCode: "",
+      fullName: "",
+      department: "",
+      status: "",
+      period: "",
+      date: "",
+    });
+  };
 
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-      maNhanSu: "1000004",
-      hoTen: "Phạm Văn Long",
-      khoa: "Cơ khí",
-      tietDay: ["7-9", "10-12"],
-      trangthaihocphan: "Tạo thành công",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-      maNhanSu: "1000005",
-      hoTen: "Hoàng Thị Ngọc Anh",
-      khoa: "Luật",
-      tietDay: ["4-6", "13-15"],
-      trangthaihocphan: "Quá hạn",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      maNhanSu: "1000006",
-      hoTen: "Đặng Quốc Bảo",
-      khoa: "Điện - Điện tử",
-      tietDay: ["1-3", "4-6"],
-      trangthaihocphan: "Quá hạn",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-      maNhanSu: "1000007",
-      hoTen: "Võ Thanh Thảo",
-      khoa: "Xây dựng",
-      tietDay: ["7-9", "13-15"],
-      trangthaihocphan: "Quá hạn",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-      maNhanSu: "1000008",
-      hoTen: "Bùi Đức Thành",
-      khoa: "Môi trường",
-      tietDay: ["1-3", "10-12"],
-      trangthaihocphan: "Quá hạn",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-      maNhanSu: "1000009",
-      hoTen: "Ngô Thị Mai",
-      khoa: "Du lịch",
-      tietDay: ["4-6", "7-9"],
-      trangthaihocphan: "Quá hạn",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-      maNhanSu: "1000010",
-      hoTen: "Phan Anh Tuấn",
-      khoa: "Quản trị kinh doanh",
-      tietDay: ["10-12", "13-15"],
-      trangthaihocphan: "Quá hạn",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/5.png",
-      maNhanSu: "1000011",
-      hoTen: "Lý Thanh Hương",
-      khoa: "Tài chính - Ngân hàng",
-      tietDay: ["1-3", "7-9"],
-      trangthaihocphan: "Tạo thành công",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/4.png",
-      maNhanSu: "1000012",
-      hoTen: "Mai Quốc Khánh",
-      khoa: "Kế toán",
-      tietDay: ["4-6", "13-15"],
-      trangthaihocphan: "Tạo thành công",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/3.png",
-      maNhanSu: "1000013",
-      hoTen: "Tạ Ngọc Trinh",
-      khoa: "Marketing",
-      tietDay: ["7-9", "10-12"],
-      trangthaihocphan: "Tạo thành công",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/2.png",
-      maNhanSu: "1000014",
-      hoTen: "Cao Minh Đức",
-      khoa: "Công nghệ thực phẩm",
-      tietDay: ["1-3", "13-15"],
-      trangthaihocphan: "Tạo thành công",
-      ngayday: "2024-06-15",
-
-    },
-    {
-      avatar_url: "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-      maNhanSu: "1000015",
-      hoTen: "Vũ Hoàng Yến",
-      khoa: "Thiết kế đồ họa",
-      tietDay: ["4-6", "10-12"],
-      trangthaihocphan: "Tạo thành công",
-      ngayday: "2024-06-15",
-
-
-    },
-  ];
-
-  // Expandable filter state
-  const [expanded, setExpanded] = useState(false);
-
-
-
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen">
       <div className="bg-gray-50 p-1">
         <div className="mx-auto">
           <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
-          <div className="">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <StatsCard
                 title="Tổng phiên điểm danh"
@@ -236,258 +162,228 @@ const AdminQRPage = () => {
 
             </div>
 
-            <div className="bg-white border p-6">
-              {/* Header */}
-              <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
+          <div className="bg-white border p-6 mb-0">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+              </svg>
+              <span>Bộ lọc thống kê</span>
+            </div>
+
+            {/* Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mã số nhân sự
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: 4203001549"
+                  value={filters.teacherCode}
+                  onChange={(e) =>
+                    handleFilterChange("teacherCode", e.target.value)
+                  }
+                  className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Họ và tên
+                </label>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo tên..."
+                  value={filters.fullName}
+                  onChange={(e) =>
+                    handleFilterChange("fullName", e.target.value)
+                  }
+                  className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Khoa/Viện
+                </label>
+                <select
+                  value={filters.department}
+                  onChange={(e) =>
+                    handleFilterChange("department", e.target.value)
+                  }
+                  className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
-                </svg>
-                <span>Bộ lọc thống kê</span>
-                <button onClick={() => setExpanded(!expanded)} className="flex items-center text-blue-600 hover:text-blue-800 ml-auto">
-                  {expanded ? (
-                    <>
-                      <ArrowUp size={16} className="mr-1" />
-                      Thu gọn
-                    </>
-                  ) : (
-                    <>
-                      <ArrowDown size={16} className="mr-1" />
-                      Mở rộng
-                    </>
-                  )}
-                </button>
+                  <option value="">-- Chọn khoa --</option>
+                  {DEPARTMENTS.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Form */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-
-
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã số nhân sự
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: 4203001549"
-                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Họ và tên
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-lg border px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Khoa/Viện
-                  </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Khoa Công nghệ thông tin</option>
-                    <option>Khoa Điện tử - Viễn thông</option>
-                    <option>Khoa Cơ khí</option>
-                    <option>Khoa Kinh tế</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Trạng thái
-                  </label>
-                  <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Tạo thành công</option>
-                    <option>Chưa tạo</option>
-                    <option>Quá hạn</option>
-                  </select>
-                </div>
-                {expanded && (
-                  <>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tiết dạy
-                      </label>
-                      <select className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option>1-3</option>
-                        <option>4-6</option>
-                        <option>7-9</option>
-                        <option>10-12</option>
-                        <option>13-15</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ngày dạy
-                      </label>
-                      <input
-                        type="date"
-                        placeholder="Ví dụ: ...."
-                        className="w-full rounded-lg border px-3 py-2"
-                      />
-                    </div>
-                  </>
-                )}
-
-
-              </div>
-
-              {/* Actions */}
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-                {/* Nhóm buttons chính bên trái */}
-                <div className="flex flex-wrap items-center gap-3">
-
-                </div>
-
-                {/* Nhóm buttons phụ bên phải */}
-                <div className="flex flex-wrap items-center gap-3">
-
-
-                  {/* Tải Excel */}
-                  <button
-                    className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
-                    title="Tải file excel, có thể danh sách khi lọc"
-                  >
-                    <FileSpreadsheet className="w-5 h-5" />
-                  </button>
-
-                  {/* Xóa bộ lọc */}
-                  <button
-                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
-                    title="Xóa bộ lọc"
-                  >
-                    <FilterX className="w-5 h-5" />
-                  </button>
-                </div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Trạng thái
+                </label>
+                <select
+                  value={filters.status}
+                  onChange={(e) =>
+                    handleFilterChange("status", e.target.value)
+                  }
+                  className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Chọn trạng thái --</option>
+                  <option value="active">Hoạt động</option>
+                  <option value="inactive">Tạm ngưng</option>
+                </select>
               </div>
             </div>
 
-            {/* TABLE */}
-            <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow">
-              <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
+            {/* Actions */}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-3" />
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  className="flex items-center gap-2 border border-emerald-400 text-emerald-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
+                  title="Tải file excel"
+                >
+                  <FileSpreadsheet className="w-5 h-5" />
+                </button>
 
-                {/* ================== HEADER ================== */}
-                <thead className="sticky top-0 z-10 bg-slate-100">
-                  <tr className="border-b">
+                <button
+                  onClick={handleResetFilters}
+                  className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
+                  title="Xóa bộ lọc"
+                >
+                  <FilterX className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
 
-                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
-                      Mã nhân sự
-                    </th>
+          <div className="w-full overflow-x-auto rounded-b-xl border border-slate-200 bg-white shadow">
+            <table className="w-full table-auto border-collapse text-left text-sm whitespace-nowrap">
+              <thead className="sticky top-0 z-10 bg-slate-100">
+                <tr className="border-b">
+                  <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">
+                    Mã nhân sự
+                  </th>
+                  <th className="h-12 px-4 min-w-[220px] text-xs font-semibold text-slate-600 uppercase">
+                    Giảng viên
+                  </th>
+                  <th className="h-12 px-4 min-w-[160px] text-xs font-semibold text-slate-600 uppercase hidden lg:table-cell">
+                    Khoa
+                  </th>
+                  <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase text-center">
+                    Trạng thái học phần
+                  </th>
+                </tr>
+              </thead>
 
-                    <th className="h-12 px-4 min-w-[220px] text-xs font-semibold text-slate-600 uppercase">
-                      Giảng viên
-                    </th>
+              <tbody>
+                {/* Loading skeleton */}
+                {teachersLoading &&
+                  Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+                    <SkeletonRow key={i} />
+                  ))}
 
-                    <th className="h-12 px-4 min-w-[160px] text-xs font-semibold text-slate-600 uppercase hidden lg:table-cell">
-                      Khoa
-                    </th>
-
-                    <th className="h-12 px-4 min-w-[180px] text-xs font-semibold text-slate-600 uppercase">
-                      Tiết dạy
-                    </th>
-
-                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase text-center">
-                      Ngày dạy
-                    </th>
-
-                    <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase text-center">
-                      Trạng thái học phần
-                    </th>
-                  </tr>
-                </thead>
-
-                {/* ================== BODY ================== */}
-                <tbody>
-                  {giangvien.map((gv) => (
+                {/* Data rows */}
+                {!teachersLoading &&
+                  filteredTeachers.map((gv) => (
                     <tr
-                      key={gv.maNhanSu}
+                      key={gv.teacher_code}
                       onClick={() =>
-                        navigate(`/dashboard/admin/qrcode/session/qrcode-detail`)
+                        navigate(
+                          `/dashboard/admin/qrcode/session/qrcode-detail`
+                        )
                       }
                       className="border-b hover:bg-slate-50 transition-colors cursor-pointer h-12"
                     >
-                      {/* Mã nhân sự */}
                       <td className="px-4 py-2 font-medium text-slate-700">
-                        {gv.maNhanSu}
+                        {gv.teacher_code}
                       </td>
 
-                      {/* Giảng viên */}
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-3 max-w-[240px]">
                           <img
                             src={gv.avatar_url}
-                            alt={gv.hoTen}
+                            alt={gv.full_name}
                             className="w-9 h-9 rounded-full object-cover border shrink-0"
                           />
-                          <div className="truncate" title={gv.hoTen}>
+                          <div className="truncate" title={gv.full_name}>
                             <div className="font-medium text-slate-800 truncate">
-                              {gv.hoTen}
+                              {gv.full_name}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Khoa */}
                       <td
                         className="px-4 py-2 text-slate-700 hidden lg:table-cell truncate max-w-[180px]"
-                        title={gv.khoa}
+                        title={gv.department}
                       >
-                        {gv.khoa}
+                        {gv.department}
                       </td>
 
-                      {/* Tiết dạy */}
-                      <td className="px-4 py-2">
-                        <div className="flex gap-1 flex-nowrap">
-                          {gv.tietDay.map((tiet, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 shrink-0"
-                            >
-                              {tiet}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-
-                      {/* Ngày dạy */}
-                      <td className="px-4 py-2 text-center text-slate-700">
-                        {gv.ngayday}
-                      </td>
-
-                      {/* Trạng thái */}
                       <td className="px-4 py-2 text-center">
-                        <span className="inline-flex items-center justify-center min-w-[90px] px-3 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-600">
-                          {gv.trangthaihocphan}
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs ${
+                            pillStyle[gv.user?.status?.toLowerCase()] ||
+                            "bg-gray-200 text-gray-600"
+                          }`}
+                        >
+                          {gv.user?.status === "active"
+                            ? "Hoạt động"
+                            : gv.user?.status === "inactive"
+                            ? "Tạm ngưng"
+                            : gv.user?.status || "-"}
                         </span>
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
 
+                {/* Empty state */}
+                {!teachersLoading && filteredTeachers.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-10 text-center text-slate-400 text-sm"
+                    >
+                      Không tìm thấy kết quả phù hợp.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-            {/* PAGINATION */}
+          <div className="flex items-center justify-between px-2 mb-4 mt-3">
+            <span className="text-sm text-gray-500">
+              Hiển thị{" "}
+              <strong>{filteredTeachers.length}</strong>
+              {" "}/{" "}
+              <strong>{teachersPagination.total || 0}</strong> giảng viên
+            </span>
             <Pagination
               currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
+              totalPages={teachersPagination.totalPages || 1}
+              onPageChange={handlePageChange}
+              disabled={teachersLoading}
             />
-
-            {/* MODAL UPLOAD */}
-            <ModalUpload open={openUpload} onClose={() => setOpenUpload(false)} />
           </div>
+
+          <ModalUpload
+            open={openUpload}
+            onClose={() => setOpenUpload(false)}
+          />
         </div>
       </div>
     </div>
