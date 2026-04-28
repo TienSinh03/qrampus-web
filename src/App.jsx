@@ -10,6 +10,7 @@ import { AttendanceProvider } from '@contexts/AttendanceContext';
 import { LeaveDashboardProvider } from '@contexts/LeaveDashboardContext';
 import { StudySessionOverviewProvider } from '@contexts/StudySessionOverviewContext';
 import { SurveyDashboardProvider } from '@contexts/SurveyDashboardContext';
+import { CourseProvider } from '@contexts/CourseContext';
 
 import { Toaster } from "sonner";
 
@@ -18,20 +19,22 @@ function App() {
     <AuthProvider>
       <NotificationProvider>
         <PersonnelProfileProvider>
-          <TeacherScheduleProvider>
-            <ClassSessionStudentsProvider>
-              <AttendanceProvider>
-                <LeaveDashboardProvider>
-                  <SurveyDashboardProvider>
-                    <StudySessionOverviewProvider>
-                      <AppRoutes />
-                      <Toaster position="top-right" richColors />
-                    </StudySessionOverviewProvider>
-                  </SurveyDashboardProvider>
-                </LeaveDashboardProvider>
-              </AttendanceProvider>
-            </ClassSessionStudentsProvider>
-          </TeacherScheduleProvider>
+          <CourseProvider>
+            <TeacherScheduleProvider>
+              <ClassSessionStudentsProvider>
+                <AttendanceProvider>
+                  <LeaveDashboardProvider>
+                    <SurveyDashboardProvider>
+                      <StudySessionOverviewProvider>
+                        <AppRoutes />
+                        <Toaster position="top-right" richColors />
+                      </StudySessionOverviewProvider>
+                    </SurveyDashboardProvider>
+                  </LeaveDashboardProvider>
+                </AttendanceProvider>
+              </ClassSessionStudentsProvider>
+            </TeacherScheduleProvider>
+          </CourseProvider>
         </PersonnelProfileProvider>
       </NotificationProvider>
     </AuthProvider>

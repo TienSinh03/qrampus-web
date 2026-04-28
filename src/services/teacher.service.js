@@ -67,6 +67,33 @@ class TeacherService {
   }
 
   /**
+   * Get course sections by teacher ID 
+   */
+  async getTeacherCourseSections(teacherId, params = {}) {
+    try {
+      const response = await axiosClient.get(
+        TEACHER_ENDPOINTS.TEACHER_COURSES(teacherId),
+        { params }
+      );
+
+      const coursesArray = response.data?.courses || response.data || [];
+
+      return {
+        success: response.success || true,
+        data: Array.isArray(coursesArray) ? coursesArray : [],
+        message: response.message || ''
+      };
+    } catch (error) {
+      console.error('Teacher Service Error:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.message || 'Đã có lỗi xảy ra khi tải học phần của giảng viên'
+      };
+    }
+  }
+
+  /**
    * Get teacher by teacher code
    * @param {string} teacherCode - Mã giảng viên
    * @returns {Promise} Teacher detail data

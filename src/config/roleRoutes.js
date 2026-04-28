@@ -31,7 +31,7 @@ export const ADMIN_ROUTES = [
   { path: '/dashboard/admin', label: 'Admin Dashboard' },
   { path: '/dashboard/admin/dashboard', label: 'Admin Dashboard' },
   { path: '/dashboard/admin/qrcode', label: 'QR Code' },
-  { path: '/dashboard/admin/qrcode/session/qrcode-detail', label: 'Chi tiết QR' },
+  { path: '/dashboard/admin/qrcode/session/qrcode-detail/:teacherId', label: 'Chi tiết QR' },
   { path: '/dashboard/admin/qrcode/session/qrcode-detail/session-detail', label: 'Chi tiết buổi học' },
   { path: '/dashboard/admin/students', label: 'Quản lý sinh viên' },
   { path: '/dashboard/admin/teachers', label: 'Quản lý giảng viên' },

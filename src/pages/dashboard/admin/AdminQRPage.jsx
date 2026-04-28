@@ -302,7 +302,7 @@ const AdminQRPage = () => {
                       key={gv.teacher_code}
                       onClick={() =>
                         navigate(
-                          `/dashboard/admin/qrcode/session/qrcode-detail`
+                          `/dashboard/admin/qrcode/session/qrcode-detail/${gv.id}`, { state: { teacher: gv } }
                         )
                       }
                       className="border-b hover:bg-slate-50 transition-colors cursor-pointer h-12"

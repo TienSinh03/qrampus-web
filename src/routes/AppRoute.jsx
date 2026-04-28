@@ -278,7 +278,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin/qrcode/session/qrcode-detail",
+        path: "admin/qrcode/session/qrcode-detail/:teacherId",
         element: (
           <RoleRoute requiredRoles={[ROLES.ADMIN]}>
             <AdminQRDetailPage />
