@@ -394,6 +394,7 @@ export const AttendanceProvider = ({ children }) => {
   const fetchSessionHistory = useCallback(async ({
     courseSectionId,
     practiceGroupId,
+    createdBy,
     page = 1,
     limit = 10,
   }) => {
@@ -414,8 +415,14 @@ export const AttendanceProvider = ({ children }) => {
         limit,
       };
 
-      if (practiceGroupId) {
+      if (practiceGroupId === null) {
+        params.practice_group_id = 'null';
+      } else if (practiceGroupId !== undefined && practiceGroupId !== '') {
         params.practice_group_id = practiceGroupId;
+      }
+
+      if (createdBy !== undefined && createdBy !== null && createdBy !== '') {
+        params.created_by = createdBy;
       }
 
       const response = await AttendanceService.getSessionHistory(params);

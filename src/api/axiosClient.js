@@ -114,10 +114,11 @@ axiosClient.interceptors.response.use(
         }
       );
 
-      const { accessToken, user } = response.data.data;
+      const { accessToken, user, refreshToken: newRefreshToken } = response.data.data;
 
       // Lưu token mới
       localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', newRefreshToken);
       localStorage.setItem('user', JSON.stringify(user));
 
       // Cập nhật token cho request gốc

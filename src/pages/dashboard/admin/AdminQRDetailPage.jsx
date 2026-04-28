@@ -8,7 +8,6 @@ import {
     IdCard,
     BookAudio,
 } from "lucide-react";
-import teacherService from "@services/teacher.service";
 import { useCourse } from "@contexts/CourseContext";
 
 const AdminQRDetailPage = () => {
@@ -154,7 +153,8 @@ const AdminQRDetailPage = () => {
                                 key={course.id || `${course.code}-${index}`}
                                 onClick={() =>
                                     navigate(
-                                        "/dashboard/admin/qrcode/session/qrcode-detail/session-detail"
+                                        "/dashboard/admin/qrcode/session/qrcode-detail/session-detail", 
+                                        { state: { course, teacher: teacherInfo } }
                                     )
                                 }
                                 className="group cursor-pointer bg-white border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"

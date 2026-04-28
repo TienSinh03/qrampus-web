@@ -94,6 +94,30 @@ class TeacherService {
   }
 
   /**
+   * Get teacher assignments by course section
+   */
+  async getTeacherCourseAssignments(teacherId, courseSectionId) {
+    try {
+      const response = await axiosClient.get(
+        TEACHER_ENDPOINTS.TEACHER_COURSE_ASSIGNMENTS(teacherId, courseSectionId)
+      );
+
+      return {
+        success: response.success || true,
+        data: response.data || null,
+        message: response.message || ''
+      };
+    } catch (error) {
+      console.error('Teacher Service Error:', error);
+      return {
+        success: false,
+        data: null,
+        message: error.message || 'Đã có lỗi xảy ra khi tải phân công giảng viên'
+      };
+    }
+  }
+
+  /**
    * Get teacher by teacher code
    * @param {string} teacherCode - Mã giảng viên
    * @returns {Promise} Teacher detail data

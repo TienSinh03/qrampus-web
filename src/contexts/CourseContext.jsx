@@ -8,6 +8,10 @@ export const CourseProvider = ({ children }) => {
   const [teacherCoursesLoading, setTeacherCoursesLoading] = useState(false);
   const [teacherCoursesError, setTeacherCoursesError] = useState(null);
 
+  const [teacherCourseAssignments, setTeacherCourseAssignments] = useState(null);
+  const [teacherCourseAssignmentsLoading, setTeacherCourseAssignmentsLoading] = useState(false);
+  const [teacherCourseAssignmentsError, setTeacherCourseAssignmentsError] = useState(null);
+
   const fetchTeacherCourses = useCallback(async (teacherId, params = {}) => {
     if (!teacherId) {
       const message = 'Thiếu teacherId để tải học phần';
@@ -38,12 +42,55 @@ export const CourseProvider = ({ children }) => {
     }
   }, []);
 
+  const fetchTeacherCourseAssignments = useCallback(async (teacherId, courseSectionId) => {
+    if (!teacherId || !courseSectionId) {
+      const message = 'Thiếu thông tin giảng viên hoặc học phần để tải phân công';
+      setTeacherCourseAssignmentsError(message);
+      return { success: false, error: message };
+    }
+
+    setTeacherCourseAssignmentsLoading(true);
+    setTeacherCourseAssignmentsError(null);
+
+    try {
+      const response = await teacherService.getTeacherCourseAssignments(teacherId, courseSectionId);
+
+      if (response?.success) {
+        setTeacherCourseAssignments(response.data || null);
+        return { success: true, data: response.data || null };
+      }
+
+      const message = response?.message || 'Không thể tải phân công giảng viên';
+      setTeacherCourseAssignmentsError(message);
+      return { success: false, error: message };
+    } catch (error) {
+      const message = error.message || 'Không thể tải phân công giảng viên';
+      setTeacherCourseAssignmentsError(message);
+      return { success: false, error: message };
+    } finally {
+      setTeacherCourseAssignmentsLoading(false);
+    }
+  }, []);
+
   const value = useMemo(() => ({
     teacherCourses,
     teacherCoursesLoading,
     teacherCoursesError,
     fetchTeacherCourses,
-  }), [teacherCourses, teacherCoursesLoading, teacherCoursesError, fetchTeacherCourses]);
+    teacherCourseAssignments,
+    teacherCourseAssignmentsLoading,
+    teacherCourseAssignmentsError,
+    fetchTeacherCourseAssignments,
+  }), [
+    teacherCourses,
+    teacherCoursesLoading,
+    teacherCoursesError,
+    fetchTeacherCourses,
+    teacherCourseAssignments,
+    teacherCourseAssignmentsLoading,
+    teacherCourseAssignmentsError,
+    fetchTeacherCourseAssignments,
+  ]);
 
   return (
     <CourseContext.Provider value={value}>

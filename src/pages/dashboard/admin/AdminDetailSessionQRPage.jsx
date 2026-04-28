@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     Send,
     Eye,
@@ -15,16 +15,43 @@ import {
     Camera, // Thêm icon X để đóng drawer
 } from "lucide-react";
 import TeacherPhotosModal from "./components/TeacherPhotosModal";
+import { useCourse } from "@contexts/CourseContext";
+import { useAttendance } from "@contexts/AttendanceContext";
+import Pagination from "../../../components/common/Pagination";
 
 const ViewIcon = Eye;
 
 const AdminDetailSessionQRPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     const openDrawer = () => setIsDrawerOpen(true);
     const closeDrawer = () => setIsDrawerOpen(false);
+    const { teacher, course } = location.state || {};
 
+    const {
+        teacherCourseAssignments,
+        teacherCourseAssignmentsLoading,
+        teacherCourseAssignmentsError,
+        fetchTeacherCourseAssignments,
+    } = useCourse();
+
+    const {
+        history,
+        historyLoading,
+        historyError,
+        historyPagination,
+        fetchSessionHistory,
+    } = useAttendance();
+
+    const teacherId = teacher?.id || teacher?.personnelId;
+    const courseSectionId = course?.id || course?.course_section_id;
+    const [selectedCreatorId, setSelectedCreatorId] = useState(null);
+    const [selectedPracticeGroupId, setSelectedPracticeGroupId] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [filterDate, setFilterDate] = useState("");
+    const SESSION_LIMIT = 15;
     // XEM Ảnh
     const [isOpen, setOpen] = useState(false);
     // Giả lập dữ liệu ảnh (thực tế sẽ lấy từ API/backend)
@@ -51,68 +78,141 @@ const AdminDetailSessionQRPage = () => {
         },
     ];
 
-    const sessionStatusRows = [
-        {
-            id: 1,
-            courseCode: "42000735839",
-            sessionTime: "09:00 - 09:05",
-            courseName: "Nhập môn lập trình web",
-            createdDate: "01/01/2024",
-            classSize: 90,
-            group: "Nhóm 1",
-            learningType: "Lý thuyết",
-            successCount: 25,
-            absentCount: 3,
-        },
-        {
-            id: 2,
-            courseCode: "42000735840",
-            sessionTime: "13:00 - 13:05",
-            courseName: "Cơ sở dữ liệu",
-            createdDate: "02/01/2024",
-            classSize: 80,
-            group: "Nhóm 2",
-            learningType: "Thực hành",
-            successCount: 72,
-            absentCount: 8,
-        },
-        {
-            id: 3,
-            courseCode: "42000735841",
-            sessionTime: "07:30 - 07:35",
-            courseName: "Lập trình hướng đối tượng",
-            createdDate: "03/01/2024",
-            classSize: 95,
-            group: "Nhóm 1",
-            learningType: "Lý thuyết",
-            successCount: 90,
-            absentCount: 5,
-        },
-        {
-            id: 4,
-            courseCode: "42000735842",
-            sessionTime: "15:00 - 15:05",
-            courseName: "Mạng máy tính",
-            createdDate: "04/01/2024",
-            classSize: 70,
-            group: "Nhóm 3",
-            learningType: "Thực hành",
-            successCount: 66,
-            absentCount: 4,
-        },
-        {
-            id: 5,
-            courseCode: "42000735843",
-            sessionTime: "10:00 - 10:05",
-            courseName: "Cấu trúc dữ liệu và giải thuật",
-            createdDate: "05/01/2024",
-            classSize: 100,
-            group: "Nhóm 4",
-            learningType: "Lý thuyết",
-            successCount: 92,
-            absentCount: 8,
-        },
-    ];
+    const formatDate = (value) => {
+        if (!value) return "--";
+        const dateValue = new Date(value);
+        if (Number.isNaN(dateValue.getTime())) return value;
+        return dateValue.toLocaleDateString("vi-VN");
+    };
+
+    const formatTimeRange = (row) => {
+        if (row.start_hour && row.end_hour) {
+            return `${row.start_hour} - ${row.end_hour}`;
+        }
+
+        if (row.start_hour) {
+            return row.start_hour;
+        }
+
+        if (row.created_at) {
+            const createdAt = new Date(row.created_at);
+            if (!Number.isNaN(createdAt.getTime())) {
+                return createdAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+            }
+        }
+
+        return "--:--";
+    };
+
+    const getRowDate = (row) => {
+        if (row.class_date) return row.class_date;
+
+        if (row.created_at) {
+            const createdAt = new Date(row.created_at);
+            if (!Number.isNaN(createdAt.getTime())) {
+                return createdAt.toISOString().slice(0, 10);
+            }
+        }
+
+        return "";
+    };
+
+    useEffect(() => {
+        if (!teacherId || !courseSectionId) return;
+        fetchTeacherCourseAssignments(teacherId, courseSectionId);
+    }, [teacherId, courseSectionId, fetchTeacherCourseAssignments]);
+
+    const { theoryAssignments, practiceAssignments } = useMemo(() => {
+        const assignments = teacherCourseAssignments?.assignments || [];
+        return {
+            theoryAssignments: assignments.filter((assignment) => assignment.practice_group_id === null),
+            practiceAssignments: assignments.filter((assignment) => assignment.practice_group_id !== null),
+        };
+    }, [teacherCourseAssignments]);
+
+    const assignmentTeacher = teacherCourseAssignments?.teacher || teacher || {};
+    const displayTeacherName = assignmentTeacher.full_name || teacher?.full_name || "Chưa cập nhật";
+    const displayTeacherCode = assignmentTeacher.teacher_code || assignmentTeacher.code || teacher?.teacher_code || "---";
+
+    const handleSelectTheory = () => {
+        setSelectedPracticeGroupId(null);
+    };
+
+    const handleSelectPractice = (practiceGroupId) => {
+        setSelectedPracticeGroupId(practiceGroupId ?? null);
+    };
+
+    useEffect(() => {
+        if (teacherCourseAssignmentsLoading) return;
+
+        const defaultCreatorId = assignmentTeacher?.id || teacherId;
+        if (!defaultCreatorId) return;
+
+        setSelectedCreatorId(defaultCreatorId);
+
+        if (theoryAssignments.length > 0) {
+            setSelectedPracticeGroupId(null);
+            return;
+        }
+
+        if (practiceAssignments.length > 0) {
+            setSelectedPracticeGroupId(practiceAssignments[0].practice_group_id || null);
+            return;
+        }
+
+        setSelectedPracticeGroupId(null);
+    }, [
+        assignmentTeacher?.id,
+        teacherId,
+        theoryAssignments,
+        practiceAssignments,
+        teacherCourseAssignmentsLoading,
+    ]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [courseSectionId, selectedCreatorId, selectedPracticeGroupId]);
+
+    useEffect(() => {
+        let isActive = true;
+
+        const loadSessionHistory = async () => {
+            if (!courseSectionId || !selectedCreatorId) return;
+
+            try {
+                const response = await fetchSessionHistory({
+                    courseSectionId,
+                    practiceGroupId: selectedPracticeGroupId,
+                    createdBy: selectedCreatorId,
+                    page: currentPage,
+                    limit: SESSION_LIMIT,
+                });
+
+                if (!isActive) return;
+
+                if (response?.success) return;
+            } catch (error) {
+                if (!isActive) return;
+            }
+        };
+
+        loadSessionHistory();
+
+        return () => {
+            isActive = false;
+        };
+    }, [
+        courseSectionId,
+        selectedCreatorId,
+        selectedPracticeGroupId,
+        currentPage,
+        fetchSessionHistory,
+    ]);
+
+    const filteredHistory = useMemo(() => {
+        if (!filterDate) return history;
+        return (history || []).filter((row) => getRowDate(row) === filterDate);
+    }, [history, filterDate]);
 
     return (
         <div className="grid grid-cols-1 gap-6">
@@ -125,16 +225,16 @@ const AdminDetailSessionQRPage = () => {
                     <div className="flex-1">
                         <h2 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
                             <Book className="w-6 h-6 text-green-600" />
-                            Nhập môn lập trình Web
+                            {course?.name || "Tên học phần"}
                         </h2>
 
                         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600">
                             <div className="flex items-center gap-1">
                                 <User className="w-4 h-4" />
-                                <span><span className="font-medium">GV:</span> Nguyễn Văn A (100000001)</span>
+                                <span><span className="font-medium">GV:</span> {teacher?.full_name || "Nguyễn Văn A"} ({teacher?.teacher_code || "100000001"})</span>
                             </div>
 
-                            <div className="flex items-center gap-1">
+                            {/* <div className="flex items-center gap-1">
                                 <Layers className="w-4 h-4" />
                                 <span><span className="font-medium">Hình thức:</span> Lý thuyết</span>
                             </div>
@@ -147,7 +247,7 @@ const AdminDetailSessionQRPage = () => {
                             <div className="flex items-center gap-1">
                                 <Clock className="w-4 h-4" />
                                 <span><span className="font-medium">Nhóm TH:</span> 0</span>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 
@@ -157,7 +257,7 @@ const AdminDetailSessionQRPage = () => {
                         {/* Course code */}
                         <div className="text-sm text-gray-600">
                             <span className="block text-gray-400 text-xs">Mã học phần</span>
-                            <span className="font-semibold text-gray-800">42000735839</span>
+                            <span className="font-semibold text-gray-800">{course?.code || "---"}</span>
                         </div>
 
                         {/* Filter by date */}
@@ -165,6 +265,8 @@ const AdminDetailSessionQRPage = () => {
                             <label className="text-gray-400 text-xs mb-1">Lọc theo ngày</label>
                             <input
                                 type="date"
+                                value={filterDate}
+                                onChange={(event) => setFilterDate(event.target.value)}
                                 className="border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                             />
                         </div>
@@ -198,47 +300,81 @@ const AdminDetailSessionQRPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {sessionStatusRows.map((row) => (
-                                <tr key={row.id} className="border-t">
-                                    <td className="p-3">{row.courseCode}</td>
-                                    <td className="p-3">{row.sessionTime}</td>
-                                    <td className="p-3">{row.courseName}</td>
-                                    <td className="p-3">{row.createdDate}</td>
-                                    <td className="p-3">{row.classSize}</td>
-                                    <td className="p-3">{row.group}</td>
-                                    <td className="p-3">{row.learningType}</td>
-                                    <td className="p-3 font-medium text-green-600">{row.successCount}</td>
-                                    <td className="p-3 font-medium text-red-500">{row.absentCount}</td>
-                                    <td className="p-5 flex space-x-2">
-                                    <button
-                                        aria-label="View Details"
-                                        title="Xem chi tiết"
-                                        className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
-                                        onClick={() => navigate("/dashboard/admin/results-qr")}
-                                    >
-                                        <ViewIcon size={16} />
-                                    </button>
-                                    {/* XEM ẢNH LỚO HỌC */}
-                                    <button
-                                        aria-label="View Photos"
-                                        title="Xem ảnh đã chụp trong buổi học này"
-                                        className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
-                                        onClick={() => setOpen(true)}
-                                    >
-                                        <Camera size={16} />
-                                    </button>
-
-                                    <button
-                                        aria-label="Download Report"
-                                        title="Tải báo cáo dạng excel, tải danh sách sinh viên điểm danh, ngày hôm đó"
-                                        className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
-                                    >
-                                        <Download size={16} />
-                                    </button> 
-
+                            {historyLoading && (
+                                <tr className="border-t">
+                                    <td className="p-4 text-center text-sm text-gray-500" colSpan={10}>
+                                        Đang tải lịch sử tạo phiên...
                                     </td>
                                 </tr>
-                            ))}
+                            )}
+
+                            {!historyLoading && historyError && (
+                                <tr className="border-t">
+                                    <td className="p-4 text-center text-sm text-red-500" colSpan={10}>
+                                        {historyError}
+                                    </td>
+                                </tr>
+                            )}
+
+                            {!historyLoading && !historyError && filteredHistory.length === 0 && (
+                                <tr className="border-t">
+                                    <td className="p-4 text-center text-sm text-gray-500" colSpan={10}>
+                                        Chưa có phiên điểm danh nào.
+                                    </td>
+                                </tr>
+                            )}
+
+                            {!historyLoading && !historyError && filteredHistory.map((row) => {
+                                const totalStudents = row.stats?.total ?? 0;
+                                const attendedStudents = row.stats?.attended ?? 0;
+                                const absentStudents = Math.max(totalStudents - attendedStudents, 0);
+                                const learningType = row.practice_group_id ? "Thực hành" : "Lý thuyết";
+                                const groupLabel = row.practice_group_id
+                                    ? row.practice_group_number
+                                        ? `Nhóm ${row.practice_group_number}`
+                                        : row.practice_group_name || "Nhóm"
+                                    : "-";
+
+                                return (
+                                    <tr key={row.id} className="border-t">
+                                        <td className="p-3">{course?.code || "---"}</td>
+                                        <td className="p-3">{formatTimeRange(row)}</td>
+                                        <td className="p-3">{course?.name || "---"}</td>
+                                        <td className="p-3">{formatDate(row.class_date || row.created_at)}</td>
+                                        <td className="p-3">{totalStudents}</td>
+                                        <td className="p-3">{groupLabel}</td>
+                                        <td className="p-3">{learningType}</td>
+                                        <td className="p-3 font-medium text-green-600">{attendedStudents}</td>
+                                        <td className="p-3 font-medium text-red-500">{absentStudents}</td>
+                                        <td className="p-5 flex space-x-2">
+                                            <button
+                                                aria-label="View Details"
+                                                title="Xem chi tiết"
+                                                className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
+                                                onClick={() => navigate("/dashboard/admin/results-qr")}
+                                            >
+                                                <ViewIcon size={16} />
+                                            </button>
+                                            <button
+                                                aria-label="View Photos"
+                                                title="Xem ảnh đã chụp trong buổi học này"
+                                                className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
+                                                onClick={() => setOpen(true)}
+                                            >
+                                                <Camera size={16} />
+                                            </button>
+
+                                            <button
+                                                aria-label="Download Report"
+                                                title="Tải báo cáo dạng excel, tải danh sách sinh viên điểm danh, ngày hôm đó"
+                                                className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
+                                            >
+                                                <Download size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -249,60 +385,120 @@ const AdminDetailSessionQRPage = () => {
                     photos={teacherPhotos}
                 />
 
+                <div className="flex items-center justify-between px-2 mt-4">
+                    <span className="text-sm text-gray-500">
+                        Hiển thị <strong>{filteredHistory.length}</strong> / <strong>{historyPagination.total || 0}</strong> phiên
+                    </span>
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={historyPagination.totalPages || 1}
+                        onPageChange={setCurrentPage}
+                        disabled={historyLoading}
+                    />
+                </div>
+
 
                 {/* Footer */}
                 <div className="grid md:grid-cols-2 gap-6 pt-4 border-t">
                     {/* LEFT */}
                     <div className="bg-white rounded-xl p-5 shadow space-y-5">
-                        <p className="text-sm font-medium text-gray-600">
-                            Giảng viên quản lý Học phần
-                        </p>
+                        <p className="text-sm font-medium text-gray-600">Giảng viên quản lý Học phần</p>
+
+                        {teacherCourseAssignmentsError && (
+                            <p className="text-sm text-red-500">
+                                {teacherCourseAssignmentsError}
+                            </p>
+                        )}
+
+                        {teacherCourseAssignmentsLoading && (
+                            <p className="text-sm text-gray-500">Đang tải phân công giảng viên...</p>
+                        )}
 
                         {/* Giảng viên Lý thuyết */}
-                        <div className="border border-blue-100 rounded-lg p-4 bg-blue-50/40">
-                            <p className="text-sm font-semibold text-blue-600 mb-3">
-                                Giảng viên Lý thuyết
-                            </p>
+                        {!teacherCourseAssignmentsLoading && (
+                            <div
+                                className={`border rounded-lg p-4 bg-blue-50/40 transition ${
+                                    selectedPracticeGroupId === null
+                                        ? "border-blue-300 ring-2 ring-blue-200"
+                                        : "border-blue-100"
+                                } ${theoryAssignments.length > 0 ? "cursor-pointer" : ""}`}
+                                onClick={theoryAssignments.length > 0 ? handleSelectTheory : undefined}
+                                role={theoryAssignments.length > 0 ? "button" : undefined}
+                                tabIndex={theoryAssignments.length > 0 ? 0 : undefined}
+                                onKeyDown={(event) => {
+                                    if (!theoryAssignments.length) return;
+                                    if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault();
+                                        handleSelectTheory();
+                                    }
+                                }}
+                            >
+                                <p className="text-sm font-semibold text-blue-600 mb-3">Giảng viên Lý thuyết</p>
 
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <p className="font-medium text-gray-800">
-                                        Nguyễn Văn A
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                        Mã GV: 100000001
-                                    </p>
-                                </div>
+                                {theoryAssignments.length > 0 ? (
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="font-medium text-gray-800">{displayTeacherName}</p>
+                                            <p className="text-xs text-gray-500">Mã GV: {displayTeacherCode}</p>
+                                        </div>
 
-                                <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700">
-                                    Lý thuyết
-                                </span>
+                                        <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700">Lý thuyết</span>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500">Chưa có phân công lý thuyết.</p>
+                                )}
                             </div>
-                        </div>
+                        )}
 
                         {/* Giảng viên Thực hành */}
-                        <div className="border border-green-100 rounded-lg p-4 bg-green-50/40">
-                            <p className="text-sm font-semibold text-green-600 mb-3">
-                                Giảng viên Thực hành
-                            </p>
+                        {!teacherCourseAssignmentsLoading && (
+                            <div className="border border-green-100 rounded-lg p-4 bg-green-50/40">
+                                <p className="text-sm font-semibold text-green-600 mb-3">Giảng viên Thực hành</p>
 
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center bg-white rounded-lg px-4 py-2 shadow-sm">
-                                    <div>
-                                        <p className="font-medium text-gray-800">
-                                            Nguyễn Văn A
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                            Mã GV: 100000001
-                                        </p>
+                                {practiceAssignments.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {practiceAssignments.map((assignment) => {
+                                            const groupLabel = assignment.number_group ? `Nhóm ${assignment.number_group}` : assignment.group_name || "Nhóm";
+
+                                            return (
+                                                <div
+                                                    key={assignment.practice_group_id || groupLabel}
+                                                    className={`flex justify-between items-center bg-white rounded-lg px-4 py-2 shadow-sm transition cursor-pointer ${
+                                                        selectedPracticeGroupId === assignment.practice_group_id
+                                                            ? "ring-2 ring-green-200 border border-green-200"
+                                                            : "border border-transparent"
+                                                    }`}
+                                                    onClick={() => handleSelectPractice(assignment.practice_group_id)}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === "Enter" || event.key === " ") {
+                                                            event.preventDefault();
+                                                            handleSelectPractice(assignment.practice_group_id);
+                                                        }
+                                                    }}
+                                                >
+                                                    <div>
+                                                        <p className="font-medium text-gray-800">
+                                                            {displayTeacherName}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            Mã GV: {displayTeacherCode}
+                                                        </p>
+                                                    </div>
+
+                                                    <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700">
+                                                        {groupLabel}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-
-                                    <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700">
-                                        Nhóm 1
-                                    </span>
-                                </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500">Chưa có phân công thực hành.</p>
+                                )}
                             </div>
-                        </div>
+                        )}
 
                     </div>
 
