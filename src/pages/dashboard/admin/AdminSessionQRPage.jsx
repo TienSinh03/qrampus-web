@@ -21,7 +21,7 @@ import Pagination from "../../../components/common/Pagination";
 
 const ViewIcon = Eye;
 
-const AdminDetailSessionQRPage = () => {
+const AdminSessionQRPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -47,8 +47,7 @@ const AdminDetailSessionQRPage = () => {
 
     const teacherId = teacher?.id || teacher?.personnelId;
     const courseSectionId = course?.id || course?.course_section_id;
-    const [selectedCreatorId, setSelectedCreatorId] = useState(null);
-    const [selectedPracticeGroupId, setSelectedPracticeGroupId] = useState(null);
+    const [selectedPracticeGroupId, setSelectedPracticeGroupId] = useState(undefined);
     const [currentPage, setCurrentPage] = useState(1);
     const [filterDate, setFilterDate] = useState("");
     const SESSION_LIMIT = 15;
@@ -85,23 +84,13 @@ const AdminDetailSessionQRPage = () => {
         return dateValue.toLocaleDateString("vi-VN");
     };
 
-    const formatTimeRange = (row) => {
-        if (row.start_hour && row.end_hour) {
-            return `${row.start_hour} - ${row.end_hour}`;
-        }
+    const formatTimeValue = (value) => {
+        if (!value) return "--:--";
+        const date = new Date(value);
 
-        if (row.start_hour) {
-            return row.start_hour;
-        }
-
-        if (row.created_at) {
-            const createdAt = new Date(row.created_at);
-            if (!Number.isNaN(createdAt.getTime())) {
-                return createdAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-            }
-        }
-
-        return "--:--";
+        if (Number.isNaN(date.getTime())) return String(value);
+        
+        return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
     };
 
     const getRowDate = (row) => {
@@ -131,8 +120,28 @@ const AdminDetailSessionQRPage = () => {
     }, [teacherCourseAssignments]);
 
     const assignmentTeacher = teacherCourseAssignments?.teacher || teacher || {};
+    const selectedCreatorId = assignmentTeacher?.id || teacherId || null;
     const displayTeacherName = assignmentTeacher.full_name || teacher?.full_name || "Chưa cập nhật";
     const displayTeacherCode = assignmentTeacher.teacher_code || assignmentTeacher.code || teacher?.teacher_code || "---";
+
+    const defaultPracticeGroupId = useMemo(() => {
+        if (theoryAssignments.length > 0) return null;
+        if (practiceAssignments.length > 0) {
+            return practiceAssignments[0].practice_group_id ?? null;
+        }
+        return null;
+    }, [theoryAssignments, practiceAssignments]);
+
+    const resolvedPracticeGroupId = useMemo(() => {
+        if (selectedPracticeGroupId === undefined) return defaultPracticeGroupId;
+        if (selectedPracticeGroupId === null) return null;
+
+        const exists = practiceAssignments.some(
+            (assignment) => assignment.practice_group_id === selectedPracticeGroupId
+        );
+
+        return exists ? selectedPracticeGroupId : defaultPracticeGroupId;
+    }, [selectedPracticeGroupId, defaultPracticeGroupId, practiceAssignments]);
 
     const handleSelectTheory = () => {
         setSelectedPracticeGroupId(null);
@@ -143,35 +152,8 @@ const AdminDetailSessionQRPage = () => {
     };
 
     useEffect(() => {
-        if (teacherCourseAssignmentsLoading) return;
-
-        const defaultCreatorId = assignmentTeacher?.id || teacherId;
-        if (!defaultCreatorId) return;
-
-        setSelectedCreatorId(defaultCreatorId);
-
-        if (theoryAssignments.length > 0) {
-            setSelectedPracticeGroupId(null);
-            return;
-        }
-
-        if (practiceAssignments.length > 0) {
-            setSelectedPracticeGroupId(practiceAssignments[0].practice_group_id || null);
-            return;
-        }
-
-        setSelectedPracticeGroupId(null);
-    }, [
-        assignmentTeacher?.id,
-        teacherId,
-        theoryAssignments,
-        practiceAssignments,
-        teacherCourseAssignmentsLoading,
-    ]);
-
-    useEffect(() => {
         setCurrentPage(1);
-    }, [courseSectionId, selectedCreatorId, selectedPracticeGroupId]);
+    }, [courseSectionId, selectedCreatorId, resolvedPracticeGroupId]);
 
     useEffect(() => {
         let isActive = true;
@@ -182,7 +164,7 @@ const AdminDetailSessionQRPage = () => {
             try {
                 const response = await fetchSessionHistory({
                     courseSectionId,
-                    practiceGroupId: selectedPracticeGroupId,
+                    practiceGroupId: resolvedPracticeGroupId,
                     createdBy: selectedCreatorId,
                     page: currentPage,
                     limit: SESSION_LIMIT,
@@ -204,7 +186,7 @@ const AdminDetailSessionQRPage = () => {
     }, [
         courseSectionId,
         selectedCreatorId,
-        selectedPracticeGroupId,
+        resolvedPracticeGroupId,
         currentPage,
         fetchSessionHistory,
     ]);
@@ -213,6 +195,50 @@ const AdminDetailSessionQRPage = () => {
         if (!filterDate) return history;
         return (history || []).filter((row) => getRowDate(row) === filterDate);
     }, [history, filterDate]);
+
+    const handleOpenSessionDetail = (sessionItem) => {
+        if (!sessionItem) return;
+
+        const selectedClassSessionId = sessionItem.class_session_id || null;
+
+        const schedulePayload = {
+            id: selectedClassSessionId,
+            class_session_id: selectedClassSessionId,
+            class_date: sessionItem.class_date,
+            start_hour: sessionItem.start_hour,
+            session_number: sessionItem.session_number,
+            practice_group_id: sessionItem.practice_group_id,
+            practice_group_name: sessionItem.practice_group_name,
+            practice_group_number: sessionItem.practice_group_number,
+            room: {
+                room_name: sessionItem.room_name,
+            },
+            attendanceSession: {
+                id: sessionItem.id,
+                status: sessionItem.status,
+                created_at: sessionItem.created_at,
+                expires_at: sessionItem.expires_at,
+                session_duration_minutes: sessionItem.session_duration_minutes,
+                qr_interval: sessionItem.qr_interval,
+                quorum_met: sessionItem.quorum_met,
+            },
+            selectedHistorySession: sessionItem,
+        };
+
+        const sessionDetailPayload = {
+            schedule: schedulePayload,
+            session: sessionItem,
+            course,
+            teacher
+        };
+
+        sessionStorage.setItem("attendanceSchedule", JSON.stringify(schedulePayload));
+        sessionStorage.setItem("attendanceSessionDetail", JSON.stringify(sessionDetailPayload));
+
+        navigate("/dashboard/admin/qrcode/session/qrcode-detail/sessions/detail", {
+            state: { sessionDetail: sessionDetailPayload },
+        });
+    };
 
     return (
         <div className="grid grid-cols-1 gap-6">
@@ -338,7 +364,7 @@ const AdminDetailSessionQRPage = () => {
                                 return (
                                     <tr key={row.id} className="border-t">
                                         <td className="p-3">{course?.code || "---"}</td>
-                                        <td className="p-3">{formatTimeRange(row)}</td>
+                                        <td className="p-3">{formatTimeValue(row.created_at)} - {formatTimeValue(row.expires_at)}</td>
                                         <td className="p-3">{course?.name || "---"}</td>
                                         <td className="p-3">{formatDate(row.class_date || row.created_at)}</td>
                                         <td className="p-3">{totalStudents}</td>
@@ -351,7 +377,7 @@ const AdminDetailSessionQRPage = () => {
                                                 aria-label="View Details"
                                                 title="Xem chi tiết"
                                                 className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
-                                                onClick={() => navigate("/dashboard/admin/results-qr")}
+                                                onClick={() => handleOpenSessionDetail(row)}
                                             >
                                                 <ViewIcon size={16} />
                                             </button>
@@ -418,7 +444,7 @@ const AdminDetailSessionQRPage = () => {
                         {!teacherCourseAssignmentsLoading && (
                             <div
                                 className={`border rounded-lg p-4 bg-blue-50/40 transition ${
-                                    selectedPracticeGroupId === null
+                                    resolvedPracticeGroupId === null
                                         ? "border-blue-300 ring-2 ring-blue-200"
                                         : "border-blue-100"
                                 } ${theoryAssignments.length > 0 ? "cursor-pointer" : ""}`}
@@ -464,7 +490,7 @@ const AdminDetailSessionQRPage = () => {
                                                 <div
                                                     key={assignment.practice_group_id || groupLabel}
                                                     className={`flex justify-between items-center bg-white rounded-lg px-4 py-2 shadow-sm transition cursor-pointer ${
-                                                        selectedPracticeGroupId === assignment.practice_group_id
+                                                        resolvedPracticeGroupId === assignment.practice_group_id
                                                             ? "ring-2 ring-green-200 border border-green-200"
                                                             : "border border-transparent"
                                                     }`}
@@ -667,4 +693,4 @@ const AdminDetailSessionQRPage = () => {
     );
 };
 
-export default AdminDetailSessionQRPage;
+export default AdminSessionQRPage;

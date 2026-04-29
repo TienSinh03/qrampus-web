@@ -30,7 +30,8 @@ import ReportPage from "../pages/dashboard/teacher/ReportPage";
 import AdminDashboardPage from "@pages/dashboard/admin/AdminDashboardPage";
 import AdminQRPage from "@pages/dashboard/admin/AdminQRPage";
 import AdminQRDetailPage from "@pages/dashboard/admin/AdminQRDetailPage";
-import AdminDetailSessionQRPage from "@pages/dashboard/admin/AdminDetailSessionQRPage";
+import AdminSessionQRPage from "@pages/dashboard/admin/AdminSessionQRPage";
+import AdminQRSessionDetailPage from "@pages/dashboard/admin/AdminQRSessionDetailPage";
 import AdminStudentPage from "@pages/dashboard/admin/AdminStudentPage";
 import AdminTeacherPage from "@pages/dashboard/admin/AdminTeacherPage";
 import AdminAccountPage from "@pages/dashboard/admin/AdminAccountPage";
@@ -286,10 +287,18 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin/qrcode/session/qrcode-detail/session-detail",
+        path: "admin/qrcode/session/qrcode-detail/sessions",
         element: (
           <RoleRoute requiredRoles={[ROLES.ADMIN]}>
-            <AdminDetailSessionQRPage />
+            <AdminSessionQRPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/qrcode/session/qrcode-detail/sessions/detail",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminQRSessionDetailPage />
           </RoleRoute>
         ),
       },

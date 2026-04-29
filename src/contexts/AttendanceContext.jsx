@@ -228,13 +228,13 @@ export const AttendanceProvider = ({ children }) => {
   /**
    * Đóng phiên điểm danh
    */
-  const closeSession = useCallback(async (sessionId) => {
+  const closeSession = useCallback(async (sessionId, teacherId = null) => {
     setCloseLoading(true);
     try {
       let latestStats = null;
 
       try {
-        const statsResponse = await AttendanceService.getSessionStats(sessionId);
+        const statsResponse = await AttendanceService.getSessionStats(sessionId, teacherId);
         if (statsResponse?.success) {
           latestStats = statsResponse.data;
         }
@@ -359,11 +359,11 @@ export const AttendanceProvider = ({ children }) => {
   /**
    * Khởi tạo/làm mới dữ liệu chốt điểm danh cho class session
    */
-  const initializeAttendanceResults = useCallback(async (payload) => {
+  const initializeAttendanceResults = useCallback(async (payload, teacher_id = null) => {
     setAttendanceResultsLoading(true);
 
     try {
-      const response = await AttendanceService.initializeAttendanceResults(payload);
+      const response = await AttendanceService.initializeAttendanceResults(payload, teacher_id);
 
       if (response?.success) {
         setAttendanceResults(response.data);

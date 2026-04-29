@@ -153,7 +153,7 @@ const AdminQRDetailPage = () => {
                                 key={course.id || `${course.code}-${index}`}
                                 onClick={() =>
                                     navigate(
-                                        "/dashboard/admin/qrcode/session/qrcode-detail/session-detail", 
+                                        "/dashboard/admin/qrcode/session/qrcode-detail/sessions", 
                                         { state: { course, teacher: teacherInfo } }
                                     )
                                 }

@@ -53,9 +53,11 @@ class AttendanceService {
    * @param {string} sessionId - Attendance session ID
    * @returns {Promise} Session statistics
    */
-  async getSessionStats(sessionId) {
+  async getSessionStats(sessionId, teacherId = null) {
     try {
-      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SESSION_STATS(sessionId));
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SESSION_STATS(sessionId), {
+        params: { teacher_id: teacherId },
+      });
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -121,9 +123,11 @@ class AttendanceService {
    * @param {Object} payload - { class_session_id, attendance_session_id?, overwrite_non_finalized? }
    * @returns {Promise} Attendance results initialize response
    */
-  async initializeAttendanceResults(payload) {
+  async initializeAttendanceResults(payload, teacher_id = null) {
     try {
-      const response = await axiosClient.post(ATTENDANCE_ENDPOINTS.RESULTS_INITIALIZE, payload);
+      const response = await axiosClient.post(ATTENDANCE_ENDPOINTS.RESULTS_INITIALIZE, payload, {
+        params: { teacher_id: teacher_id },
+      });
       return response;
     } catch (error) {
       throw this.handleError(error);
