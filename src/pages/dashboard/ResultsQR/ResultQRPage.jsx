@@ -27,6 +27,7 @@ import {
 import Pagination from "../../../components/common/Pagination";
 import TeacherPhotosModal from "../admin/components/TeacherPhotosModal";
 import { useAttendance } from "@contexts/AttendanceContext";
+import AttendanceResultEditModal from "./components/AttendanceResultEditModal";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -91,13 +92,6 @@ const formatDate = (isoText) => {
   return parsed.toLocaleDateString("vi-VN");
 };
 
-const formatDateTime = (isoText) => {
-  if (!isoText) return "--/--/---- --:--:--";
-  const parsed = new Date(isoText);
-  if (Number.isNaN(parsed.getTime())) return "--/--/---- --:--:--";
-  return parsed.toLocaleString("vi-VN", { hour12: false });
-};
-
 const ResultQRPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -105,7 +99,9 @@ const ResultQRPage = () => {
   const {
     attendanceResults,
     attendanceResultsLoading,
+    attendanceResultsUpdating,
     initializeAttendanceResults,
+    updateAttendanceResult,
   } = useAttendance();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,6 +115,9 @@ const ResultQRPage = () => {
     locationCheck: "all",
     dob: "",
   });
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedResult, setSelectedResult] = useState(null);
 
   const scheduleFromStorage = useMemo(() => readAttendanceSchedule(), []);
   const selectedSchedule = location.state?.schedule || scheduleFromStorage || null;
@@ -209,9 +208,12 @@ const ResultQRPage = () => {
         deviceMatch: null,
         location: `(${item.student?.scan_latitude || "?"}, ${item.student?.scan_longitude || "?"})`,
         locationMatch: item.student?.location_verified || false,
-        status: statusMeta.label,
+        status: item.status,
+        statusLabel: statusMeta.label,
         statusBadgeClass: statusMeta.badgeClass,
         note: item.note || "",
+        resultId: item.id,
+        isFinalized: Boolean(item.is_finalized),
       };
     });
   }, [resultData]);
@@ -221,11 +223,11 @@ const ResultQRPage = () => {
       id: selectedSchedule?.courseSection?.code || "---",
       name: selectedSchedule?.courseSection?.name || "Chua co hoc phan",
       type:
-        selectedSchedule?.practiceGroup?.group_name ||
-        selectedSchedule?.practiceGroup?.groupName ||
-        "Chua phan nhom",
+        selectedSchedule?.practiceGroup  === null
+          ? "Lý thuyết"
+          : selectedSchedule?.practiceGroup?.group_name || "Chua phan nhom",
       creator: selectedSchedule?.personnel?.full_name || "Chua co giang vien",
-      creatorID: selectedSchedule?.personnel?.code || "N/A",
+      creatorID: selectedSchedule?.personnel?.teacher_code || "N/A",
     }),
     [selectedSchedule]
   );
@@ -340,7 +342,7 @@ const ResultQRPage = () => {
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-slate-50 !space-y-0">
+    <div className="min-h-screen bg-slate-50">
       <div className="flex items-center justify-end">
         <button
           type="button"
@@ -529,10 +531,10 @@ const ResultQRPage = () => {
                 className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">Tất cả</option>
-                <option value="Thanh cong">Thành công</option>
-                <option value="Vang">Vắng</option>
-                <option value="Co phep">Có phép</option>
-                <option value="Di muon">Đi muộn</option>
+                <option value="present">Có mặt</option>
+                <option value="absent">Vắng</option>
+                <option value="excused">Có phép</option>
+                <option value="late">Đi muộn</option>
               </select>
             </div>
             <div>
@@ -618,12 +620,12 @@ const ResultQRPage = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {currentPageData.map((student) => (
-                <tr key={`${student.id}-${student.name}`} className="hover:bg-slate-50/50 transition-colors">
+                <tr key={`${student.resultId}-${student.id}`} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4"><p className="text-sm font-black text-indigo-600">{student.id}</p></td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <p className="text-sm font-black text-slate-800">{student.name}</p>
-                      <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold ${student.statusBadgeClass}`}>{student.status}</span>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold ${student.statusBadgeClass}`}>{student.statusLabel}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-black text-slate-700"><Calendar className="w-3 h-3" /> {student.dob}</div></td>
@@ -632,7 +634,22 @@ const ResultQRPage = () => {
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-black p-2 rounded-lg border w-fit bg-slate-50 text-slate-600 border-slate-200"><Monitor className="w-3.5 h-3.5" /> {student.deviceID}</div></td>
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600"><MapPin className="w-3.5 h-3.5 text-indigo-400" />{student.location}</div></td>
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600">{student.note}</div></td>
-                  <td className="px-6 py-4"><div className="flex justify-center"><button className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-colors"><Edit3 className="w-5 h-5" /></button></div></td>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedResult(student);
+                          setIsEditModalOpen(true);
+                        }}
+                        disabled={attendanceResultsUpdating || student.isFinalized}
+                        className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        title={student.isFinalized ? "Kết quả đã chốt, không thể chỉnh sửa" : "Chỉnh sửa kết quả"}
+                      >
+                        <Edit3 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
 
@@ -660,6 +677,26 @@ const ResultQRPage = () => {
         isOpen={isPhotosModalOpen}
         onClose={() => setIsPhotosModalOpen(false)}
         photos={teacherPhotos}
+      />
+
+      <AttendanceResultEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedResult(null);
+        }}
+        result={selectedResult}
+        loading={attendanceResultsUpdating}
+        onSubmit={
+          async (payload) => {
+            if (!selectedResult?.resultId) return;
+
+            const updated = await updateAttendanceResult(selectedResult.resultId, payload);
+            if (updated) {
+              setIsEditModalOpen(false);
+              setSelectedResult(null);
+            }
+        }}
       />
     </div>
   );

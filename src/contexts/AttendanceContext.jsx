@@ -55,6 +55,7 @@ export const AttendanceProvider = ({ children }) => {
   // Attendance results initialize state
   const [attendanceResults, setAttendanceResults] = useState(null);
   const [attendanceResultsLoading, setAttendanceResultsLoading] = useState(false);
+  const [attendanceResultsUpdating, setAttendanceResultsUpdating] = useState(false);
   
   // History
   const [history, setHistory] = useState([]);
@@ -389,6 +390,39 @@ export const AttendanceProvider = ({ children }) => {
   }, []);
 
   /**
+   * Cập nhật một kết quả chốt điểm danh
+   */
+  const updateAttendanceResult = useCallback(async (attendanceResultId, payload, teacherId = null) => {
+    if (!attendanceResultId) {
+      toast.error('Thiếu mã kết quả điểm danh để cập nhật');
+      return null;
+    }
+
+    setAttendanceResultsUpdating(true);
+
+    try {
+      const response = await AttendanceService.updateAttendanceResult(attendanceResultId, payload, teacherId);
+
+      if (response?.success) {
+        setAttendanceResults(response.data);
+        toast.success(response.message || 'Cập nhật kết quả chốt thành công');
+        return response.data;
+      }
+
+      const message = response?.message || 'Cập nhật kết quả chốt thất bại';
+      toast.error(message);
+      return null;
+    } catch (error) {
+      const errorMessage = error?.message || 'Cập nhật kết quả chốt thất bại';
+      toast.error(errorMessage);
+      console.error('Update attendance result error:', error);
+      return null;
+    } finally {
+      setAttendanceResultsUpdating(false);
+    }
+  }, []);
+
+  /**
    * Lấy lịch sử phiên điểm danh theo học phần/nhóm thực hành
    */
   const fetchSessionHistory = useCallback(async ({
@@ -672,6 +706,7 @@ export const AttendanceProvider = ({ children }) => {
     nextQRLoading,
     statsLoading,
     attendanceResultsLoading,
+    attendanceResultsUpdating,
     historyLoading,
     
     // Actions
@@ -680,6 +715,7 @@ export const AttendanceProvider = ({ children }) => {
     getNextQR,
     getStats,
     initializeAttendanceResults,
+    updateAttendanceResult,
     fetchSessionHistory,
     fetchStudentAttendanceProgress,
     clearSessionHistory,

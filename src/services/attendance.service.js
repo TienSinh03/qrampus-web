@@ -135,6 +135,28 @@ class AttendanceService {
   }
 
   /**
+   * Cập nhật một kết quả chốt điểm danh
+   * @param {string} attendanceResultId
+   * @param {Object} payload - { status, note? }
+   * @param {string|null} teacherId
+   * @returns {Promise}
+   */
+  async updateAttendanceResult(attendanceResultId, payload, teacherId = null) {
+    try {
+      const response = await axiosClient.patch(
+        ATTENDANCE_ENDPOINTS.RESULTS_UPDATE(attendanceResultId),
+        payload,
+        {
+          params: { teacher_id: teacherId },
+        }
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Tổng hợp điểm danh theo ngày cho admin
    * @param {string} fromDate - YYYY-MM-DD
    * @param {string} toDate   - YYYY-MM-DD

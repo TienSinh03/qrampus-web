@@ -25,6 +25,7 @@ export const ATTENDANCE_ENDPOINTS = {
 
   // Attendance results endpoints
   RESULTS_INITIALIZE: `${API_VERSION}/attendance-results/initialize`,
+  RESULTS_UPDATE: (attendanceResultId) => `${API_VERSION}/attendance-results/${attendanceResultId}`,
 
   // Admin summary
   ADMIN_SUMMARY: `${API_VERSION}/attendance-history/admin/summary`,
