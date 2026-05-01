@@ -184,6 +184,7 @@ export default function TeacherAttendancePage() {
     course: true,
     process: true,
     status: true,
+    type: true,
     action: true
   });
 
@@ -353,6 +354,7 @@ export default function TeacherAttendancePage() {
                 <div className="absolute right-0 mt-2 w-100% bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-20 text-sm">
                   {[
                     ["course", "Tên học phần"],
+                    ["type", "Loại học phần"],
                     ["process", "Tiến trình"],
                     ["status", "Trạng thái"],
                     ["action", "Hành động"],
@@ -394,6 +396,11 @@ export default function TeacherAttendancePage() {
                   {visibleColsCourse.course && (
                     <th className="px-6 py-4 text-left">Tên học phần</th>
                   )}
+
+                  {visibleColsCourse.type && (
+                    <th className="px-6 py-4 text-left">Loại học phần</th>
+                  )}
+
                   {visibleColsCourse.process && (
                     <th className="px-6 py-4 text-left">Tiến trình</th>
                   )}
@@ -420,6 +427,19 @@ export default function TeacherAttendancePage() {
                           </p>
                         </td>
                       )}
+
+                      {visibleColsCourse.type && (
+
+                        course.practiceGroupId ? (
+                          <td className="px-6 py-4">
+                            Thực hành {course.practiceGroupNumber ? `- Nhóm ${course.practiceGroupNumber}` : ""}
+                          </td>
+                        ) : (
+                          <td className="px-6 py-4">Lý thuyết</td>
+                        )
+
+                      )}
+                        
 
                       {visibleColsCourse.process && (
 
