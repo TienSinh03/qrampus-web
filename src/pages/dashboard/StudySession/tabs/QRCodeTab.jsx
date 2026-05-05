@@ -4,7 +4,7 @@ import {
     ArrowUp,
     FileSpreadsheet,
     FilterX,
-    Settings, X, FileSearchIcon
+    Settings, X, FileSearchIcon, Eye
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAttendance } from "@contexts/AttendanceContext";
@@ -589,8 +589,9 @@ const QRCodeTab = ({ schedule }) => {
                                                 type="button"
                                                 onClick={() => handleOpenSessionDetail(item)}
                                                 className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                                                title="Xem chi tiết"
                                             >
-                                                Xem chi tiết
+                                                <Eye size={18} />
                                             </button>
                                         </td>
                                     )}
