@@ -65,6 +65,19 @@ class AttendanceService {
   }
 
   /**
+   * Lấy phiên điểm danh đang active theo class_session_id (đồng bộ cross-device)
+   * @param {string} classSessionId
+   */
+  async getActiveSessionByClassSession(classSessionId) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SESSION_ACTIVE_BY_CLASS(classSessionId));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Lấy lịch sử các phiên điểm danh theo học phần/nhóm thực hành
    */
   async getSessionHistory(params) {

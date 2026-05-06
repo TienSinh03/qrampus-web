@@ -13,7 +13,7 @@ const StudySessionPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [currentTab, setCurrentTab] = useState("description");
-    const { checkActiveSession } = useAttendance();
+    const { checkActiveSession, syncActiveSession } = useAttendance();
     
     // Get schedule from navigate state
     const scheduleFromState = location.state?.schedule;
@@ -33,18 +33,29 @@ const StudySessionPage = () => {
     // Kiểm tra active session khi load page hoặc khi schedule thay đổi
     useEffect(() => {
         if (!schedule?.id) return;
-        
-        setCheckingSession(true);
-        try {
-            const activeSessionData = checkActiveSession(schedule.id);
-            setHasActiveSession(!!activeSessionData);
-        } catch (error) {
-            console.error('Error checking active session:', error);
-            setHasActiveSession(false);
-        } finally {
-            setCheckingSession(false);
+
+        if (schedule?.has_active_session) {
+            setHasActiveSession(true);
+            return;
         }
-    }, [schedule?.id, checkActiveSession]);
+
+        setCheckingSession(true);
+        const check = async () => {
+            try {
+                let activeSessionData = checkActiveSession(schedule.id);
+                if (!activeSessionData) {
+                    activeSessionData = await syncActiveSession(schedule.id);
+                }
+                setHasActiveSession(!!activeSessionData);
+            } catch (error) {
+                console.error('Error checking active session:', error);
+                setHasActiveSession(false);
+            } finally {
+                setCheckingSession(false);
+            }
+        };
+        check();
+    }, [schedule?.id, checkActiveSession, syncActiveSession, schedule?.has_active_session]);
 
     // Lắng nghe realtime khi GV tạo/đóng phiên điểm danh để cập nhật UI ngay lập tức
     const handleAttendanceClick = () => {

@@ -16,6 +16,7 @@ export const ATTENDANCE_ENDPOINTS = {
   SESSION_CLOSE: (id) => `${API_VERSION}/attendance-sessions/${id}/close`,
   SESSION_NEXT_QR: (id) => `${API_VERSION}/attendance-sessions/${id}/next-qr`,
   SESSION_STATS: (id) => `${API_VERSION}/attendance-sessions/${id}/stats`,
+  SESSION_ACTIVE_BY_CLASS: (classSessionId) => `${API_VERSION}/attendance-sessions/class-session/${classSessionId}/active`,
   SESSION_HISTORY: `${API_VERSION}/attendance-sessions/history`,
   TEACHER_DASHBOARD: `${API_VERSION}/attendance-sessions/teacher/dashboard`,
   TEACHER_COURSE_SESSIONS: (courseId) => `${API_VERSION}/attendance-sessions/teacher/courses/${courseId}/sessions`,

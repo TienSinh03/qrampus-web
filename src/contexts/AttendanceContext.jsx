@@ -300,8 +300,29 @@ export const AttendanceProvider = ({ children }) => {
       }
     } catch (error) {
       const errorMessage = error.message || 'Đóng phiên điểm danh thất bại';
-      toast.error(errorMessage);
       console.error('Close session error:', error);
+
+      if (error.status === 400) {
+        setActiveSession(null);
+        setCurrentQR(null);
+        setSessionStats(null);
+        setActiveSessions(prev => {
+          const newMap = new Map(prev);
+          if (activeSession?.class_session_id) {
+            newMap.delete(activeSession.class_session_id);
+          } else {
+            for (const [classSessionId, session] of newMap.entries()) {
+              if (session?.id === sessionId) {
+                newMap.delete(classSessionId);
+                break;
+              }
+            }
+          }
+          return newMap;
+        });
+      } else {
+        toast.error(errorMessage);
+      }
       return null;
     } finally {
       setCloseLoading(false);
@@ -324,9 +345,25 @@ export const AttendanceProvider = ({ children }) => {
         return null;
       }
     } catch (error) {
-      const errorMessage = error.message || 'Tạo QR mới thất bại';
-      toast.error(errorMessage);
       console.error('Get next QR error:', error);
+      // Nếu session đã hết hạn hoặc bị đóng từ thiết bị khác, xóa state local
+      if (error.status === 400) {
+        setActiveSession(null);
+        setCurrentQR(null);
+        setSessionStats(null);
+        setActiveSessions(prev => {
+          const newMap = new Map(prev);
+          for (const [classSessionId, session] of newMap.entries()) {
+            if (session?.id === sessionId) {
+              newMap.delete(classSessionId);
+              break;
+            }
+          }
+          return newMap;
+        });
+      } else {
+        toast.error(error.message || 'Tạo QR mới thất bại');
+      }
       return null;
     } finally {
       setNextQRLoading(false);
@@ -594,6 +631,43 @@ export const AttendanceProvider = ({ children }) => {
   }, [activeSessions, getValidSession]);
 
   /**
+   * Đồng bộ phiên active từ server về localStorage 
+   * Trả về session data nếu có, null nếu không có phiên active
+   */
+  const syncActiveSession = useCallback(async (classSessionId) => {
+    if (!classSessionId) return null;
+    try {
+      const response = await AttendanceService.getActiveSessionByClassSession(classSessionId);
+      if (!response?.success) return null;
+
+      if (!response?.data) {
+        // Server xác nhận không còn phiên active → xóa entry stale trong local Map
+        setActiveSessions(prev => {
+          if (!prev.has(classSessionId)) return prev;
+          const newMap = new Map(prev);
+          newMap.delete(classSessionId);
+          return newMap;
+        });
+        return null;
+      }
+
+      const { attendanceSession, classInfo } = response.data;
+      const sessionData = { ...attendanceSession, classInfo };
+
+      setActiveSessions(prev => {
+        const newMap = new Map(prev);
+        newMap.set(classSessionId, sessionData);
+        return newMap;
+      });
+
+      return sessionData;
+    } catch (error) {
+      console.error('Error syncing active session from server:', error);
+      return null;
+    }
+  }, []);
+
+  /**
    * Hàm lấy thông tin thời gian còn lại của phiên điểm danh, cũng như phần trăm đã trôi qua để hiển thị tiến trình
    */
   const getSessionTiming = useCallback((classSessionId = null, _clockTick = 0, options = {}) => {
@@ -721,6 +795,7 @@ export const AttendanceProvider = ({ children }) => {
     clearSessionHistory,
     clearSession,
     checkActiveSession,
+    syncActiveSession,
     getSessionTiming,
     getLatestCompletedSessionSnapshot,
     fetchTeacherAttendanceDashboard,
