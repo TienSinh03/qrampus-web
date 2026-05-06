@@ -8,27 +8,45 @@ import { FileImage, FileUser, Calendar, QrCode, SquareStar, ScanQrCode, AlertCir
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { useAttendance } from "@contexts/AttendanceContext";
+import { useTeacherSchedule } from "@contexts/TeacherScheduleContext";
 
 const StudySessionPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [currentTab, setCurrentTab] = useState("description");
     const { checkActiveSession, syncActiveSession } = useAttendance();
+    const { fetchClassSessionDetail } = useTeacherSchedule();
     
     // Get schedule from navigate state
     const scheduleFromState = location.state?.schedule;
     const [schedule, setSchedule] = useState(scheduleFromState || null);
     const [hasActiveSession, setHasActiveSession] = useState(schedule?.has_active_session || false);
     const [checkingSession, setCheckingSession] = useState(false);
-    // If no schedule in state, you might want to redirect or fetch it
+
     useEffect(() => {
-        if (!scheduleFromState) {
-            console.warn('No schedule data found in navigation state');
-            // Optional: redirect back or fetch schedule by ID from URL params
-        } else {
-            setSchedule(scheduleFromState);
-        }
-    }, [scheduleFromState]);
+        if (!schedule?.id) return;
+
+        let isMounted = true;
+
+        const refreshSchedule = async () => {
+            try {
+                const response = await fetchClassSessionDetail(schedule?.id);
+                if (!isMounted) return;
+
+                if (response?.success && response.data) {
+                    setSchedule(response.data);
+                }
+            } catch (error) {
+                console.error('Error fetching class session detail:', error);
+            }
+        };
+
+        refreshSchedule();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [schedule?.id, fetchClassSessionDetail]);
 
     // Kiểm tra active session khi load page hoặc khi schedule thay đổi
     useEffect(() => {
@@ -42,9 +60,9 @@ const StudySessionPage = () => {
         setCheckingSession(true);
         const check = async () => {
             try {
-                let activeSessionData = checkActiveSession(schedule.id);
+                let activeSessionData = checkActiveSession(schedule?.id);
                 if (!activeSessionData) {
-                    activeSessionData = await syncActiveSession(schedule.id);
+                    activeSessionData = await syncActiveSession(schedule?.id);
                 }
                 setHasActiveSession(!!activeSessionData);
             } catch (error) {
