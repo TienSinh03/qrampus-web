@@ -13,12 +13,13 @@ export const ImageSessionProvider = ({ children }) => {
   const [sessionImagesLoading, setSessionImagesLoading] = useState(false);
   const [activeImageSessionId, setActiveImageSessionId] = useState(null);
 
-  const fetchImageSessionsByClassSession = useCallback(async (classSessionId) => {
+  const fetchImageSessionsByClassSession = useCallback(async (classSessionId, teacherId) => {
     if (!classSessionId) return;
     setImageSessionsLoading(true);
     try {
       const response = await AttendanceService.getImageSessionsByTeacher({
         classSessionId,
+        teacherId,
         page: 1,
         limit: 20,
       });

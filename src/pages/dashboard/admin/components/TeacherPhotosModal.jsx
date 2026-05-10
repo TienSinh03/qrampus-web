@@ -130,7 +130,7 @@ const SessionImagesPanel = ({ images, loading, selectedImage, onSelectImage }) =
 };
 
 // Main Modal 
-const TeacherPhotosModal = ({ isOpen, onClose, classSessionId }) => {
+const TeacherPhotosModal = ({ isOpen, onClose, classSessionId, teacherId = null }) => {
   const {
     imageSessions,
     imageSessionsLoading,
@@ -148,8 +148,8 @@ const TeacherPhotosModal = ({ isOpen, onClose, classSessionId }) => {
     if (!isOpen || !classSessionId) return;
     // External side-effects only — no setState here.
     clearSessionImages();
-    fetchImageSessionsByClassSession(classSessionId);
-  }, [isOpen, classSessionId, fetchImageSessionsByClassSession, clearSessionImages]);
+    fetchImageSessionsByClassSession(classSessionId, teacherId);
+  }, [isOpen, classSessionId, teacherId, fetchImageSessionsByClassSession, clearSessionImages]);
 
   const handleSelectSession = (session) => {
     setActiveSession(session);
