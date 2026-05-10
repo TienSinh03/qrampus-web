@@ -15,6 +15,12 @@ export const TeacherScheduleProvider = ({ children }) => {
   const [todayError, setTodayError] = useState(null);
   const [lastFetchedToday, setLastFetchedToday] = useState(null);
 
+  const [classSessionDetail, setClassSessionDetail] = useState(null);
+  const [classSessionDetailLoading, setClassSessionDetailLoading] = useState(false);
+  const [classSessionDetailError, setClassSessionDetailError] = useState(null);
+  const [lastFetchedDetail, setLastFetchedDetail] = useState(null);
+  const [currentClassSessionId, setCurrentClassSessionId] = useState(null);
+
   /**
    * Fetch teacher's schedule from API
    */
@@ -115,6 +121,58 @@ export const TeacherScheduleProvider = ({ children }) => {
   }, [fetchTodaySchedules]);
 
   /**
+   * Fetch class session detail for teacher
+   */
+  const fetchClassSessionDetail = useCallback(async (classSessionId, forceRefresh = false) => {
+    if (!classSessionId) {
+      const message = 'Thiếu classSessionId để lấy chi tiết buoi hoc';
+      setClassSessionDetailError(message);
+      return { success: false, error: message };
+    }
+
+    const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+    if (!forceRefresh && currentClassSessionId === classSessionId && lastFetchedDetail) {
+      const timeSinceLastFetch = Date.now() - lastFetchedDetail;
+      if (timeSinceLastFetch < CACHE_DURATION && classSessionDetail) {
+        return { success: true, data: classSessionDetail };
+      }
+    }
+
+    setClassSessionDetailLoading(true);
+    setClassSessionDetailError(null);
+
+    try {
+      const response = await teacherService.getMyClassSessionDetail(classSessionId);
+
+      if (response.success) {
+        const detail = response.data || null;
+        setClassSessionDetail(detail);
+        setCurrentClassSessionId(classSessionId);
+        setLastFetchedDetail(Date.now());
+        return { success: true, data: detail };
+      }
+
+      const message = response.message || 'Khong the tai chi tiet buoi hoc';
+      setClassSessionDetailError(message);
+      return { success: false, error: message };
+    } catch (err) {
+      const errorMessage = err.message || 'Da xay ra loi khi tai chi tiet buoi hoc';
+      setClassSessionDetailError(errorMessage);
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setClassSessionDetailLoading(false);
+    }
+  }, [currentClassSessionId, lastFetchedDetail, classSessionDetail]);
+
+  /**
+   * Refresh class session detail (force fetch)
+   */
+  const refreshClassSessionDetail = useCallback(async (classSessionId) => {
+    return fetchClassSessionDetail(classSessionId, true);
+  }, [fetchClassSessionDetail]);
+
+  /**
    * Clear schedules data
    */
   const clearSchedules = useCallback(() => {
@@ -125,6 +183,11 @@ export const TeacherScheduleProvider = ({ children }) => {
     setTodayLoading(false);
     setTodayError(null);
     setLastFetchedToday(null);
+    setClassSessionDetail(null);
+    setClassSessionDetailLoading(false);
+    setClassSessionDetailError(null);
+    setLastFetchedDetail(null);
+    setCurrentClassSessionId(null);
   }, []);
 
   /**
@@ -193,10 +256,17 @@ export const TeacherScheduleProvider = ({ children }) => {
     todayLoading,
     todayError,
     lastFetchedToday,
+    classSessionDetail,
+    classSessionDetailLoading,
+    classSessionDetailError,
+    lastFetchedDetail,
+    currentClassSessionId,
     fetchSchedules,
     refreshSchedules,
     fetchTodaySchedules,
     refreshTodaySchedules,
+    fetchClassSessionDetail,
+    refreshClassSessionDetail,
     clearSchedules,
     getSchedulesByDate,
     getSchedulesByWeek,

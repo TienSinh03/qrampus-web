@@ -350,6 +350,22 @@ class TeacherService {
   }
 
   
+  /**
+   * Lấy chi tiết buổi học cho giảng viên 
+   */
+  async getMyClassSessionDetail(classSessionId) {
+    try {
+      const response = await axiosClient.get(TEACHER_ENDPOINTS.ME_CLASS_SESSION_DETAIL(classSessionId));
+      return {
+        success: response.success || true,
+        data: response.data || null,
+        message: response.message || '',
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async getTeacherClassSessionOverview(classSessionId) {
     try {
       const response = await axiosClient.get(TEACHER_ENDPOINTS.CLASS_SESSION_OVERVIEW(classSessionId));

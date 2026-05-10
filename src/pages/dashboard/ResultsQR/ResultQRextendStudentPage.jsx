@@ -14,6 +14,7 @@ const FinalAttendancePage = () => {
         closeSession,
         getNextQR,
         checkActiveSession,
+        syncActiveSession,
         createLoading,
         closeLoading,
         setActiveSession
@@ -26,9 +27,13 @@ const FinalAttendancePage = () => {
 
     const isRefreshingQR = useRef(false);
     const isEndingSession = useRef(false);
+    const hasLoaded = useRef(false);
 
     // backup: load schedule and check for active session on mount
     useEffect(() => {
+        if (hasLoaded.current) return;
+        hasLoaded.current = true;
+
         const loadAndResumeSession = async () => {
             try {
                 const savedSchedule = sessionStorage.getItem('attendanceSchedule');
@@ -36,8 +41,13 @@ const FinalAttendancePage = () => {
                     const parsedSchedule = JSON.parse(savedSchedule);
                     setSchedule(parsedSchedule);
                     
-                    const activeSessionData = checkActiveSession(parsedSchedule.id);
-                    
+                    let activeSessionData = null;
+                    try {
+                        activeSessionData = await syncActiveSession(parsedSchedule.id);
+                    } catch {
+                        activeSessionData = checkActiveSession(parsedSchedule.id);
+                    }
+
                     if (activeSessionData) {
 
                         setActiveSession(activeSessionData);
@@ -69,7 +79,7 @@ const FinalAttendancePage = () => {
         };
 
         loadAndResumeSession();
-    }, [checkActiveSession, getNextQR, setActiveSession]);
+    }, [checkActiveSession, syncActiveSession, getNextQR, setActiveSession]);
 
     const classInfo = schedule ? {
         maHocPhan: schedule.courseSection?.code || "N/A",
@@ -157,9 +167,13 @@ const FinalAttendancePage = () => {
         isRefreshingQR.current = true;
 
         try {
-            await getNextQR(activeSession.id);
+            const result = await getNextQR(activeSession.id);
+            if (!result) {
+                setIsStarted(false);
+            }
         } catch (error) {
             console.error('Error refreshing QR:', error);
+            setIsStarted(false);
         } finally {
             isRefreshingQR.current = false;
         }

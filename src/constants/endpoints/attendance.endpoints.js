@@ -4,11 +4,15 @@ import { API_VERSION } from '../config';
  * Attendance Endpoints
  */
 export const ATTENDANCE_ENDPOINTS = {
-  // Legacy endpoints (deprecated)
+  // Attendance image endpoints
   IMAGES: `${API_VERSION}/attendance-images`,
   IMAGE_BY_ID: (id) => `${API_VERSION}/attendance-images/${id}`,
+  IMAGES_BY_SESSION: (imageSessionId) => `${API_VERSION}/attendance-images/session/${imageSessionId}`,
+
+  // Image session endpoints
   IMAGE_SESSIONS: `${API_VERSION}/image-sessions`,
   IMAGE_SESSION_BY_ID: (id) => `${API_VERSION}/image-sessions/${id}`,
+  IMAGE_SESSION_EXISTS: (classSessionId) => `${API_VERSION}/image-sessions/exists/${classSessionId}`,
 
   // New attendance session endpoints
   SESSIONS: `${API_VERSION}/attendance-sessions`,
@@ -16,6 +20,7 @@ export const ATTENDANCE_ENDPOINTS = {
   SESSION_CLOSE: (id) => `${API_VERSION}/attendance-sessions/${id}/close`,
   SESSION_NEXT_QR: (id) => `${API_VERSION}/attendance-sessions/${id}/next-qr`,
   SESSION_STATS: (id) => `${API_VERSION}/attendance-sessions/${id}/stats`,
+  SESSION_ACTIVE_BY_CLASS: (classSessionId) => `${API_VERSION}/attendance-sessions/class-session/${classSessionId}/active`,
   SESSION_HISTORY: `${API_VERSION}/attendance-sessions/history`,
   TEACHER_DASHBOARD: `${API_VERSION}/attendance-sessions/teacher/dashboard`,
   TEACHER_COURSE_SESSIONS: (courseId) => `${API_VERSION}/attendance-sessions/teacher/courses/${courseId}/sessions`,

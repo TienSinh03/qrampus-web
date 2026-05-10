@@ -23,6 +23,8 @@ import {
   UserStar,
   Grid2X2,
   LucideTestTube,
+  List,
+  ListChecks,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useState, useMemo } from 'react';
@@ -95,7 +97,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       roles: [ROLES.TEACHER]
     },
     {
-      icon: Bell,
+      icon:   ListChecks,
       label: 'Quản lý thông báo',
       path: '/dashboard/manage-notifications',
       roles: [ROLES.TEACHER]
@@ -115,7 +117,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       roles: [ROLES.ADMIN]
     },
     {
-      icon: LucideTestTube,
+      icon:   ListChecks,
       label: 'Quản lý thông báo',
       path: '/dashboard/admin/notifications',
       roles: [ROLES.ADMIN]
