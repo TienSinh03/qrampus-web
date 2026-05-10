@@ -40,3 +40,35 @@
 .read-the-docs {
   color: #888;
 } */
+
+/* Firefox */
+* {
+  scrollbar-width: none; /* auto | thin | none */
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 2px;  /* ← tăng/giảm số này */
+  height: 2px; /* ← thanh ngang */
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #646cff;
+  border-radius: 4px;
+  border: 2px solid #f0f0f0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #4a50cc;
+}
