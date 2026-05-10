@@ -11,6 +11,7 @@ import { LeaveDashboardProvider } from '@contexts/LeaveDashboardContext';
 import { StudySessionOverviewProvider } from '@contexts/StudySessionOverviewContext';
 import { SurveyDashboardProvider } from '@contexts/SurveyDashboardContext';
 import { CourseProvider } from '@contexts/CourseContext';
+import { ImageSessionProvider } from '@contexts/ImageSessionContext';
 
 import { Toaster } from "sonner";
 
@@ -23,6 +24,7 @@ function App() {
             <TeacherScheduleProvider>
               <ClassSessionStudentsProvider>
                 <AttendanceProvider>
+                  <ImageSessionProvider>
                   <LeaveDashboardProvider>
                     <SurveyDashboardProvider>
                       <StudySessionOverviewProvider>
@@ -31,6 +33,7 @@ function App() {
                       </StudySessionOverviewProvider>
                     </SurveyDashboardProvider>
                   </LeaveDashboardProvider>
+                  </ImageSessionProvider>
                 </AttendanceProvider>
               </ClassSessionStudentsProvider>
             </TeacherScheduleProvider>

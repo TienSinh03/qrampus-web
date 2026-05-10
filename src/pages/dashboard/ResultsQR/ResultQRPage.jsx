@@ -316,12 +316,6 @@ const ResultQRPage = () => {
     setCurrentPage(1);
   };
 
-  const teacherPhotos = [
-    { id: 1, url: "/assets/images/_34A8269.jpg", caption: "Photo 1" },
-    { id: 2, url: "/assets/images/_34A8289.jpg", caption: "Photo 2" },
-    { id: 3, url: "/assets/images/_34A8277.jpg", caption: "Photo 3" },
-    { id: 4, url: "/assets/images/_34A8304.jpg", caption: "Photo 4" },
-  ];
 
   if (!classSessionId) {
     return (
@@ -674,9 +668,10 @@ const ResultQRPage = () => {
       </div>
 
       <TeacherPhotosModal
+        key={isPhotosModalOpen ? classSessionId : null}
         isOpen={isPhotosModalOpen}
         onClose={() => setIsPhotosModalOpen(false)}
-        photos={teacherPhotos}
+        classSessionId={classSessionId}
       />
 
       <AttendanceResultEditModal

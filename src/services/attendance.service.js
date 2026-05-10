@@ -170,6 +170,31 @@ class AttendanceService {
   }
 
   /**
+   * Lấy danh sách image sessions của giảng viên đang đăng nhập (có phân trang)
+   * { classSessionId?, courseSectionId?, page?, limit? }
+   */
+  async getImageSessionsByTeacher(params = {}) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.IMAGE_SESSIONS, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Lấy danh sách ảnh trong 1 image session
+   */
+  async getAttendanceImagesBySession(imageSessionId) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.IMAGES_BY_SESSION(imageSessionId));
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Tổng hợp điểm danh theo ngày cho admin
    * @param {string} fromDate - YYYY-MM-DD
    * @param {string} toDate   - YYYY-MM-DD

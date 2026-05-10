@@ -4,11 +4,15 @@ import { API_VERSION } from '../config';
  * Attendance Endpoints
  */
 export const ATTENDANCE_ENDPOINTS = {
-  // Legacy endpoints (deprecated)
+  // Attendance image endpoints
   IMAGES: `${API_VERSION}/attendance-images`,
   IMAGE_BY_ID: (id) => `${API_VERSION}/attendance-images/${id}`,
+  IMAGES_BY_SESSION: (imageSessionId) => `${API_VERSION}/attendance-images/session/${imageSessionId}`,
+
+  // Image session endpoints
   IMAGE_SESSIONS: `${API_VERSION}/image-sessions`,
   IMAGE_SESSION_BY_ID: (id) => `${API_VERSION}/image-sessions/${id}`,
+  IMAGE_SESSION_EXISTS: (classSessionId) => `${API_VERSION}/image-sessions/exists/${classSessionId}`,
 
   // New attendance session endpoints
   SESSIONS: `${API_VERSION}/attendance-sessions`,
