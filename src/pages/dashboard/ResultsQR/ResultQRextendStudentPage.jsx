@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Users, BookOpen, Layers, Play, Square, UserCheck, Maximize2, AlertCircle, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useLocation } from 'react-router-dom';
 import { useAttendance } from '@contexts/AttendanceContext';
+import { useTeacherSchedule } from '@contexts/TeacherScheduleContext';
 
 const FinalAttendancePage = () => {
     const [schedule, setSchedule] = useState(null);
     const [loadError, setLoadError] = useState(false);
+    const location = useLocation();
 
     const {
         activeSession,
@@ -19,6 +22,7 @@ const FinalAttendancePage = () => {
         closeLoading,
         setActiveSession
     } = useAttendance();
+    const { fetchClassSessionDetail } = useTeacherSchedule();
 
     const [isStarted, setIsStarted] = useState(false);
     const [sessionClockTick, setSessionClockTick] = useState(0);
@@ -37,15 +41,28 @@ const FinalAttendancePage = () => {
         const loadAndResumeSession = async () => {
             try {
                 const savedSchedule = sessionStorage.getItem('attendanceSchedule');
-                if (savedSchedule) {
-                    const parsedSchedule = JSON.parse(savedSchedule);
-                    setSchedule(parsedSchedule);
-                    
+                const routeSchedule = location.state?.schedule;
+                const initialSchedule = routeSchedule || (savedSchedule ? JSON.parse(savedSchedule) : null);
+
+                if (initialSchedule) {
+                    let detailedSchedule = initialSchedule;
+
+                    try {
+                        const response = await fetchClassSessionDetail(initialSchedule.id);
+                        if (response?.success && response.data) {
+                            detailedSchedule = response.data;
+                        }
+                    } catch {
+                        // fall back to the schedule passed from study-session
+                    }
+
+                    setSchedule(detailedSchedule);
+
                     let activeSessionData = null;
                     try {
-                        activeSessionData = await syncActiveSession(parsedSchedule.id);
+                        activeSessionData = await syncActiveSession(detailedSchedule.id);
                     } catch {
-                        activeSessionData = checkActiveSession(parsedSchedule.id);
+                        activeSessionData = checkActiveSession(detailedSchedule.id);
                     }
 
                     if (activeSessionData) {
@@ -79,7 +96,7 @@ const FinalAttendancePage = () => {
         };
 
         loadAndResumeSession();
-    }, [checkActiveSession, syncActiveSession, getNextQR, setActiveSession]);
+    }, [checkActiveSession, fetchClassSessionDetail, getNextQR, location.state?.schedule, setActiveSession, syncActiveSession]);
 
     const classInfo = schedule ? {
         maHocPhan: schedule.courseSection?.code || "N/A",
@@ -290,52 +307,92 @@ const FinalAttendancePage = () => {
 
                     {/* CLASS INFO */}
                     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-                        <div className="p-6 border-b bg-slate-50">
-                            <h1 className="text-2xl font-semibold">
+                        <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <h1 className="text-2xl font-semibold text-gray-800">
                                 {classInfo.tenMonHoc}
                             </h1>
-                            <p className="text-sm text-slate-400 mt-1">
-                                {classInfo.maHocPhan} • Tiết {classInfo.tietHoc}
+                            <p className="text-sm text-slate-500 mt-2">
+                                Mã học phần: <span className="font-semibold text-slate-700">{classInfo.maHocPhan}</span>
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 divide-x">
+                        {/* Main Info Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y">
                             {[
                                 { icon: Users, label: "Sĩ số", value: `${classInfo.siSo} SV` },
                                 { icon: BookOpen, label: "Hình thức", value: classInfo.hinhThuc },
-                                { icon: Layers, label: "Nhóm", value: classInfo.nhom },
+                                { icon: Layers, label: "Nhóm", value: classInfo.nhom || "Không có" },
                                 { icon: UserCheck, label: "Giảng viên", value: classInfo.giangVien },
                             ].map((item, i) => (
-                                <div key={i} className="p-5">
-                                    <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                                <div key={i} className="p-4">
+                                    <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
                                         <item.icon size={14} />
                                         {item.label}
                                     </div>
-                                    <p className="font-medium truncate">{item.value}</p>
+                                    <p className="font-semibold text-gray-800 truncate">{item.value}</p>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Additional Details */}
+                        <div className="border-t bg-slate-50 p-4 space-y-3">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <p className="text-xs text-slate-500 font-medium mb-1">Phòng học</p>
+                                    <p className="text-sm font-semibold text-gray-800">{classInfo.phongHoc}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-slate-500 font-medium mb-1">Tiết học</p>
+                                    <p className="text-sm font-semibold text-gray-800">{classInfo.tietHoc}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-slate-500 font-medium mb-1">Ngày học</p>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {classInfo.classDate 
+                                            ? new Date(classInfo.classDate).toLocaleDateString('vi-VN')
+                                            : "N/A"
+                                        }
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-slate-500 font-medium mb-1">Buổi học</p>
+                                    <p className="text-sm font-semibold text-gray-800">Buổi {classInfo.sessionNumber || "N/A"}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     {/* CONTROL */}
-                    <div className="max-w-md mx-auto text-center space-y-8 py-10">
+                    <div className="max-w-2xl mx-auto space-y-8 py-8">
+
+                        {/* INFO SECTION */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                            <h3 className="text-lg font-semibold text-blue-900 mb-3">ℹ️ Hướng dẫn sử dụng</h3>
+                            <ul className="space-y-2 text-sm text-blue-800">
+                                <li>• Chọn thời gian điểm danh (2, 3 hoặc 5 phút)</li>
+                                <li>• Click <span className="font-semibold">"Bắt đầu điểm danh"</span> để khởi động phiên</li>
+                                <li>• Mã QR sẽ tự động cập nhật theo khoảng thời gian được cài đặt</li>
+                                <li>• Sinh viên sẽ quét mã QR để điểm danh</li>
+                                <li>• Nhấn <span className="font-semibold">"Dừng phiên"</span> để kết thúc khi hoàn thành</li>
+                            </ul>
+                        </div>
 
                         <div>
-                            <h2 className="text-lg font-semibold mb-4">
-                                Thời gian điểm danh
+                            <h2 className="text-lg font-semibold mb-4 text-center">
+                                ⏱️ Chọn thời gian điểm danh
                             </h2>
 
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-3 gap-4">
                                 {[2, 3, 5].map((t) => (
                                     <button
                                         key={t}
                                         onClick={() => setDuration(t)}
                                         disabled={createLoading}
                                         className={`
-                                            py-3 rounded-xl border transition
+                                            py-4 rounded-xl border-2 font-semibold transition
                                             ${duration === t
-                                                ? 'bg-emerald-500 text-white border-emerald-500'
-                                                : 'bg-white hover:bg-slate-50'}
+                                                ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg'
+                                                : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50'}
                                             ${createLoading ? 'opacity-50 cursor-not-allowed' : ''}
                                         `}
                                     >
@@ -345,19 +402,37 @@ const FinalAttendancePage = () => {
                             </div>
                         </div>
 
+                        {/* STATISTICS */}
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-4 text-center">
+                                <p className="text-xs text-purple-600 font-medium mb-1">Sĩ số lớp</p>
+                                <p className="text-3xl font-bold text-purple-700">{classInfo.siSo}</p>
+                                <p className="text-xs text-purple-500 mt-1">sinh viên</p>
+                            </div>
+                            <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-xl p-4 text-center">
+                                <p className="text-xs text-orange-600 font-medium mb-1">Thời gian điểm danh</p>
+                                <p className="text-3xl font-bold text-orange-700">{duration}</p>
+                                <p className="text-xs text-orange-500 mt-1">phút</p>
+                            </div>
+                            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-xl p-4 text-center">
+                                <p className="text-xs text-indigo-600 font-medium mb-1">Hình thức</p>
+                                <p className="text-2xl font-bold text-indigo-700">{classInfo.hinhThuc}</p>
+                            </div>
+                        </div>
+
                         <button
                             onClick={handleStart}
                             disabled={createLoading}
-                            className="w-full py-4 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 transition font-semibold flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                         >
                             {createLoading ? (
                                 <>
-                                    <Loader2 size={18} className="animate-spin" />
+                                    <Loader2 size={20} className="animate-spin" />
                                     Đang tạo phiên...
                                 </>
                             ) : (
                                 <>
-                                    <Play size={18} />
+                                    <Play size={20} />
                                     Bắt đầu điểm danh
                                 </>
                             )}

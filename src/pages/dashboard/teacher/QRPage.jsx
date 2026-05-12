@@ -161,9 +161,9 @@ const QRPage = () => {
   const anyActiveClassSessionId = anyActiveSessionTiming?.session?.class_session_id || null;
   const hasActiveSession = Boolean(sessionTiming?.session);
   const sessionTotalSeconds = sessionTiming?.totalSeconds ?? 0;
-  const sessionElapsedSeconds = sessionTiming?.elapsedSeconds ?? 0; // Thời gian đã trôi qua kể từ khi QR được tạo
-  const sessionRemainingSeconds = sessionTiming?.remainingSeconds ?? 0; // Thời gian còn lại trước khi QR hết hạn
-  
+  const sessionElapsedSeconds = sessionTiming?.elapsedSeconds ?? 0;
+  const sessionRemainingSeconds = sessionTiming?.remainingSeconds ?? 0;
+
   const sessionDurationMinutes = sessionTotalSeconds > 0 ? Math.ceil(sessionTotalSeconds / 60) : 0;
   const sessionProgress = sessionTotalSeconds > 0
     ? Math.round((sessionElapsedSeconds / sessionTotalSeconds) * 100)
@@ -270,12 +270,11 @@ const QRPage = () => {
   const classDateObj = classDateRaw ? new Date(`${classDateRaw}T00:00:00`) : null;
   const isValidClassDate = classDateObj && !Number.isNaN(classDateObj.getTime());
 
-  const dayLabel = isValidClassDate  ? classDateObj.toLocaleDateString("en-US", { day: "2-digit" }) : "--";
+  const dayLabel = isValidClassDate ? classDateObj.toLocaleDateString("en-US", { day: "2-digit" }) : "--";
   const monthLabel = isValidClassDate ? classDateObj.toLocaleDateString("en-US", { month: "short" }) : "--";
 
   const formatHour = (hourValue) => {
     if (!hourValue || typeof hourValue !== "string") return "";
-
     return hourValue.slice(0, 5);
   };
 
@@ -283,28 +282,24 @@ const QRPage = () => {
 
   const classDateLabel = isValidClassDate
     ? classDateObj.toLocaleDateString("vi-VN", {
-      weekday: "long",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
     : "Chưa có ngày học";
 
   const formatScanDate = (scanTime) => {
     if (!scanTime) return '--/--';
-
     const date = new Date(scanTime);
     if (Number.isNaN(date.getTime())) return '--/--';
-
     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
   };
 
   const formatScanHour = (scanTime) => {
     if (!scanTime) return '--:--';
-
     const date = new Date(scanTime);
     if (Number.isNaN(date.getTime())) return '--:--';
-
     return date.toLocaleTimeString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
@@ -312,10 +307,8 @@ const QRPage = () => {
     });
   };
 
-  //helper number
   const toCount = (value, fallback = 0) => {
     const parsedValue = Number(value);
-
     return Number.isFinite(parsedValue) ? parsedValue : fallback;
   };
 
@@ -329,33 +322,29 @@ const QRPage = () => {
 
   const computedStrangeDeviceCount = attendanceRows.filter((item) => item?.device_match === false || item?.device_verified === false).length;
 
-  // Điểm danh thành công
-  const successCount = hasActiveSession 
+  const successCount = hasActiveSession
     ? toCount(effectiveStats?.stats?.attended, toCount(attendanceRows.length, 0))
     : toCount(latestSessionOverview?.attendedCount, toCount(effectiveStats?.stats?.attended, toCount(attendanceRows.length, 0)));
 
-  // Vắng mặt
   const absentCount = hasActiveSession
     ? Math.max(0, classSize - successCount)
     : Math.max(0, toCount(latestSessionOverview?.absentCount, classSize - successCount));
 
-  // Thiết bị lạ
   const strangeDeviceCount = hasActiveSession
     ? (computedStrangeDeviceCount > 0 ? computedStrangeDeviceCount : toCount(latestSessionOverview?.strangeDeviceCount, 0))
     : toCount(latestSessionOverview?.strangeDeviceCount, computedStrangeDeviceCount);
 
-  // Số QR đã tạo
   const qrCreatedCount = hasActiveSession
     ? toCount(effectiveStats?.stats?.qr_generated, toCount(attendanceOverview?.qrGeneratedCount, 0))
     : toCount(attendanceOverview?.qrGeneratedCount, toCount(effectiveStats?.stats?.qr_generated, 0));
 
-  // Số phiên điểm danh đã tạo  
   const attendedSessionCount = toCount(attendanceOverview?.attendanceSessionCount, 0);
   const capturedImageCount = Number(effectiveStats?.stats?.captured_images ?? effectiveStats?.stats?.photos ?? attendanceRows.length);
 
   const isSessionEnded = classSessionId ? !hasActiveSession : currentSchedule?.attendanceSession?.status === "ended";
   const locationStatsCount = attendanceRows.filter((item) => item?.location_match === true || item?.location_verified === true).length || successCount;
 
+  // ─── Khi chưa chọn buổi học ──────────────────────────────────────────────
   if (!currentSchedule) {
     return (
       <div className="space-y-6">
@@ -442,6 +431,7 @@ const QRPage = () => {
     );
   }
 
+  // ─── Dashboard chính ──────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
 
@@ -455,9 +445,8 @@ const QRPage = () => {
         <p className="text-xs text-slate-400">Đang tải tổng quan buổi học...</p>
       ) : null}
 
-
+      {/* ── Stats cards hàng đầu ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
         <StatsCard
           title="SĨ SỐ"
           value={classSize.toLocaleString("vi-VN")}
@@ -467,7 +456,6 @@ const QRPage = () => {
           icon={<Users className="w-6 h-6 text-purple-600" />}
           iconBg="bg-purple-100"
         />
-
         <StatsCard
           title="SỐ QR ĐÃ TẠO"
           value={qrCreatedCount.toLocaleString("vi-VN")}
@@ -477,7 +465,6 @@ const QRPage = () => {
           icon={<UserPlus className="w-6 h-6 text-rose-600" />}
           iconBg="bg-rose-100"
         />
-
         <StatsCard
           title="SỐ PHIÊN ĐIỂM DANH"
           value={attendedSessionCount.toLocaleString("vi-VN")}
@@ -487,7 +474,6 @@ const QRPage = () => {
           icon={<CalendarClock className="w-6 h-6 text-green-600" />}
           iconBg="bg-green-100"
         />
-
         <StatsCard
           title="SỐ HÌNH ẢNH ĐÃ CHỤP"
           value={capturedImageCount.toLocaleString("vi-VN")}
@@ -497,10 +483,12 @@ const QRPage = () => {
           icon={<GalleryThumbnails className="w-6 h-6 text-yellow-600" />}
           iconBg="bg-yellow-100"
         />
-
       </div>
+
+      {/* ── 3 cột giữa ── */}
       <div className="grid gap-6 xl:grid-cols-3">
 
+        {/* Cột 1 — QR & đồng hồ */}
         <div className="rounded-2xl bg-white shadow-sm">
           <div className="h-32 w-full overflow-hidden rounded-t-2xl bg-[radial-gradient(circle_at_top,_#e5e7eb,_#cbd5f5)] flex flex-col justify-end px-4 pb-4">
             <p className="text-xl font-bold text-slate-800">{time}</p>
@@ -510,18 +498,15 @@ const QRPage = () => {
                 persistAttendanceSchedule();
                 window.open('/dashboard/results-qr-extend-student', '_blank');
               }}
-              className="mt-2 inline-flex items-center justify-center h-10 px-4 py-3 rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md porter cursor-pointer"
+              className="mt-2 inline-flex items-center justify-center h-10 px-4 py-3 rounded-full text-slate-500 hover:text-slate-700 bg-slate-200 hover:bg-slate-300 transition-all duration-300 ease-in-out shadow-md cursor-pointer"
             >
               <View className="w-5 h-5" />
               <span className="ml-2 text-sm font-medium">Màn hình điểm danh dành cho sinh viên</span>
             </a>
-
-
           </div>
 
-
           {/* QR CODE */}
-          <div className="flex flex-col items-center justify-center pt-2">
+          <div className="flex flex-col items-center justify-center pt-2 pb-4 px-4">
             {isSessionEnded ? (
               <div className="w-full max-w-sm rounded-2xl border border-red-200/80 bg-gradient-to-br from-red-50 via-rose-50 to-white p-4 shadow-sm">
                 <div className="flex items-start gap-3">
@@ -588,7 +573,6 @@ const QRPage = () => {
               </div>
             </div>
 
-            {/* thời lượng điểm danh */}
             <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
               <AlarmClockCheck className="w-5 h-5" />
               <span>
@@ -608,24 +592,18 @@ const QRPage = () => {
               <ExternalLink className="w-5 h-5" />
               <span className="ml-2 text-sm font-medium">Chi tiết điểm danh</span>
             </button>
-
-
           </div>
         </div>
 
-        {/* THÔNG TIN HỌC PHẦN */}
-
+        {/* Cột 2 — Thông tin học phần */}
         <div className="rounded-2xl bg-white shadow-sm">
-          {/* Image */}
           <div className="h-32 w-full overflow-hidden rounded-t-2xl bg-[radial-gradient(circle_at_top,_#e5e7eb,_#cbd5f5)] flex items-end">
             <h2 className="px-4 pb-4 text-lg font-semibold text-slate-800 drop-shadow-sm">
               {courseName}
             </h2>
           </div>
 
-
           <div className="p-6">
-            {/* Header event */}
             <div className="mb-6 flex gap-2">
               <div className="flex h-16 w-24 flex-col items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
                 <span className="text-xs font-medium">{monthLabel}</span>
@@ -644,65 +622,55 @@ const QRPage = () => {
               </div>
             </div>
 
-            {/* Status buttons */}
             <div className="mb-6 flex items-center justify-between text-xs">
               <button className="flex flex-col items-center gap-1 text-yellow-500 hover:text-yellow-200">
-                <SquareStar className="w-5 h-5 " />
+                <SquareStar className="w-5 h-5" />
                 <span>{semesterLabel}</span>
               </button>
               <button className="flex flex-col items-center gap-1 text-yellow-500 hover:text-yellow-200">
-                <SquareStar className="w-5 h-5 " />
+                <SquareStar className="w-5 h-5" />
                 <span>{classDateObj ? classDateObj.getFullYear() : "N/A"}</span>
               </button>
               <button className="flex flex-col items-center gap-1 text-green-600 hover:text-slate-700">
-                <SquareCheck className="w-5 h-5 " />
+                <SquareCheck className="w-5 h-5" />
                 <span>{hasActiveSession ? "ĐANG TẠO QR" : "CHƯA KÍCH HOẠT"}</span>
               </button>
               <button className="flex flex-col items-center gap-1 text-violet-600">
-                <SquareUser className="w-5 h-5 " />
+                <SquareUser className="w-5 h-5" />
                 <span>{teacherName}</span>
               </button>
-
             </div>
-            {/* Lịch sử điểm danh gần nhất */}
+
             <div className="space-y-3 text-xs text-slate-600 border-t pt-4 border-slate-200">
               <div className="flex items-start gap-3">
-                <CalendarClock className="w-5 h-5 " />
+                <CalendarClock className="w-5 h-5" />
                 <div>
                   <p>{`${classDateLabel}, ${timeRange}`}</p>
                   <p className="text-slate-400">Lịch hiện tại</p>
                 </div>
               </div>
-
               <div className="flex items-start gap-3">
-                <SquareUser className="w-5 h-5 " />
+                <SquareUser className="w-5 h-5" />
                 <div>
                   <p>Tạo bởi</p>
-                  <p className="text-slate-400">
-                    {teacherName}
-                  </p>
+                  <p className="text-slate-400">{teacherName}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <PieChart className="w-5 h-5 " />
+                <PieChart className="w-5 h-5" />
                 <div>
                   <p>Tổng SV:</p>
-                  <p className="text-slate-400">
-                    {`${successCount}/${classSize} SV`}
-                  </p>
+                  <p className="text-slate-400">{`${successCount}/${classSize} SV`}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* chứa bảng điểm danh hiện tại*/}
+        {/* Cột 3 — Bảng điểm danh hiện tại */}
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">
-              Điểm danh hôm nay
-            </h2>
-            {/* mở ra danh sách KQ hôm đó */}
+            <h2 className="text-lg font-semibold text-slate-800">Điểm danh hôm nay</h2>
             <button
               onClick={() => navigate('/dashboard/results-qr')}
               className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -713,6 +681,7 @@ const QRPage = () => {
               Xem danh sách
             </button>
           </div>
+
           <div className="mb-4 flex gap-2 text-xs font-medium">
             <button className="rounded-full bg-violet-400 px-3 py-1 text-white shadow-sm">
               Thành công: {successCount}
@@ -734,17 +703,13 @@ const QRPage = () => {
             {attendanceRows.map((item, index) => (
               <div
                 key={item.id || `${item?.student?.student_code || index}-${item?.scan_time || index}`}
-                className={`flex items-center justify-between rounded-xl px-2 py-2 hover:bg-slate-50
+                className={`flex items-center justify-between rounded-xl px-2 py-2 hover:bg-slate-50 cursor-pointer
                   ${index !== attendanceRows.length - 1 ? "mb-3" : ""}
                 `}
                 onClick={() => navigate('/dashboard/results-qr')}
-                style={{ cursor: "pointer" }}
-
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-lg overflow-hidden"
-                  >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-lg overflow-hidden">
                     {item?.student?.avatar_url ? (
                       <img src={item.student.avatar_url} alt={item?.student?.full_name || 'Sinh viên'} />
                     ) : (
@@ -763,10 +728,7 @@ const QRPage = () => {
                     </div>
                   </div>
                 </div>
-
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-medium bg-violet-100 text-violet-600"
-                >
+                <span className="rounded-full px-3 py-1 text-xs font-medium bg-violet-100 text-violet-600">
                   Thành công
                 </span>
               </div>
@@ -784,11 +746,13 @@ const QRPage = () => {
           </div>
         </div>
 
-
       </div>
 
-      <div className=" bg-white shadow-sm">
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* ── Tổng kết buổi học (phần chân) ── */}
+      <div className="rounded-2xl bg-white shadow-sm p-6">
+        <h2 className="mb-4 text-lg font-semibold text-slate-800">Tổng kết buổi học</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+
           <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-emerald-700">SV điểm danh thành công</p>
@@ -820,6 +784,7 @@ const QRPage = () => {
             </div>
             <p className="mt-3 text-2xl font-bold text-sky-700">{locationStatsCount}</p>
           </div>
+
         </div>
       </div>
 

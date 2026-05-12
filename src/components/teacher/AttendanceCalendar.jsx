@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { Calendar as CalendarIcon, ArrowUpRight, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowUpRight, ChevronLeft, ChevronRight, Download, RefreshCw } from 'lucide-react';
 
 const WEEK_DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const MONTH_NAMES_VI = [
@@ -27,12 +27,22 @@ const autoCol = (rows) =>
  *   onFilter  — (from: string, to: string) => void  (gọi khi chuyển tháng)
  */
 const AttendanceCalendar = ({ data = [], overview = {}, loading = false, fromDate, onFilter }) => {
-  const initDate = fromDate ? new Date(fromDate + 'T00:00:00') : new Date();
-  const [displayDate, setDisplayDate] = useState(initDate);
+  const now = new Date();
+  const currentMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  const [displayDate, setDisplayDate] = useState(currentMonthDate);
 
   useEffect(() => {
     if (fromDate) setDisplayDate(new Date(fromDate + 'T00:00:00'));
   }, [fromDate]);
+
+  useEffect(() => {
+    // Load data for current month on mount
+    const now = new Date();
+    onFilter?.(
+      toDateStr(now.getFullYear(), now.getMonth(), 1),
+      lastOfMonth(now.getFullYear(), now.getMonth()).toISOString().slice(0, 10)
+    );
+  }, []);
 
   const year = displayDate.getFullYear();
   const month = displayDate.getMonth();
@@ -55,6 +65,17 @@ const AttendanceCalendar = ({ data = [], overview = {}, loading = false, fromDat
     const ny = next.getFullYear();
     const nm = next.getMonth();
     onFilter?.(toDateStr(ny, nm, 1), lastOfMonth(ny, nm).toISOString().slice(0, 10));
+  };
+
+  const handleRefreshToToday = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    setDisplayDate(new Date(currentYear, currentMonth, 1));
+    onFilter?.(
+      toDateStr(currentYear, currentMonth, 1),
+      lastOfMonth(currentYear, currentMonth).toISOString().slice(0, 10)
+    );
   };
 
   const exportToExcel = () => {
@@ -144,6 +165,17 @@ const AttendanceCalendar = ({ data = [], overview = {}, loading = false, fromDat
             </button>
           </div>
 
+          {/* Refresh */}
+          <button
+            type="button"
+            onClick={handleRefreshToToday}
+            disabled={loading}
+            className="h-8 w-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 transition disabled:opacity-40"
+            title="Làm mới"
+          >
+            <RefreshCw className={`w-4 h-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+
           {/* Export */}
           <button
             onClick={exportToExcel}
@@ -210,14 +242,14 @@ const AttendanceCalendar = ({ data = [], overview = {}, loading = false, fromDat
                             }`}
                           />
                           {/* Tooltip */}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-3 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 opacity-0 invisible group-hover/dot:opacity-100 group-hover/dot:visible transition-all scale-95 group-hover/dot:scale-100 pointer-events-none">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 max-w-[90vw] p-4 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 opacity-0 invisible group-hover/dot:opacity-100 group-hover/dot:visible transition-all scale-95 group-hover/dot:scale-100 pointer-events-none">
                             <div className="flex items-start gap-2 mb-2">
                               <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${session.has_attendance_session ? 'bg-emerald-500' : 'bg-amber-400'}`} />
-                              <p className="text-xs font-bold text-slate-800 leading-tight">
+                              <p className="text-sm font-bold text-slate-800 leading-tight">
                                 {session.course_section?.name || 'Chưa có tên'}
                               </p>
                             </div>
-                            <div className="space-y-1 text-[10px] text-slate-500 font-medium ml-4">
+                            <div className="space-y-1.5 text-xs text-slate-500 font-medium ml-4">
                               <p><span className="italic text-slate-400">Mã:</span> {session.course_section?.code}</p>
                               <p><span className="italic text-slate-400">Giờ:</span> {session.start_hour?.slice(0,5)} – {session.end_hour?.slice(0,5)}</p>
                               <p><span className="italic text-slate-400">Phòng:</span> {session.room?.room_code ?? '--'}</p>

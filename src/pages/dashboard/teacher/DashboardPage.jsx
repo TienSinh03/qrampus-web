@@ -296,6 +296,9 @@ export default function Dashboard() {
 
         {/* LỊCH DẠY HÔM NAY */}
         <div className="lg:row-span-2 rounded-2xl bg-white border border-slate-100 shadow-sm flex flex-col overflow-hidden">
+          {/* Thêm nút refresh */}
+          
+          
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-600 to-blue-500">
             <div className="flex items-center gap-3">

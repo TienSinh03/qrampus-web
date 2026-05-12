@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '@constants/config';
 
-const DEFAULT_SOCKET_URL = 'http://localhost:3001';
+const DEFAULT_SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 
 let appSocket = null;
 let currentToken = null;
