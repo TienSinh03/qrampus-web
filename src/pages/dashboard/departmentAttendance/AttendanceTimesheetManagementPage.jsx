@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   UserCheck,
@@ -20,65 +20,90 @@ import {
 
 import StatsCard from "../../../components/common/StatsCard";
 import Pagination from "../../../components/common/Pagination";
+import attendanceService from "../../../services/attendance.service";
+
+const SCHEDULE_TYPE_LABELS = { theory: "LT", practice: "TH" };
+
+const EMPTY_FILTERS = {
+  code: "",
+  name: "",
+  month: "",
+  fromDate: "",
+  toDate: "",
+  teacher: "",
+};
+
+const monthOptions = [
+  { value: "", label: "Tất cả" },
+  { value: "1", label: "Tháng 1" },
+  { value: "2", label: "Tháng 2" },
+  { value: "3", label: "Tháng 3" },
+  { value: "4", label: "Tháng 4" },
+  { value: "5", label: "Tháng 5" },
+  { value: "6", label: "Tháng 6" },
+  { value: "7", label: "Tháng 7" },
+  { value: "8", label: "Tháng 8" },
+  { value: "9", label: "Tháng 9" },
+  { value: "10", label: "Tháng 10" },
+  { value: "11", label: "Tháng 11" },
+  { value: "12", label: "Tháng 12" },
+];
+
+const formatTime = (t) => (t ? t.slice(0, 5) : "--");
 
 const AttendanceTimesheetManagementPage = () => {
   const [expanded, setExpanded] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectAllPages, setSelectAllPages] = useState(false);
-  const [tempFilters, setTempFilters] = useState({
-    code: "",
-    name: "",
-    month: "",
-    fromDate: "",
-    toDate: "",
-    teacher: "",
-  });
+  const [tempFilters, setTempFilters] = useState(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
-  const data = [
-    {
-      id: 1,
-      teacher: "Nguyễn Văn A",
-      subject: "Lập trình Web",
-      subjectCode: "INT3104",
-      class: "CNTT1",
-      date: "12/03/2026",
-      startTime: "07:30",
-      endTime: "09:00",
-      students: 45,
-      scanned: 40,
-      status: "valid",
-    },
-    {
-      id: 2,
-      teacher: "Trần Thị B",
-      subject: "Cơ sở dữ liệu",
-      subjectCode: "INT2202",
-      class: "CNTT2",
-      date: "14/03/2026",
-      startTime: "--",
-      endTime: "--",
-      students: 50,
-      scanned: 0,
-      status: "missing",
-    },
-  ];
+  const [sessions, setSessions] = useState([]);
+  const [pagination, setPagination] = useState({ total: 0, total_pages: 1 });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const monthOptions = [
-    { value: "", label: "Tất cả" },
-    { value: "1", label: "Tháng 1" },
-    { value: "2", label: "Tháng 2" },
-    { value: "3", label: "Tháng 3" },
-    { value: "4", label: "Tháng 4" },
-    { value: "5", label: "Tháng 5" },
-    { value: "6", label: "Tháng 6" },
-    { value: "7", label: "Tháng 7" },
-    { value: "8", label: "Tháng 8" },
-    { value: "9", label: "Tháng 9" },
-    { value: "10", label: "Tháng 10" },
-    { value: "11", label: "Tháng 11" },
-    { value: "12", label: "Tháng 12" },
-  ];
-  const totalRecords = 120;
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let fromDate = appliedFilters.fromDate;
+      let toDate = appliedFilters.toDate;
+      if (appliedFilters.month && !fromDate && !toDate) {
+        const year = new Date().getFullYear();
+        const month = parseInt(appliedFilters.month, 10);
+        const lastDay = new Date(year, month, 0).getDate();
+        fromDate = `${year}-${String(month).padStart(2, "0")}-01`;
+        toDate = `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
+      }
+
+      const params = {
+        course_code: appliedFilters.code || undefined,
+        course_name: appliedFilters.name || undefined,
+        teacher_name: appliedFilters.teacher || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      Object.keys(params).forEach((k) => params[k] === undefined && delete params[k]);
+
+      const res = await attendanceService.getAttendanceSchedule(params);
+      const data = res?.data || res;
+      setSessions(data.sessions || []);
+      setPagination(data.pagination || { total: 0, total_pages: 1 });
+    } catch {
+      setError("Không thể tải dữ liệu công dạy.");
+    } finally {
+      setLoading(false);
+    }
+  }, [appliedFilters, currentPage]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleTempFilterChange = (e) => {
     const { name, value } = e.target;
@@ -86,71 +111,64 @@ const AttendanceTimesheetManagementPage = () => {
   };
 
   const handleApplyFilters = () => {
-    console.log("Applying filters:", tempFilters);
+    setCurrentPage(1);
+    setAppliedFilters(tempFilters);
+    setSelectedRows([]);
+    setSelectAllPages(false);
   };
 
   const handleClearFilters = () => {
-    setTempFilters({
-      code: "",
-      name: "",
-      month: "",
-      fromDate: "",
-      toDate: "",
-      teacher: "",
-    });
+    setTempFilters(EMPTY_FILTERS);
+    setAppliedFilters(EMPTY_FILTERS);
+    setCurrentPage(1);
     setSelectedRows([]);
     setSelectAllPages(false);
   };
 
   const toggleSelectAll = () => {
-    if (selectedRows.length === data.length) {
+    if (selectedRows.length === sessions.length) {
       setSelectedRows([]);
       setSelectAllPages(false);
       return;
     }
-    setSelectedRows(data.map((item) => item.id));
+    setSelectedRows(sessions.map((item) => item.id));
   };
 
   const toggleSelectRow = (id) => {
     if (selectedRows.includes(id)) {
       setSelectedRows(selectedRows.filter((item) => item !== id));
-      return;
+    } else {
+      setSelectedRows([...selectedRows, id]);
     }
-    setSelectedRows([...selectedRows, id]);
   };
 
-  const renderStatus = (status) => {
-    const styles = {
-      valid: "bg-green-100 text-green-600",
-      warning: "bg-yellow-100 text-yellow-600",
-      missing: "bg-red-100 text-red-600",
-    };
-    const labels = {
-      valid: "Hợp lệ",
-      warning: "Thiếu SV",
-      missing: "Chưa lên lớp/QR",
-    };
-
+  const renderAttendanceStatus = (hasSession) => {
+    if (hasSession) {
+      return (
+        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-medium">
+          Đã tạo phiên
+        </span>
+      );
+    }
     return (
-      <span className={`${styles[status]} px-3 py-1 rounded-full text-xs font-medium`}>
-        {labels[status]}
+      <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium">
+        Chưa lên lớp/QR
       </span>
     );
   };
 
-  const totalSessions = data.length;
-  const validSessions = data.filter((item) => item.status === "valid").length;
-  const warningSessions = data.filter((item) => item.status !== "valid").length;
+  const validSessions = sessions.filter((s) => s.has_attendance_session).length;
+  const warningSessions = sessions.filter((s) => !s.has_attendance_session).length;
   const qrUsageRate =
-    totalSessions > 0
+    sessions.length > 0
       ? `${Math.round(
-          (data.filter((item) => item.startTime !== "--" && item.endTime !== "--").length / totalSessions) * 100
+          (sessions.filter((s) => s.start_hour && s.end_hour).length / sessions.length) * 100
         )}%`
       : "0%";
 
-  const isAllSelected = data.length > 0 && selectedRows.length === data.length;
-  const isSomeSelected = selectedRows.length > 0 && selectedRows.length < data.length;
-  const selectedCount = selectAllPages ? totalRecords : selectedRows.length;
+  const isAllSelected = sessions.length > 0 && selectedRows.length === sessions.length;
+  const isSomeSelected = selectedRows.length > 0 && selectedRows.length < sessions.length;
+  const selectedCount = selectAllPages ? pagination.total : selectedRows.length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-1">
@@ -160,7 +178,7 @@ const AttendanceTimesheetManagementPage = () => {
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <StatsCard
             title="Tổng tiết dạy"
-            value={totalSessions}
+            value={pagination.total}
             percent="(+4.2%)"
             positive
             subtitle="Trong kỳ hiện tại"
@@ -365,17 +383,17 @@ const AttendanceTimesheetManagementPage = () => {
         </div>
 
         <div className="w-full overflow-x-auto bg-white shadow mb-6 mt-6">
-          {isAllSelected && !selectAllPages && totalRecords > data.length && (
+          {isAllSelected && !selectAllPages && pagination.total > sessions.length && (
             <div className="bg-blue-50 border-x border-b border-blue-200 px-4 py-2.5 text-sm text-center text-blue-800">
               Đã chọn <strong>{selectedRows.length}</strong> bản ghi trên trang này.{" "}
               <button
                 onClick={() => {
                   setSelectAllPages(true);
-                  setSelectedRows(data.map((item) => item.id));
+                  setSelectedRows(sessions.map((item) => item.id));
                 }}
                 className="text-blue-600 underline font-medium hover:text-blue-800"
               >
-                Chọn tất cả {totalRecords} bản ghi trong tất cả trang
+                Chọn tất cả {pagination.total} bản ghi trong tất cả trang
               </button>
             </div>
           )}
@@ -395,89 +413,115 @@ const AttendanceTimesheetManagementPage = () => {
             </div>
           )}
 
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="w-12">
-                  <input
-                    type="checkbox"
-                    className="ml-4 cursor-pointer"
-                    checked={isAllSelected}
-                    ref={(input) => {
-                      if (input) {
-                        input.indeterminate = isSomeSelected;
-                      }
-                    }}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th className="h-12 px-4">Giảng viên</th>
-                <th className="h-12 px-4">Mã học phần</th>
-                <th className="h-12 px-4">Học phần</th>
-                <th className="h-12 px-4 text-center">Ngày dạy</th>
-                <th className="h-12 px-4 text-center">QR Start</th>
-                <th className="h-12 px-4 text-center">QR End</th>
-                <th className="h-12 px-4 text-center">Sinh viên</th>
-                <th className="h-12 px-4 text-center">Trạng thái</th>
-                <th className="h-12 px-4 text-center">Thao tác</th>
-              </tr>
-            </thead>
+          {loading && (
+            <div className="flex items-center justify-center py-16 text-blue-500 text-sm font-medium">
+              Đang tải dữ liệu...
+            </div>
+          )}
 
-            <tbody>
-              {data.map((item) => (
-                <tr
-                  key={item.id}
-                  className={`h-12 border-t hover:bg-slate-50 ${selectedRows.includes(item.id) ? "bg-blue-50" : ""}`}
-                >
-                  <td>
+          {error && !loading && (
+            <div className="flex items-center justify-center py-16 text-red-500 text-sm font-medium">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && (
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="w-12">
                     <input
                       type="checkbox"
                       className="ml-4 cursor-pointer"
-                      checked={selectedRows.includes(item.id)}
-                      onChange={() => toggleSelectRow(item.id)}
+                      checked={isAllSelected}
+                      ref={(input) => {
+                        if (input) input.indeterminate = isSomeSelected;
+                      }}
+                      onChange={toggleSelectAll}
                     />
-                  </td>
-                  <td className="px-4 min-w-max font-medium text-gray-900">{item.teacher}</td>
-                  <td className="px-4 min-w-max font-medium text-gray-900">{item.subjectCode}</td>
-                  <td className="px-4">
-                    <div className="font-medium text-gray-900">{item.subject}</div>
-                  </td>
-                  <td className="px-4 text-center text-gray-600">{item.date}</td>
-                  <td className="px-4 text-center font-mono text-xs">{item.startTime}</td>
-                  <td className="px-4 text-center font-mono text-xs">{item.endTime}</td>
-                  <td className="px-4 text-center">
-                    <div className="text-xs font-semibold">
-                      {item.scanned}/{item.students}
-                    </div>
-                    <div className="w-16 bg-gray-200 h-1.5 rounded-full mt-1 mx-auto">
-                      <div
-                        className="bg-blue-500 h-1.5 rounded-full"
-                        style={{ width: `${(item.scanned / item.students) * 100}%` }}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 text-center">{renderStatus(item.status)}</td>
-                  <td className="px-4">
-                    <div className="flex justify-center gap-3">
-                      <button title="Xem chi tiết" className="text-blue-500">
-                        <Eye className="cursor-pointer w-5 h-5" />
-                      </button>
-                      <button title="Chốt/Khóa công" className="text-amber-500">
-                        <LockKeyhole className="cursor-pointer w-5 h-5" />
-                      </button>
-                    </div>
-                  </td>
+                  </th>
+                  <th className="h-12 px-4">Mã GV</th>
+                  <th className="h-12 px-4">Giảng viên</th>
+                  <th className="h-12 px-4">Mã học phần</th>
+                  <th className="h-12 px-4">Học phần</th>
+                  <th className="h-12 px-4 text-center">Ngày dạy</th>
+                  <th className="h-12 px-4 text-center">Loại</th>
+                  <th className="h-12 px-4 text-center">QR Start</th>
+                  <th className="h-12 px-4 text-center">QR End</th>
+                  <th className="h-12 px-4 text-center">Trạng thái</th>
+                  <th className="h-12 px-4 text-center">Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {sessions.length === 0 ? (
+                  <tr>
+                    <td colSpan="11" className="p-10 text-center text-slate-400">
+                      Không có dữ liệu công dạy
+                    </td>
+                  </tr>
+                ) : (
+                  sessions.map((item) => (
+                    <tr
+                      key={item.id}
+                      className={`h-12 border-t hover:bg-slate-50 ${selectedRows.includes(item.id) ? "bg-blue-50" : ""}`}
+                    >
+                      <td>
+                        <input
+                          type="checkbox"
+                          className="ml-4 cursor-pointer"
+                          checked={selectedRows.includes(item.id)}
+                          onChange={() => toggleSelectRow(item.id)}
+                        />
+                      </td>
+                      <td className="px-4 font-mono text-xs text-gray-700">
+                        {item.personnel?.teacher_code || "--"}
+                      </td>
+                      <td className="px-4 font-medium text-gray-900">
+                        {item.personnel?.full_name || "--"}
+                      </td>
+                      <td className="px-4 font-medium text-gray-900">
+                        {item.course_section?.code || "--"}
+                      </td>
+                      <td className="px-4 text-gray-800">
+                        {item.course_section?.name || "--"}
+                      </td>
+                      <td className="px-4 text-center text-gray-600">{item.class_date || "--"}</td>
+                      <td className="px-4 text-center">
+                        <span className="text-xs font-semibold text-slate-500">
+                          {SCHEDULE_TYPE_LABELS[item.schedule_type] || item.schedule_type || "--"}
+                        </span>
+                      </td>
+                      <td className="px-4 text-center font-mono text-xs">{formatTime(item.start_hour)}</td>
+                      <td className="px-4 text-center font-mono text-xs">{formatTime(item.end_hour)}</td>
+                      <td className="px-4 text-center">{renderAttendanceStatus(item.has_attendance_session)}</td>
+                      <td className="px-4">
+                        <div className="flex justify-center gap-3">
+                          <button title="Xem chi tiết" className="text-blue-500">
+                            <Eye className="cursor-pointer w-5 h-5" />
+                          </button>
+                          <button title="Chốt/Khóa công" className="text-amber-500">
+                            <LockKeyhole className="cursor-pointer w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <div className="flex items-center justify-between px-2 mb-4">
           <span className="text-sm text-gray-500">
-            Tổng: <strong>120</strong> bản ghi công
+            Tổng: <strong>{pagination.total}</strong> bản ghi công
           </span>
-          <Pagination currentPage={1} totalPages={10} />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={pagination.total_pages || 1}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         </div>
       </div>
     </div>
