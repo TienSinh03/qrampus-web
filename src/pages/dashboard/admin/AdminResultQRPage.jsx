@@ -657,9 +657,11 @@ const AdminResultQRPage = () => {
       </div>
 
       <TeacherPhotosModal
+        key={isPhotosModalOpen ? classSessionId : null}
         isOpen={isPhotosModalOpen}
         onClose={() => setIsPhotosModalOpen(false)}
-        photos={teacherPhotos}
+        classSessionId={classSessionId}
+        teacherId = {selectedTeacher?.id || null}
       />
     </div>
   );
