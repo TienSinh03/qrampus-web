@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   CalendarDays,
@@ -10,9 +10,11 @@ import {
   RefreshCw,
   User,
   Users,
+  ScanFace,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAttendance } from "@contexts/AttendanceContext";
+import ModalFaceVerify from "@components/modal/ModalFaceVerify";
 
 const DETAIL_STORAGE_KEY = "attendanceSessionDetail";
 
@@ -89,6 +91,7 @@ const QRSessionDetailPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { getStats, statsLoading, sessionStats } = useAttendance();
+  const [faceModal, setFaceModal] = useState(null); // attendance row
 
   const detailPayload = useMemo(
     () => location.state?.sessionDetail || readSessionDetail(),
@@ -205,7 +208,7 @@ const QRSessionDetailPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -334,11 +337,12 @@ const QRSessionDetailPage = () => {
                   <th className="px-4 py-3 text-left">MSSV</th>
                   <th className="px-4 py-3 text-left">Họ tên</th>
                   <th className="px-4 py-3 text-left">Thời gian quét</th>
+                  <th className="px-4 py-3 text-center">Khuôn mặt</th>
                 </tr>
               </thead>
               <tbody>
                 {attendanceRows.map((item, index) => (
-                  <tr key={item.id || `${item?.student?.id || "student"}-${index}`} className="border-t border-slate-100">
+                  <tr key={item.id || `${item?.student?.id || "student"}-${index}`} className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
                     <td className="px-4 py-3 text-slate-600">{index + 1}</td>
                     <td className="px-4 py-3 font-medium text-indigo-700">{item?.student?.student_code || "--"}</td>
                     <td className="px-4 py-3 text-slate-700">
@@ -348,6 +352,16 @@ const QRSessionDetailPage = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-700">{formatDateTime(item?.scan_time)}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        type="button"
+                        title="Xem nhận diện khuôn mặt"
+                        onClick={() => setFaceModal(item)}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-500 hover:text-indigo-700 transition-colors"
+                      >
+                        <ScanFace className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -362,6 +376,13 @@ const QRSessionDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {faceModal && (
+        <ModalFaceVerify
+          attendance={faceModal}
+          onClose={() => setFaceModal(null)}
+        />
+      )}
     </div>
   );
 };

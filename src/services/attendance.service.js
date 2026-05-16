@@ -244,6 +244,33 @@ class AttendanceService {
   }
 
   /**
+   * Lấy danh sách kết quả nhận diện khuôn mặt trong một buổi học (dành cho giảng viên)
+   * @param {string} classSessionId
+   */
+  async getFaceVerificationByAttendance(attendanceId) {
+    try {
+      const response = await axiosClient.get(
+        ATTENDANCE_ENDPOINTS.FACE_VERIFY_BY_ATTENDANCE(attendanceId)
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getFaceVerificationsByClassSession(classSessionId, teacherId = null) {
+    try {
+      const response = await axiosClient.get(
+        ATTENDANCE_ENDPOINTS.FACE_VERIFY_BY_CLASS_SESSION(classSessionId),
+        { params: { teacher_id: teacherId } }
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Thống kê nhanh số buổi hôm nay đã/chưa tạo phiên điểm danh
    */
   async getScheduleTodayStats() {

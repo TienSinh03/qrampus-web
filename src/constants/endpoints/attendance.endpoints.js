@@ -41,4 +41,10 @@ export const ATTENDANCE_ENDPOINTS = {
 
   // Teacher attendance workload
   TEACHER_WORKLOAD: `${API_VERSION}/teachers/me/attendance-workload`,
+
+  // Face verifications by class session
+  FACE_VERIFY_BY_CLASS_SESSION: (classSessionId) => `${API_VERSION}/face-verify/class-session/${classSessionId}`,
+
+  // Face verification by attendance id
+  FACE_VERIFY_BY_ATTENDANCE: (attendanceId) => `${API_VERSION}/face-verify/attendance/${attendanceId}`,
 };

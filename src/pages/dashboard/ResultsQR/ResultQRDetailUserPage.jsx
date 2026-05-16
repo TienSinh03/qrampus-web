@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     SquareStar, MapPin, Monitor, Clock, Calendar,
-    CheckCircle2, XCircle, Info, User, Phone, Mail, GraduationCap
+    CheckCircle2, XCircle, Info, User, Phone, Mail, GraduationCap,
+    ScanFace, ZoomIn, UserCircle2,
 } from 'lucide-react';
+import Lightbox from '@components/common/Lightbox';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -75,6 +77,96 @@ const getStatusIcon = (status) => {
         default:
             return null;
     }
+};
+
+const FACE_STATUS = {
+    match:    { label: 'Khớp',         cls: 'text-emerald-700 bg-emerald-50 border-emerald-200', Icon: CheckCircle2 },
+    no_match: { label: 'Không khớp',   cls: 'text-rose-700 bg-rose-50 border-rose-200',         Icon: XCircle },
+    error:    { label: 'Lỗi xác thực', cls: 'text-amber-700 bg-amber-50 border-amber-200',       Icon: Info },
+};
+
+const FaceVerificationRow = ({ faceVerification }) => {
+    const [lightbox, setLightbox] = useState(null);
+
+    if (!faceVerification) return null;
+
+    const meta    = faceVerification.metadata || {};
+    const anh1    = meta.anh_1 || null;
+    const anh2    = meta.anh_2 || faceVerification.imageUrl || null;
+    const sim     = meta.cosine_similarity != null ? `${(Math.abs(meta.cosine_similarity) * 100).toFixed(1)}%` : null;
+    const cfg     = FACE_STATUS[faceVerification.status] || FACE_STATUS.error;
+    const { Icon } = cfg;
+
+    const zoomImages = [
+        ...(anh1 ? [{ src: anh1, label: 'Ảnh đăng ký' }] : []),
+        ...(anh2 ? [{ src: anh2, label: 'Ảnh quét' }] : []),
+    ];
+
+    const openZoom = (idx) => zoomImages.length > 0 && setLightbox({ images: zoomImages, index: idx });
+
+    return (
+        <>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <ScanFace className="w-3.5 h-3.5" />
+                        Nhận diện khuôn mặt
+                    </div>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${cfg.cls}`}>
+                        <Icon className="w-3 h-3" />
+                        {cfg.label}
+                        {sim && <span className="ml-1 font-black">{sim}</span>}
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    {/* Thumbnail pair */}
+                    <div className="flex gap-1.5">
+                        {[
+                            { src: anh1, label: 'Đăng ký', idx: 0, fallback: <UserCircle2 className="w-6 h-6 text-slate-300" /> },
+                            { src: anh2, label: 'Quét',    idx: anh1 ? 1 : 0, fallback: <ScanFace className="w-6 h-6 text-slate-300" /> },
+                        ].map(({ src, label, idx, fallback }) => (
+                            <div
+                                key={label}
+                                onClick={() => src && openZoom(idx)}
+                                className={`relative group w-14 h-14 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center ${src ? 'cursor-pointer hover:shadow-md' : ''}`}
+                            >
+                                {src ? (
+                                    <>
+                                        <img src={src} alt={label} className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110" />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 flex items-center justify-center transition-all duration-200">
+                                            <ZoomIn className="w-4 h-4 text-white opacity-0 group-hover:opacity-100" />
+                                        </div>
+                                    </>
+                                ) : fallback}
+                                <span className="absolute bottom-0 left-0 right-0 text-[8px] font-bold text-center bg-black/40 text-white py-0.5 leading-tight">
+                                    {label}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Score bar */}
+                    {meta.cosine_similarity != null && (
+                        <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[9px] font-bold uppercase text-slate-400">Độ tương đồng</span>
+                                <span className={`text-xs font-black ${faceVerification.status === 'match' ? 'text-emerald-600' : 'text-rose-500'}`}>{sim}</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${faceVerification.status === 'match' ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                                    style={{ width: `${Math.max(0, Math.min(100, Math.abs(meta.cosine_similarity) * 100))}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {lightbox && <Lightbox images={lightbox.images} initialIndex={lightbox.index} onClose={() => setLightbox(null)} />}
+        </>
+    );
 };
 
 const ResultQRDetailUserPage = () => {
@@ -186,6 +278,7 @@ const ResultQRDetailUserPage = () => {
                 device: 'N/A',
                 isStrangeDevice: false,
                 isDifferentLocation: false,
+                faceVerification: record?.attendance?.faceVerification || null,
             };
         });
     }, [records]);
@@ -406,6 +499,8 @@ const ResultQRDetailUserPage = () => {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <FaceVerificationRow faceVerification={item.faceVerification} />
                                     </div>
                                 </div>
                             ))}

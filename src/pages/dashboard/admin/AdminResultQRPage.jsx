@@ -27,6 +27,7 @@ import {
 import Pagination from "../../../components/common/Pagination";
 import TeacherPhotosModal from "../admin/components/TeacherPhotosModal";
 import { useAttendance } from "@contexts/AttendanceContext";
+import FaceVerificationsModal from "../ResultsQR/components/FaceVerificationsModal";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -119,6 +120,8 @@ const AdminResultQRPage = () => {
     locationCheck: "all",
     dob: "",
   });
+
+  const [isFaceModalOpen, setIsFaceModalOpen] = useState(false);
 
   const scheduleFromStorage = useMemo(() => readAttendanceSchedule(), []);
   const selectedSchedule = location.state?.schedule || scheduleFromStorage || null;
@@ -433,13 +436,26 @@ const AdminResultQRPage = () => {
                 <p className="text-xs font-bold text-blue-400/60 mt-1">{courseInfo.creatorID}</p>
               </div>
             </div>
-            <button
-              onClick={() => setIsPhotosModalOpen(true)}
-              className="group w-full flex items-center justify-center gap-3 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm  transition-all duration-300 shadow-lg shadow-blue-200 active:scale-[0.97]"
-            >
-              <Edit3 className="w-4 h-4 text-white" />
-              Xem hình ảnh
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setIsPhotosModalOpen(true)}
+                title="Xem hình ảnh"
+                className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all duration-200 shadow-md shadow-blue-200 active:scale-95 group"
+              >
+                <Edit3 className="w-5 h-5" />
+                <span className="text-[10px] font-bold tracking-wide">Hình ảnh</span>
+              </button>
+              <button
+                onClick={() => setIsFaceModalOpen(true)}
+                title="Nhận diện khuôn mặt"
+                className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-200 shadow-md shadow-indigo-200 active:scale-95 group"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 3H5a2 2 0 00-2 2v4m0 6v4a2 2 0 002 2h4m6 0h4a2 2 0 002-2v-4m0-6V5a2 2 0 00-2-2h-4M9 3v4m0 0H5m4 0h6m0-4v4m0 0h4M9 7h6" />
+                </svg>
+                <span className="text-[10px] font-bold tracking-wide">Khuôn mặt</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -662,6 +678,14 @@ const AdminResultQRPage = () => {
         onClose={() => setIsPhotosModalOpen(false)}
         classSessionId={classSessionId}
         teacherId = {selectedTeacher?.id || null}
+      />
+
+      
+      <FaceVerificationsModal
+        isOpen={isFaceModalOpen}
+        onClose={() => setIsFaceModalOpen(false)}
+        classSessionId={classSessionId}
+        teacherId={selectedTeacher?.id || null}
       />
     </div>
   );

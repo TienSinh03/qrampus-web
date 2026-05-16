@@ -12,6 +12,7 @@ import { StudySessionOverviewProvider } from '@contexts/StudySessionOverviewCont
 import { SurveyDashboardProvider } from '@contexts/SurveyDashboardContext';
 import { CourseProvider } from '@contexts/CourseContext';
 import { ImageSessionProvider } from '@contexts/ImageSessionContext';
+import { FaceVerifyProvider } from '@contexts/FaceVerifyContext';
 
 import { Toaster } from "sonner";
 
@@ -25,6 +26,7 @@ function App() {
               <ClassSessionStudentsProvider>
                 <AttendanceProvider>
                   <ImageSessionProvider>
+                  <FaceVerifyProvider>
                   <LeaveDashboardProvider>
                     <SurveyDashboardProvider>
                       <StudySessionOverviewProvider>
@@ -33,6 +35,7 @@ function App() {
                       </StudySessionOverviewProvider>
                     </SurveyDashboardProvider>
                   </LeaveDashboardProvider>
+                  </FaceVerifyProvider>
                   </ImageSessionProvider>
                 </AttendanceProvider>
               </ClassSessionStudentsProvider>
