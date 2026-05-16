@@ -431,7 +431,7 @@ const ResultQRPage = () => {
             </div>
             <button
               onClick={() => setIsPhotosModalOpen(true)}
-              className="group w-full flex items-center justify-center gap-3 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-2xl transition-all duration-300 shadow-lg shadow-blue-200 active:scale-[0.97]"
+              className="group w-full flex items-center justify-center gap-3 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm transition-all duration-300 shadow-lg shadow-blue-200 active:scale-[0.97]"
             >
               <Edit3 className="w-4 h-4 text-white" />
               Xem hình ảnh
