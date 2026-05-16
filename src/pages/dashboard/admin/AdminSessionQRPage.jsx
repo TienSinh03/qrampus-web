@@ -53,6 +53,7 @@ const AdminSessionQRPage = () => {
     const SESSION_LIMIT = 15;
     // XEM Ảnh
     const [isOpen, setOpen] = useState(false);
+    const [selectedClassSessionId, setSelectedClassSessionId] = useState(null);
     // Giả lập dữ liệu ảnh (thực tế sẽ lấy từ API/backend)
     const teacherPhotos = [
         {
@@ -385,7 +386,10 @@ const AdminSessionQRPage = () => {
                                                 aria-label="View Photos"
                                                 title="Xem ảnh đã chụp trong buổi học này"
                                                 className="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition"
-                                                onClick={() => setOpen(true)}
+                                                onClick={() => {
+                                                    setSelectedClassSessionId(row.class_session_id);
+                                                    setOpen(true);
+                                                }}
                                             >
                                                 <Camera size={16} />
                                             </button>
@@ -409,6 +413,8 @@ const AdminSessionQRPage = () => {
                     isOpen={isOpen}
                     onClose={() => setOpen(false)}
                     photos={teacherPhotos}
+                    classSessionId={selectedClassSessionId}
+                    teacherId={teacherId}
                 />
 
                 <div className="flex items-center justify-between px-2 mt-4">
