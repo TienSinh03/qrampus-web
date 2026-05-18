@@ -19,6 +19,7 @@ const MAIN_TABLE_PAGE_SIZE = 8;
 const normalizeCourseProgress = (course = {}) => ({
   ...course,
   totalSessions: course.totalTeachingSessions || 0,
+  pendingAttendanceSessions: course.pendingAttendanceSessions || 0,
   successSessions: (course.onTimeCheckins || 0) + (course.lateCheckins || 0),
   failedSessions: course.absentCheckins || 0,
 });
@@ -143,11 +144,12 @@ export default function TeacherAttendancePage() {
     return courses.reduce(
       (acc, course) => ({
         totalSessions: acc.totalSessions + (course.totalSessions || 0),
+        pendingAttendanceSessions: acc.pendingAttendanceSessions + (course.pendingAttendanceSessions || 0),
         onTimeSessions: acc.onTimeSessions + (course.onTimeCheckins || 0),
         lateOrManual: acc.lateOrManual + (course.lateCheckins || 0) + (course.manualOverrideCheckins || 0),
         absentSessions: acc.absentSessions + (course.failedSessions || 0),
       }),
-      { totalSessions: 0, onTimeSessions: 0, lateOrManual: 0, absentSessions: 0 }
+      { totalSessions: 0, pendingAttendanceSessions: 0, onTimeSessions: 0, lateOrManual: 0, absentSessions: 0 }
     );
   }, [courses]);
 
@@ -211,7 +213,7 @@ export default function TeacherAttendancePage() {
             <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 w-full lg:w-auto text-center">
               <div className="bg-blue-50 rounded-xl p-4">
                 <p className="text-3xl font-bold text-blue-600">
-                  {isLoadingDashboard ? "..." : dashboardSummary.totalSessions}
+                  {isLoadingDashboard ? "..." : dashboardSummary.totalSessions + dashboardSummary.pendingAttendanceSessions}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">Tổng tiết dạy</p>
               </div>
@@ -472,7 +474,7 @@ export default function TeacherAttendancePage() {
                               title="Tổng số buổi cần chấm"
                             >
                               <Calendar size={16} />
-                              {course.totalSessions}
+                              {course.pendingAttendanceSessions}
                             </span>
 
                             <span
