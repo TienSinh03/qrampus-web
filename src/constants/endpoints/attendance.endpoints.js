@@ -38,6 +38,7 @@ export const ATTENDANCE_ENDPOINTS = {
   // Attendance schedule (for attendance staff)
   SCHEDULE: `${API_VERSION}/attendance-schedule`,
   SCHEDULE_TODAY_STATS: `${API_VERSION}/attendance-schedule/today-stats`,
+  SCHEDULE_WORKLOAD_BY_COURSE: `${API_VERSION}/attendance-schedule/workload`,
 
   // Teacher attendance workload
   TEACHER_WORKLOAD: `${API_VERSION}/teachers/me/attendance-workload`,

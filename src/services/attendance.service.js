@@ -225,6 +225,38 @@ class AttendanceService {
   }
 
   /**
+   * Lấy danh sách lịch dạy theo mã môn học cho bộ phận chấm công
+   * Trả về đúng shape mà page hiện tại đang dùng: { data: sessions, meta: { pagination } }
+   * @param {Object} params - { lecturer_id, course_code, page, limit }
+   */
+  async getLecturerAttendanceSessions(params = {}) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SCHEDULE, { params });
+      return {
+        data: response?.data?.sessions ?? [],
+        meta: {
+          pagination: response?.data?.pagination ?? { total: 0, page: 1, limit: 20, totalPages: 0 },
+        },
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Tổng hợp buổi chấm công theo mã môn học cho bộ phận chấm công
+   * @param {Object} params - { course_code, from_date, to_date }
+   */
+  async getAttendanceWorkloadByCourseCode(params = {}) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SCHEDULE_WORKLOAD_BY_COURSE, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Kết quả chấm công của giảng viên đang đăng nhập theo khoảng ngày
    * @param {string} fromDate - YYYY-MM-DD
    * @param {string} toDate   - YYYY-MM-DD

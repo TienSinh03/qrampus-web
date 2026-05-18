@@ -205,6 +205,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       roles: [ROLES.ATTENDANCE_STAFF]
     },
     {
+      icon: BarChart,
+      label: 'Thống kê Chấm Công',
+      parth: '/dashboard/attendance-statistics',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    {
       icon: Calendar,
       label: 'Danh sách giảng viên',
       path: '/dashboard/attendance-teacher',

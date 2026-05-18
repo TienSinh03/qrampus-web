@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import {
   Users, BookOpen, Building2, FileText,
   CheckCircle, Calendar, PlusCircle, History,
@@ -107,67 +107,168 @@ export default function AttendanceDashboardPage() {
 
   const exportToExcel = () => {
     if (!summary) return;
-    const wb = XLSX.utils.book_new();
-    const autoCol = (rows) =>
-      Object.keys(rows[0] || {}).map((k) => ({
-        wch: Math.max(k.length, ...rows.map((r) => String(r[k] ?? "").length)) + 2,
-      }));
 
-    // Sheet 1: Tổng quan
-    const overviewRows = [
-      { "Chỉ số": "Từ ngày", "Giá trị": fromDate },
-      { "Chỉ số": "Đến ngày", "Giá trị": toDate },
-      { "Chỉ số": "Tổng buổi học", "Giá trị": overview.total_sessions },
-      { "Chỉ số": "Đã tạo phiên ĐD", "Giá trị": overview.total_created },
-      { "Chỉ số": "Chưa tạo phiên ĐD", "Giá trị": overview.total_not_created },
-      { "Chỉ số": "Hiệu suất (%)", "Giá trị": efficiency },
-      { "Chỉ số": "Hôm nay - Tổng", "Giá trị": todayStats?.total ?? 0 },
-      { "Chỉ số": "Hôm nay - Đã tạo", "Giá trị": todayStats?.created ?? 0 },
-      { "Chỉ số": "Hôm nay - Chưa tạo", "Giá trị": todayStats?.not_created ?? 0 },
+    const wb = XLSX.utils.book_new();
+
+    const fmtDate = (dateStr) => {
+      if (!dateStr) return "";
+      const [y, m, d] = dateStr.split("-");
+      return `${d}/${m}/${y}`;
+    };
+
+    const now = new Date();
+    const exportAt =
+      now.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) +
+      " " +
+      now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+
+    const BORDER = {
+      top:    { style: "thin", color: { rgb: "AAAAAA" } },
+      bottom: { style: "thin", color: { rgb: "AAAAAA" } },
+      left:   { style: "thin", color: { rgb: "AAAAAA" } },
+      right:  { style: "thin", color: { rgb: "AAAAAA" } },
+    };
+
+    const sTitle = {
+      font: { bold: true, sz: 13, color: { rgb: "153898" } },
+      alignment: { horizontal: "center", vertical: "center" },
+    };
+    const sSubtitle = {
+      font: { bold: true, sz: 16, color: { rgb: "153898" } },
+      alignment: { horizontal: "center", vertical: "center" },
+    };
+    const sMeta = {
+      font: { sz: 10, italic: true },
+      alignment: { horizontal: "center", vertical: "center" },
+    };
+    const sTableHead = {
+      font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "153898" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: BORDER,
+    };
+    const sData = (even) => ({
+      font: { sz: 10 },
+      fill: { fgColor: { rgb: even ? "EEF2FF" : "FFFFFF" } },
+      alignment: { vertical: "center", wrapText: true },
+      border: BORDER,
+    });
+
+    // 5 dòng header block (index 0-4), dòng 5 là tiêu đề cột
+    const HEADER_ROWS = 5;
+
+    const buildAoa = (title, keys, dataRows) => [
+      ["ĐẠI HỌC CÔNG NGHIỆP THÀNH PHỐ HỒ CHÍ MINH", ...Array(keys.length - 1).fill("")],
+      ["PHÒNG CÔNG TÁC SINH VIÊN", ...Array(keys.length - 1).fill("")],
+      [title,                                        ...Array(keys.length - 1).fill("")],
+      [`Từ ngày: ${fmtDate(fromDate)}   →   Đến ngày: ${fmtDate(toDate)}`, ...Array(keys.length - 1).fill("")],
+      [`Ngày xuất: ${exportAt}`,                     ...Array(keys.length - 1).fill("")],
+      Array(keys.length).fill(""),
+      keys,
+      ...dataRows.map((r) => keys.map((k) => r[k])),
     ];
-    const ws1 = XLSX.utils.json_to_sheet(overviewRows);
-    ws1["!cols"] = autoCol(overviewRows);
+
+    const applyStyles = (ws, keys, numData) => {
+      const n = keys.length;
+      // header block styles
+      const blockStyles = [sTitle, sSubtitle, sMeta, sMeta];
+      blockStyles.forEach((s, r) => {
+        const addr = XLSX.utils.encode_cell({ r, c: 0 });
+        if (ws[addr]) ws[addr].s = s;
+      });
+      // merge header block rows across all columns
+      ws["!merges"] = Array.from({ length: HEADER_ROWS }, (_, r) => ({
+        s: { r, c: 0 }, e: { r, c: n - 1 },
+      }));
+      // table header row
+      for (let c = 0; c < n; c++) {
+        const addr = XLSX.utils.encode_cell({ r: HEADER_ROWS, c });
+        if (!ws[addr]) ws[addr] = { v: "", t: "s" };
+        ws[addr].s = sTableHead;
+      }
+      // data rows
+      for (let r = HEADER_ROWS + 1; r <= HEADER_ROWS + numData; r++) {
+        for (let c = 0; c < n; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (!ws[addr]) ws[addr] = { v: "", t: "s" };
+          ws[addr].s = sData(r % 2 === 0);
+        }
+      }
+    };
+
+    const baseRows = [{ hpt: 22 }, { hpt: 32 }, { hpt: 18 }, { hpt: 18 }, { hpt: 8 }, { hpt: 24 }];
+
+    // ── Sheet 1: Tổng quan ────────────────────────────────────────────
+    const overviewKeys = ["Chỉ số", "Giá trị"];
+    const overviewData = [
+      { "Chỉ số": "Tổng buổi học",              "Giá trị": overview.total_sessions },
+      { "Chỉ số": "Công dạy đã ghi nhận",       "Giá trị": overview.total_created },
+      { "Chỉ số": "Công dạy chưa ghi nhận",     "Giá trị": overview.total_not_created },
+      { "Chỉ số": "Hiệu suất (%)",              "Giá trị": Number(efficiency) },
+      { "Chỉ số": "Hôm nay – Tổng buổi",        "Giá trị": todayStats?.total ?? 0 },
+      { "Chỉ số": "Hôm nay – Đã tạo ĐD",        "Giá trị": todayStats?.created ?? 0 },
+      { "Chỉ số": "Hôm nay – Chưa tạo ĐD",      "Giá trị": todayStats?.not_created ?? 0 },
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(buildAoa("BÁO CÁO THỐNG KÊ CÔNG DẠY", overviewKeys, overviewData));
+    applyStyles(ws1, overviewKeys, overviewData.length);
+    ws1["!cols"] = [{ wch: 42 }, { wch: 20 }];
+    ws1["!rows"] = [...baseRows, ...overviewData.map(() => ({ hpt: 20 }))];
     XLSX.utils.book_append_sheet(wb, ws1, "Tổng quan");
 
-    // Sheet 2: Tổng hợp theo ngày
-    const dailyRows = (summary.data || []).map((d) => ({
-      "Ngày": d.date,
-      "Tổng buổi": d.total,
-      "Đã tạo ĐD": d.created,
-      "Chưa tạo ĐD": d.not_created,
+    // ── Sheet 2: Theo ngày ────────────────────────────────────────────
+    const dailyKeys = ["Ngày ghi nhận", "Tổng buổi học", "Công dạy ghi nhận", "Chưa ghi nhận công dạy"];
+    const dailyData = (summary.data || []).map((d) => ({
+      "Ngày ghi nhận":         d.date,
+      "Tổng buổi học":         d.total,
+      "Công dạy ghi nhận":     d.created,
+      "Chưa ghi nhận công dạy": d.not_created,
     }));
-    if (dailyRows.length) {
-      const ws2 = XLSX.utils.json_to_sheet(dailyRows);
-      ws2["!cols"] = autoCol(dailyRows);
+    if (dailyData.length) {
+      const ws2 = XLSX.utils.aoa_to_sheet(buildAoa("BÁO CÁO THỐNG KÊ CÔNG DẠY THEO NGÀY", dailyKeys, dailyData));
+      applyStyles(ws2, dailyKeys, dailyData.length);
+      ws2["!cols"] = [{ wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 26 }];
+      ws2["!rows"] = [...baseRows, ...dailyData.map(() => ({ hpt: 20 }))];
       XLSX.utils.book_append_sheet(wb, ws2, "Theo ngày");
     }
 
-    // Sheet 3: Chi tiết buổi học
-    const detailRows = (summary.data || []).flatMap((d) =>
+    // ── Sheet 3: Chi tiết buổi học ────────────────────────────────────
+    const detailKeys = [
+      "Ngày", "Mã học phần", "Tên học phần", "Học kỳ",
+      "Mã GV", "Giảng viên", "Khoa",
+      "Giờ bắt đầu", "Giờ kết thúc", "Phòng",
+      "Loại lịch", "Trạng thái", "Công dạy",
+    ];
+    const detailData = (summary.data || []).flatMap((d) =>
       (d.sessions || []).map((s) => ({
-        "Ngày": d.date,
-        "Mã học phần": s.course_section?.code ?? "",
+        "Ngày":         d.date,
+        "Mã học phần":  s.course_section?.code ?? "",
         "Tên học phần": s.course_section?.name ?? "",
-        "Học kỳ": s.course_section?.semester ?? "",
-        "Mã GV": s.personnel?.teacher_code ?? "",
-        "Giảng viên": s.personnel?.full_name ?? "",
-        "Khoa": s.personnel?.department ?? "",
-        "Giờ bắt đầu": s.start_hour ?? "",
+        "Học kỳ":       s.course_section?.semester ?? "",
+        "Mã GV":        s.personnel?.teacher_code ?? "",
+        "Giảng viên":   s.personnel?.full_name ?? "",
+        "Khoa":         s.personnel?.department ?? "",
+        "Giờ bắt đầu":  s.start_hour ?? "",
         "Giờ kết thúc": s.end_hour ?? "",
-        "Phòng": s.room?.room_code ?? "",
-        "Loại lịch": s.schedule_type === "theory" ? "Lý thuyết" : "Thực hành",
-        "Trạng thái buổi": s.status ?? "",
-        "Đã tạo ĐD": s.has_attendance_session ? "Có" : "Không",
+        "Phòng":        s.room?.room_code ?? "",
+        "Loại lịch":    s.schedule_type === "theory" ? "Lý thuyết" : "Thực hành",
+        "Trạng thái":   s.status === "completed" ? "Đã kết thúc" : "Chưa bắt đầu",
+        "Công dạy":     s.has_attendance_session ? "Ghi nhận" : "Không ghi nhận",
       }))
     );
-    if (detailRows.length) {
-      const ws3 = XLSX.utils.json_to_sheet(detailRows);
-      ws3["!cols"] = autoCol(detailRows);
+    if (detailData.length) {
+      const ws3 = XLSX.utils.aoa_to_sheet(buildAoa("BÁO CÁO CHI TIẾT BUỔI HỌC", detailKeys, detailData));
+      applyStyles(ws3, detailKeys, detailData.length);
+      ws3["!cols"] = [
+        { wch: 14 }, { wch: 14 }, { wch: 28 }, { wch: 10 },
+        { wch: 10 }, { wch: 22 }, { wch: 20 },
+        { wch: 12 }, { wch: 12 }, { wch: 10 },
+        { wch: 14 }, { wch: 16 }, { wch: 16 },
+      ];
+      ws3["!rows"] = [...baseRows, ...detailData.map(() => ({ hpt: 20 }))];
       XLSX.utils.book_append_sheet(wb, ws3, "Chi tiết buổi học");
     }
 
-    const fileName = `ThongKeCongDay_${fromDate}_${toDate}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    XLSX.writeFile(wb, `ThongKeCongDay_${fromDate}_${toDate}.xlsx`);
   };
 
   const quickActions = [
@@ -219,7 +320,7 @@ export default function AttendanceDashboardPage() {
               <div>
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   <History className="w-5 h-5 text-indigo-600" />
-                  Thống kê Công dạy
+                  Thống kê Công dạy Toàn trường
                 </h3>
                 <p className="text-xs text-gray-500 italic mt-1">* Số buổi học đã tạo / chưa tạo phiên điểm danh</p>
               </div>

@@ -1,527 +1,862 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
+import AttendanceCoursePage from "./AttendanceCoursePage";
+import Pagination from "../../../components/common/Pagination";
+import ModalExportExcel from "../../../components/modal/ModalExportExcel";
+import ModalExportWorkloadDepartment from "../../../components/modal/ModalExportWorkloadDepartment";
+import personnelService from "../../../services/personnel.service";
+import reportService from "../../../services/report.service";
+import attendanceService from "../../../services/attendance.service";
+import LoadingSpinner from "@components/layout/LoadingSpinner";
+import EmptyState from "@components/layout/EmptyState";
+import { toast } from "sonner";
+import { DEPARTMENTS } from "../../../constants/departments";
+import { exportPersonnelToExcel, exportWorkloadAllTeachers, exportWorkloadToFolder } from "../../../utils/excelExport";
 import {
   Users,
   UserCheck,
-  AlertTriangle,
-  QrCode,
-  Eye,
-  LockKeyhole,
-  CirclePlus,
-  CloudUpload,
-  FileSearch as FileSearchIcon,
-  FileSpreadsheet,
-  FileDown,
-  FilterX,
-  ArrowUp,
+  UserX,
+  UserPlus,
   ArrowDown,
-  Clock3,
-  ShieldCheck,
+  ArrowUp,
+  FileSpreadsheet,
+  FileSearchIcon,
+  View,
+  ArrowBigDown,
 } from "lucide-react";
-
 import StatsCard from "../../../components/common/StatsCard";
-import Pagination from "../../../components/common/Pagination";
-import attendanceService from "../../../services/attendance.service";
-
-const SCHEDULE_TYPE_LABELS = { theory: "LT", practice: "TH" };
-
-const EMPTY_FILTERS = {
-  code: "",
-  name: "",
-  month: "",
-  fromDate: "",
-  toDate: "",
-  teacher: "",
-};
-
-const monthOptions = [
-  { value: "", label: "Tất cả" },
-  { value: "1", label: "Tháng 1" },
-  { value: "2", label: "Tháng 2" },
-  { value: "3", label: "Tháng 3" },
-  { value: "4", label: "Tháng 4" },
-  { value: "5", label: "Tháng 5" },
-  { value: "6", label: "Tháng 6" },
-  { value: "7", label: "Tháng 7" },
-  { value: "8", label: "Tháng 8" },
-  { value: "9", label: "Tháng 9" },
-  { value: "10", label: "Tháng 10" },
-  { value: "11", label: "Tháng 11" },
-  { value: "12", label: "Tháng 12" },
-];
-
-const formatTime = (t) => (t ? t.slice(0, 5) : "--");
-
+import teacherService from "../../../services/teacher.service";
 const AttendanceTimesheetManagementPage = () => {
-  const [expanded, setExpanded] = useState(false);
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [selectAllPages, setSelectAllPages] = useState(false);
-  const [tempFilters, setTempFilters] = useState(EMPTY_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [sessions, setSessions] = useState([]);
-  const [pagination, setPagination] = useState({ total: 0, total_pages: 1 });
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+
+  // API Data states
+  const [personnels, setPersonnels] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    teachers: {
+      total: 0,
+      this_month: 0,
+      growth: 0,
+      active: 0,
+      active_rate: 0,
+    },
+  });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: "",
+    teacherCode: "",
+    fullName: "",
+    department: "",
+    status: "",
+    email: "",
+    phone: "",
+    dob: "",
+    role: "" // teacher/attendance_staff/admin
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expanded, setExpanded] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
+
+  const [modalExportExcel, setModalExportExcel] = useState({ isOpen: false, data: [] });
+  const [modalExportWorkloadDept, setModalExportWorkloadDept] = useState({ isOpen: false });
+  const [exportWorkloadDeptLoading, setExportWorkloadDeptLoading] = useState(false);
+  const [exportWorkloadDeptText, setExportWorkloadDeptText] = useState("");
+
+  useEffect(() => {
+    const teacherId = searchParams.get("teacherId");
+
+    if (!teacherId) {
+      if (selectedTeacher) {
+        setSelectedTeacher(null);
+      }
+      return;
+    }
+
+    if (selectedTeacher?.id === teacherId) {
+      return;
+    }
+
+    const teacherFromList = personnels.find((personnel) => personnel.id === teacherId);
+    if (teacherFromList) {
+      setSelectedTeacher(teacherFromList);
+      return;
+    }
+
+    const loadTeacher = async () => {
+      try {
+        const response = await teacherService.getTeacherById(teacherId);
+        const teacherData = response?.data || response;
+        if (teacherData) {
+          setSelectedTeacher(teacherData);
+        }
+      } catch (error) {
+        console.error("Error loading teacher from URL:", error);
+      }
+    };
+
+    loadTeacher();
+  }, [searchParams, personnels, selectedTeacher]);
+
+  const openTeacherDrilldown = (teacher) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("teacherId", teacher.id);
+    next.delete("courseCode");
+    setSearchParams(next);
+    setSelectedTeacher(teacher);
+  };
+
+  const closeTeacherDrilldown = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("teacherId");
+    next.delete("courseCode");
+    setSearchParams(next, { replace: true });
+    setSelectedTeacher(null);
+  };
+
+  const openExportExcelModal = async () => {
+    if (pagination.total === 0) {
+      toast.warning("Không có dữ liệu để xuất Excel");
+      return;
+    }
+
+    if (selectedRows.length > 0) {
+      const selectedData = personnels.filter((personnel) => selectedRows.includes(personnel.id));
+      if (selectedData.length > 0) {
+        setModalExportExcel({ isOpen: true, data: selectedData });
+        return;
+      }
+    }
+
     try {
-      let fromDate = appliedFilters.fromDate;
-      let toDate = appliedFilters.toDate;
-      if (appliedFilters.month && !fromDate && !toDate) {
-        const year = new Date().getFullYear();
-        const month = parseInt(appliedFilters.month, 10);
-        const lastDay = new Date(year, month, 0).getDate();
-        fromDate = `${year}-${String(month).padStart(2, "0")}-01`;
-        toDate = `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
+      const params = {
+        page: 1,
+        limit: pagination.total,
+      };
+
+      if (filters.search) params.search = filters.search;
+      if (filters.teacherCode) params.search = filters.teacherCode;
+      if (filters.fullName) params.search = filters.fullName;
+      if (filters.department) params.department = filters.department;
+      if (filters.status) params.status = filters.status;
+      if (filters.email) params.email = filters.email;
+      if (filters.phone) params.phone = filters.phone;
+      if (filters.dob) params.dob = filters.dob;
+      if (filters.role) params.role = filters.role;
+
+      const response = await personnelService.getAllTeachers(params);
+      if (response.success && response.data) {
+        const allPersonnels = response.data.teachers || response.data.personnels || [];
+        setModalExportExcel({ isOpen: true, data: allPersonnels });
+      }
+    } catch {
+      toast.error("Không thể tải danh sách giảng viên để xuất.");
+    }
+  };
+
+  const closeExportExcelModal = () => setModalExportExcel({ isOpen: false, data: [] });
+
+  const handleExportExcel = ({ selectedColumns, filename }) => {
+    try {
+      exportPersonnelToExcel(modalExportExcel.data, filename, selectedColumns);
+      toast.success(`Đã xuất ${modalExportExcel.data.length} giảng viên ra file Excel thành công`);
+      closeExportExcelModal();
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Không thể xuất file Excel. Vui lòng thử lại!");
+    }
+  };
+
+  const handleExportWorkloadDept = async ({
+    filterType, year, semester, from_date, to_date, mode, filename,
+  }) => {
+    try {
+      setExportWorkloadDeptLoading(true);
+
+      // For folder mode, open directory picker FIRST (before any fetching)
+      let dirHandle = null;
+      if (mode === 'folder') {
+        if (!window.showDirectoryPicker) {
+          toast.error("Trình duyệt không hỗ trợ tính năng này. Vui lòng dùng Chrome hoặc Edge.");
+          return;
+        }
+        try {
+          dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        } catch (err) {
+          if (err.name === 'AbortError') return; // User cancelled picker
+          toast.error("Không thể truy cập thư mục đã chọn");
+          return;
+        }
       }
 
-      const params = {
-        course_code: appliedFilters.code || undefined,
-        course_name: appliedFilters.name || undefined,
-        teacher_name: appliedFilters.teacher || undefined,
-        from_date: fromDate || undefined,
-        to_date: toDate || undefined,
-        page: currentPage,
-        limit: itemsPerPage,
-      };
-      Object.keys(params).forEach((k) => params[k] === undefined && delete params[k]);
+      // 1. Fetch all teachers matching current filters
+      setExportWorkloadDeptText("Đang tải danh sách giảng viên...");
+      const teacherParams = { page: 1, limit: 1000 };
+      if (filters.department)  teacherParams.department = filters.department;
+      if (filters.status)      teacherParams.status     = filters.status;
+      if (filters.teacherCode) teacherParams.search     = filters.teacherCode;
+      else if (filters.fullName) teacherParams.search   = filters.fullName;
 
-      const res = await attendanceService.getAttendanceSchedule(params);
-      const data = res?.data || res;
-      setSessions(data.sessions || []);
-      setPagination(data.pagination || { total: 0, total_pages: 1 });
-    } catch {
-      setError("Không thể tải dữ liệu công dạy.");
+      const teacherRes  = await personnelService.getAllTeachers(teacherParams);
+      const allTeachers = teacherRes.data?.teachers || teacherRes.data?.personnels || [];
+
+      if (allTeachers.length === 0) {
+        toast.warning("Không có giảng viên nào phù hợp với bộ lọc hiện tại");
+        return;
+      }
+
+      // 2. Fetch sessions for each teacher
+      const sessionsByTeacher = [];
+      for (let i = 0; i < allTeachers.length; i++) {
+        const teacher = allTeachers[i];
+        setExportWorkloadDeptText(
+          `Đang tải dữ liệu (${i + 1}/${allTeachers.length} giảng viên)...`
+        );
+        try {
+          const params = { lecturer_id: teacher.id, limit: 1000, page: 1 };
+          if (filterType === 'date') {
+            params.from_date = from_date;
+            params.to_date   = to_date;
+          }
+          const res = await attendanceService.getLecturerAttendanceSessions(params);
+          let sessions = Array.isArray(res?.data) ? res.data : [];
+
+          // Filter by semester/year client-side
+          if (filterType === 'semester' && year && semester) {
+            const semKey = `${year}-${semester}`;
+            sessions = sessions.filter(
+              (s) => s?.course_section?.semester === semKey
+            );
+          }
+
+          if (sessions.length > 0) {
+            sessionsByTeacher.push({ teacher, sessions });
+          }
+        } catch (err) {
+          console.error(`Error fetching sessions for ${teacher.teacher_code}:`, err);
+        }
+      }
+
+      if (sessionsByTeacher.length === 0) {
+        toast.warning("Không có dữ liệu buổi dạy trong khoảng thời gian này");
+        return;
+      }
+
+      // 3. Export
+      setExportWorkloadDeptText("Đang tạo file...");
+      const totalSessions = sessionsByTeacher.reduce((s, t) => s + t.sessions.length, 0);
+
+      if (mode === 'folder') {
+        await exportWorkloadToFolder(sessionsByTeacher, dirHandle);
+        toast.success(
+          `Đã xuất ${totalSessions} buổi dạy của ${sessionsByTeacher.length} giảng viên vào thư mục`
+        );
+      } else {
+        exportWorkloadAllTeachers(sessionsByTeacher, filename, mode);
+        toast.success(
+          `Đã xuất ${totalSessions} buổi dạy của ${sessionsByTeacher.length} giảng viên thành công`
+        );
+      }
+
+      setModalExportWorkloadDept({ isOpen: false });
+    } catch (err) {
+      console.error("Export dept workload error:", err);
+      toast.error(err?.message || "Không thể xuất dữ liệu chấm công");
+    } finally {
+      setExportWorkloadDeptLoading(false);
+      setExportWorkloadDeptText("");
+    }
+  };
+
+  // Fetch personnels from API
+  const fetchPersonnels = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Build query params
+      const params = {
+        page: currentPage,
+        limit: pagination.limit || 10,
+      };
+
+      // Add filters if they have values
+      if (filters.search) params.search = filters.search;
+      if (filters.teacherCode) params.search = filters.teacherCode; // Use search for teacher code
+      if (filters.fullName) params.search = filters.fullName; // Use search for full name
+      if (filters.department) params.department = filters.department;
+      if (filters.status) params.status = filters.status;
+      if (filters.email) params.email = filters.email;
+      if (filters.phone) params.phone = filters.phone;
+      if (filters.dob) params.dob = filters.dob;
+      if (filters.role) params.role = filters.role;
+
+      const response = await personnelService.getAllTeachers(params);
+      
+      if (response.success && response.data) {
+        setPersonnels(response.data.teachers || response.data.personnels || []);
+        setPagination(response.data.pagination || {
+          total: 0,
+          page: 1,
+          limit: 10,
+          totalPages: 0
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching personnels:", err);
+      setError(err.message || "Không thể tải danh sách nhân sự");
+      toast.error(err.message || "Không thể tải danh sách nhân sự");
     } finally {
       setLoading(false);
     }
-  }, [appliedFilters, currentPage]);
+  };
+
+  const fetchCardPersonnel = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardpersonnel();
+      if (response?.data?.teachers) {
+        setCardStats({
+          teachers: {
+            total: Number(response.data.teachers.total) || 0,
+            this_month: Number(response.data.teachers.this_month) || 0,
+            growth: Number(response.data.teachers.growth) || 0,
+            active: Number(response.data.teachers.active) || 0,
+            active_rate: Number(response.data.teachers.active_rate) || 0,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching card personnel stats:", err);
+      toast.error(err.message || "Không thể tải thống kê giảng viên");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
+  // Fetch data on mount and when filters/currentPage change
+  useEffect(() => {
+    fetchPersonnels();
+  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    setSelectedRows([]);
+  }, [personnels]);
 
-  const handleTempFilterChange = (e) => {
-    const { name, value } = e.target;
-    setTempFilters((prev) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    fetchCardPersonnel();
+  }, []);
+
+
+  // Handle filter change
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
-  const handleApplyFilters = () => {
-    setCurrentPage(1);
-    setAppliedFilters(tempFilters);
-    setSelectedRows([]);
-    setSelectAllPages(false);
-  };
-
-  const handleClearFilters = () => {
-    setTempFilters(EMPTY_FILTERS);
-    setAppliedFilters(EMPTY_FILTERS);
-    setCurrentPage(1);
-    setSelectedRows([]);
-    setSelectAllPages(false);
+  // Handle search/filter submit
+  const handleSearch = () => {
+    setCurrentPage(1); // Reset to page 1
+    fetchPersonnels();
   };
 
   const toggleSelectAll = () => {
-    if (selectedRows.length === sessions.length) {
+    if (personnels.length === 0) return;
+    if (selectedRows.length === personnels.length) {
       setSelectedRows([]);
-      setSelectAllPages(false);
       return;
     }
-    setSelectedRows(sessions.map((item) => item.id));
+    setSelectedRows(personnels.map((item) => item.id));
   };
 
   const toggleSelectRow = (id) => {
     if (selectedRows.includes(id)) {
       setSelectedRows(selectedRows.filter((item) => item !== id));
-    } else {
-      setSelectedRows([...selectedRows, id]);
+      return;
     }
+    setSelectedRows([...selectedRows, id]);
   };
 
-  const renderAttendanceStatus = (hasSession) => {
-    if (hasSession) {
-      return (
-        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-medium">
-          Đã tạo phiên
-        </span>
-      );
+  const pillStyle = {
+    active: "bg-green-100 text-green-600",
+    inactive: "bg-gray-200 text-gray-600",
+    pending: "bg-yellow-100 text-yellow-600",
+  };
+
+  // Role mapping
+  const roleMapping = {
+    teacher: "Giảng viên",
+    admin: "Quản trị viên",
+    attendance_staff: "Ban chấm công"
+  };
+
+  // Role color mapping
+  const roleColorMapping = {
+    teacher: "bg-blue-100 text-blue-700 border border-blue-200",
+    admin: "bg-red-100 text-red-700 border border-red-200",
+    attendance_staff: "bg-green-100 text-green-700 border border-green-200"
+  };
+
+  const inactiveTeachers = Math.max(cardStats.teachers.total - cardStats.teachers.active, 0);
+  const inactiveRate = Math.max(100 - cardStats.teachers.active_rate, 0);
+  const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
+  const isAllSelected = personnels.length > 0 && selectedRows.length === personnels.length;
+  const isSomeSelected = selectedRows.length > 0 && selectedRows.length < personnels.length;
+
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return "?";
+    const words = name.trim().split(" ");
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
     }
+    return name[0].toUpperCase();
+  };
+
+  // Get color for avatar based on name
+  const getAvatarColor = (name) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-green-500", 
+      "bg-yellow-500",
+      "bg-red-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-teal-500"
+    ];
+    const index = name ? name.charCodeAt(0) % colors.length : 0;
+    return colors[index];
+  };
+
+  // CỘT, BẢNG
+
+  if (selectedTeacher) {
     return (
-      <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-medium">
-        Chưa lên lớp/QR
-      </span>
+      <AttendanceCoursePage
+        teacher={selectedTeacher}
+        onBack={closeTeacherDrilldown}
+      />
     );
-  };
-
-  const validSessions = sessions.filter((s) => s.has_attendance_session).length;
-  const warningSessions = sessions.filter((s) => !s.has_attendance_session).length;
-  const qrUsageRate =
-    sessions.length > 0
-      ? `${Math.round(
-          (sessions.filter((s) => s.start_hour && s.end_hour).length / sessions.length) * 100
-        )}%`
-      : "0%";
-
-  const isAllSelected = sessions.length > 0 && selectedRows.length === sessions.length;
-  const isSomeSelected = selectedRows.length > 0 && selectedRows.length < sessions.length;
-  const selectedCount = selectAllPages ? pagination.total : selectedRows.length;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-1">
-      <div className="mx-auto">
-        <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
 
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <StatsCard
-            title="Tổng tiết dạy"
-            value={pagination.total}
-            percent="(+4.2%)"
-            positive
-            subtitle="Trong kỳ hiện tại"
-            icon={<Users className="w-6 h-6 text-indigo-600" />}
-            iconBg="bg-indigo-100"
-          />
-          <StatsCard
-            title="Công hợp lệ"
-            value={validSessions}
-            percent="(+2.1%)"
-            positive
-            subtitle="Đã xác minh"
-            icon={<UserCheck className="w-6 h-6 text-emerald-600" />}
-            iconBg="bg-emerald-100"
-          />
-          <StatsCard
-            title="Cảnh báo/Bất thường"
-            value={warningSessions}
-            percent="(-1.3%)"
-            positive={false}
-            subtitle="Cần rà soát"
-            icon={<AlertTriangle className="w-6 h-6 text-amber-600" />}
-            iconBg="bg-amber-100"
-          />
-          <StatsCard
-            title="Tỷ lệ dùng QR"
-            value={qrUsageRate}
-            percent="(+0.8%)"
-            positive
-            subtitle="Theo Start/End"
-            icon={<QrCode className="w-6 h-6 text-blue-600" />}
-            iconBg="bg-blue-100"
-          />
-        </div>
+    <div className="min-h-screen">
+      <div className="bg-gray-50 p-1">
+        <div className="mx-auto">
+          {/* Header */}
+          <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+          <div className="">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <StatsCard
+                title="Tổng giảng viên"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.total)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.growth)})`}
+                positive={cardStats.teachers.growth >= 0}
+                subtitle="Toàn hệ thống"
+                icon={<Users className="w-6 h-6 text-purple-600" />}
+                iconBg="bg-purple-100"
+              />
 
-        <div className="bg-white border p-6">
-          <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
-            <FileSearchIcon className="w-4 h-4" />
-            <span>Bộ lọc quản lý công</span>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex items-center text-blue-600 hover:text-blue-800 ml-auto"
-            >
-              {expanded ? (
-                <>
-                  <ArrowUp size={16} className="mr-1" />
-                  Thu gọn
-                </>
-              ) : (
-                <>
-                  <ArrowDown size={16} className="mr-1" />
-                  Mở rộng
-                </>
-              )}
-            </button>
-          </div>
+              <StatsCard
+                title="Giảng viên mới"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.this_month)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.growth)})`}
+                positive={cardStats.teachers.growth >= 0}
+                subtitle="Trong tháng này"
+                icon={<UserPlus className="w-6 h-6 text-rose-600" />}
+                iconBg="bg-rose-100"
+              />
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mã học phần</label>
-              <input
-                type="text"
-                name="code"
-                value={tempFilters.code}
-                onChange={handleTempFilterChange}
-                placeholder="Ví dụ: INT3104"
-                className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <StatsCard
+                title="Giảng viên hoạt động"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.active)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.active_rate)})`}
+                positive={cardStats.teachers.active_rate >= 50}
+                subtitle="Tỷ lệ active"
+                icon={<UserCheck className="w-6 h-6 text-green-600" />}
+                iconBg="bg-green-100"
+              />
+
+              <StatsCard
+                title="Giảng viên chưa active"
+                value={cardLoading ? '...' : formatNumber(inactiveTeachers)}
+                percent={cardLoading ? '...' : `(${formatPercent(inactiveRate)})`}
+                positive={false}
+                subtitle="Tỷ lệ chưa active"
+                icon={<UserX className="w-6 h-6 text-yellow-600" />}
+                iconBg="bg-yellow-100"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Giảng viên</label>
-              <input
-                type="text"
-                name="teacher"
-                value={tempFilters.teacher}
-                onChange={handleTempFilterChange}
-                placeholder="Nhập tên giảng viên"
-                className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tháng</label>
-              <select
-                name="month"
-                value={tempFilters.month}
-                onChange={handleTempFilterChange}
-                className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {monthOptions.map((month) => (
-                  <option key={month.value || "all"} value={month.value}>
-                    {month.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
-              <input
-                type="date"
-                name="fromDate"
-                value={tempFilters.fromDate}
-                onChange={handleTempFilterChange}
-                className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
-              <input
-                type="date"
-                name="toDate"
-                value={tempFilters.toDate}
-                onChange={handleTempFilterChange}
-                className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {/* FILTERS */}
+            <div className="bg-white border  p-6">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+                </svg>
+                <span>Bộ lọc thống kê</span>
+                <button onClick={() => setExpanded(!expanded)} className="flex items-center text-blue-600 hover:text-blue-800 ml-auto">
+                  {expanded ? (
+                    <>
+                      <ArrowUp size={16} className="mr-1" />
+                      Thu gọn
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDown size={16} className="mr-1" />
+                        Mở rộng
+                    </>
+                  )}
+                </button>
+              </div>
 
-            {expanded && (
-              <>
+              {/* Form */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên học phần</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mã số nhân sự
+                  </label>
                   <input
                     type="text"
-                    name="name"
-                    value={tempFilters.name}
-                    onChange={handleTempFilterChange}
-                    placeholder="Ví dụ: Lập trình Web"
+                    placeholder="Ví dụ: 4203001549"
+                    value={filters.teacherCode}
+                    onChange={(e) => handleFilterChange('teacherCode', e.target.value)}
                     className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mốc thời gian</label>
-                  <div className="w-full rounded-lg border px-3 py-2 text-gray-500 flex items-center gap-2">
-                    <Clock3 className="w-4 h-4" />
-                    Toàn bộ buổi học
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Họ và tên
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Nhập họ tên"
+                    value={filters.fullName}
+                    onChange={(e) => handleFilterChange('fullName', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái kiểm duyệt</label>
-                  <div className="w-full rounded-lg border px-3 py-2 text-gray-500 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4" />
-                    Tất cả trạng thái
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Khoa/Viện
+                  </label>
+                  <select
+                    value={filters.department}
+                    onChange={(e) => handleFilterChange('department', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    {DEPARTMENTS.map((dept, index) => (
+                      <option key={index} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </>
-            )}
-          </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between justify-start md:justify-end">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                title="Thêm công thủ công"
-                className="flex items-center gap-2 border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
-              >
-                <CirclePlus className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={handleApplyFilters}
-                className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200"
-              >
-                <FileSearchIcon className="w-5 h-5" />
-              </button>
-
-              <button
-                title="Upload bảng công"
-                className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
-              >
-                <CloudUpload className="w-5 h-5" />
-              </button>
-
-              <button
-                disabled={selectedCount === 0}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
-                  selectedCount > 0
-                    ? "border border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500"
-                    : "border border-gray-300 text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                <FileSpreadsheet className="w-5 h-5" />
-                {selectedCount > 0 && (
-                  <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">
-                    {selectedCount}
-                  </span>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Trạng thái
+                  </label>
+                  <select 
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="inactive">Tạm ngưng</option>
+                  </select>
+                </div>
+                {expanded && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mail
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: example@iuh.edu.vn"
+                        value={filters.email}
+                        onChange={(e) => handleFilterChange('email', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Số điện thoại
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: 0912345678"
+                        value={filters.phone}
+                        onChange={(e) => handleFilterChange('phone', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày sinh
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.dob}
+                        onChange={(e) => handleFilterChange('dob', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Vai trò
+                      </label>
+                      <select 
+                        value={filters.role}
+                        onChange={(e) => handleFilterChange('role', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Tất cả</option>
+                        <option value="teacher">Giảng viên</option>
+                        <option value="admin">Quản trị viên</option>
+                        <option value="attendance_staff">Ban chấm công</option>
+                      </select>
+                    </div>
+                  </>
                 )}
-              </button>
 
-              <button
-                title="Tải file mẫu"
-                className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
-              >
-                <FileDown className="w-5 h-5" />
-              </button>
 
-              <button
-                onClick={handleClearFilters}
-                className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200"
-              >
-                <FilterX className="w-5 h-5" />
-              </button>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-6 flex flex-wrap items-center justify-between justify-start md:justify-end">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={handleSearch}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" 
+                    title="Tìm kiếm"
+                  >
+                    {loading ? <LoadingSpinner size="sm" color="blue" /> : <FileSearchIcon className="w-5 h-5" />}
+                  </button>
+
+                    <button
+                      onClick={() => setModalExportWorkloadDept({ isOpen: true })}
+                      className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
+                      title="Tải toàn bộ công dạy của giảng viên theo bộ lọc hiện tại"
+                    >
+                      <ArrowBigDown className="w-5 h-5" />
+                      Tải dữ liệu chấm công theo môn học
+                    </button>
+
+                  <button
+                    onClick={openExportExcelModal}
+                    disabled={pagination.total === 0 || loading}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      pagination.total > 0 && !loading
+                        ? 'border border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500'
+                        : 'border border-gray-300 text-gray-400 cursor-not-allowed'
+                    }`}
+                    title={
+                      selectedRows.length > 0
+                        ? `Xuất ${selectedRows.length} giảng viên đã chọn`
+                        : pagination.total > 0
+                          ? `Xuất ${pagination.total} giảng viên theo bộ lọc`
+                          : "Xuất danh sách excel môn học"
+                    }
+                  >
+                    <FileSpreadsheet className="w-5 h-5" />
+                    {(selectedRows.length > 0 || pagination.total > 0) && (
+                      <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                        {selectedRows.length > 0 ? selectedRows.length : pagination.total}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        <div className="w-full overflow-x-auto bg-white shadow mb-6 mt-6">
-          {isAllSelected && !selectAllPages && pagination.total > sessions.length && (
-            <div className="bg-blue-50 border-x border-b border-blue-200 px-4 py-2.5 text-sm text-center text-blue-800">
-              Đã chọn <strong>{selectedRows.length}</strong> bản ghi trên trang này.{" "}
-              <button
-                onClick={() => {
-                  setSelectAllPages(true);
-                  setSelectedRows(sessions.map((item) => item.id));
-                }}
-                className="text-blue-600 underline font-medium hover:text-blue-800"
-              >
-                Chọn tất cả {pagination.total} bản ghi trong tất cả trang
-              </button>
-            </div>
-          )}
-
-          {selectAllPages && (
-            <div className="bg-blue-100 border-x border-b border-blue-300 px-4 py-2.5 text-sm text-center text-blue-800">
-              Đã chọn <strong>{selectedCount}</strong> bản ghi trong tất cả trang.{" "}
-              <button
-                onClick={() => {
-                  setSelectAllPages(false);
-                  setSelectedRows([]);
-                }}
-                className="text-blue-600 underline font-medium hover:text-blue-800"
-              >
-                Bỏ chọn tất cả
-              </button>
-            </div>
-          )}
-
-          {loading && (
-            <div className="flex items-center justify-center py-16 text-blue-500 text-sm font-medium">
-              Đang tải dữ liệu...
-            </div>
-          )}
-
-          {error && !loading && (
-            <div className="flex items-center justify-center py-16 text-red-500 text-sm font-medium">
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && (
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="w-12">
-                    <input
-                      type="checkbox"
-                      className="ml-4 cursor-pointer"
-                      checked={isAllSelected}
-                      ref={(input) => {
-                        if (input) input.indeterminate = isSomeSelected;
-                      }}
-                      onChange={toggleSelectAll}
-                    />
-                  </th>
-                  <th className="h-12 px-4">Mã GV</th>
-                  <th className="h-12 px-4">Giảng viên</th>
-                  <th className="h-12 px-4">Mã học phần</th>
-                  <th className="h-12 px-4">Học phần</th>
-                  <th className="h-12 px-4 text-center">Ngày dạy</th>
-                  <th className="h-12 px-4 text-center">Loại</th>
-                  <th className="h-12 px-4 text-center">QR Start</th>
-                  <th className="h-12 px-4 text-center">QR End</th>
-                  <th className="h-12 px-4 text-center">Trạng thái</th>
-                  <th className="h-12 px-4 text-center">Thao tác</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {sessions.length === 0 ? (
-                  <tr>
-                    <td colSpan="11" className="p-10 text-center text-slate-400">
-                      Không có dữ liệu công dạy
-                    </td>
+            {/* TABLE */}
+            <div className="w-full overflow-x-auto bg-white shadow mb-6">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="w-12">
+                      <input
+                        type="checkbox"
+                        className="ml-4 cursor-pointer"
+                        checked={isAllSelected}
+                        ref={(input) => {
+                          if (input) {
+                            input.indeterminate = isSomeSelected;
+                          }
+                        }}
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th className="h-12 px-4">Ảnh</th>
+                    <th className="h-12 px-4">Mã nhân sự</th>
+                    <th className="h-12 px-4">{t("users.name")}</th>
+                    <th className="h-12 px-4">{t("users.email")}</th>
+                    <th className="h-12 px-4">{t("users.role")}</th>
+                    <th className="h-12 px-4">{t("users.status")}</th>
+                    <th className="h-12 px-4"> Hành động </th>
                   </tr>
-                ) : (
-                  sessions.map((item) => (
+                </thead>
+
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-12">
+                        <LoadingSpinner size="lg" color="blue" text="Đang tải dữ liệu..." />
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-12">
+                        <p className="text-red-500">{error}</p>
+                        <button
+                          onClick={fetchPersonnels}
+                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Thử lại
+                        </button>
+                      </td>
+                    </tr>
+                  ) : personnels.length === 0 ? (
+                    <EmptyState
+                      title="Không tìm thấy nhân sự"
+                      description="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm."
+                      colSpan={8}
+                    />
+                  ) : personnels.map((personnel) => (
                     <tr
-                      key={item.id}
-                      className={`h-12 border-t hover:bg-slate-50 ${selectedRows.includes(item.id) ? "bg-blue-50" : ""}`}
+                      key={personnel.id}
+                      className={`border-t hover:bg-slate-50 ${selectedRows.includes(personnel.id) ? "bg-blue-50" : ""}`}
                     >
                       <td>
                         <input
                           type="checkbox"
                           className="ml-4 cursor-pointer"
-                          checked={selectedRows.includes(item.id)}
-                          onChange={() => toggleSelectRow(item.id)}
+                          checked={selectedRows.includes(personnel.id)}
+                          onChange={() => toggleSelectRow(personnel.id)}
                         />
                       </td>
-                      <td className="px-4 font-mono text-xs text-gray-700">
-                        {item.personnel?.teacher_code || "--"}
+                      <td className="px-2 h-10 flex items-center gap-2 p-6">
+                        {personnel.avatar_url ? (
+                          <img 
+                            src={personnel.avatar_url} 
+                            alt={personnel.full_name}
+                            className="w-8 h-8 rounded-full object-cover" 
+                          />
+                        ) : (
+                          <div className={`w-8 h-8 rounded-full ${getAvatarColor(personnel.full_name)} flex items-center justify-center text-white text-xs font-semibold`}>
+                            {getInitials(personnel.full_name)}
+                          </div>
+                        )}
                       </td>
-                      <td className="px-4 font-medium text-gray-900">
-                        {item.personnel?.full_name || "--"}
+                      <td className="px-4">{personnel.teacher_code}</td>
+                      <td className="px-4 min-w-max">{personnel.full_name}</td>
+
+                      <td className="px-4">{personnel.email}</td>
+                      <td className="px-4">
+                        {personnel.user?.roles && personnel.user.roles.length > 0 
+                          ? (
+                            <div className="flex flex-wrap gap-1">
+                              {personnel.user.roles.map((role, index) => (
+                                <span 
+                                  key={`${personnel.id}-${role.id || role.name || index}`}
+                                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    roleColorMapping[role.name] || "bg-gray-100 text-gray-700 border border-gray-200"
+                                  }`}
+                                >
+                                  {roleMapping[role.name] || role.name}
+                                </span>
+                              ))}
+                            </div>
+                          )
+                          : "-"}
                       </td>
-                      <td className="px-4 font-medium text-gray-900">
-                        {item.course_section?.code || "--"}
-                      </td>
-                      <td className="px-4 text-gray-800">
-                        {item.course_section?.name || "--"}
-                      </td>
-                      <td className="px-4 text-center text-gray-600">{item.class_date || "--"}</td>
-                      <td className="px-4 text-center">
-                        <span className="text-xs font-semibold text-slate-500">
-                          {SCHEDULE_TYPE_LABELS[item.schedule_type] || item.schedule_type || "--"}
+
+                      <td className="px-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs ${
+                            pillStyle[personnel.user?.status?.toLowerCase()] || 'bg-gray-200 text-gray-600'
+                          }`}
+                        >
+                          {personnel.user?.status === 'active' ? 'Hoạt động' : 
+                           personnel.user?.status === 'inactive' ? 'Tạm ngưng' : 
+                           personnel.user?.status || '-'}
                         </span>
                       </td>
-                      <td className="px-4 text-center font-mono text-xs">{formatTime(item.start_hour)}</td>
-                      <td className="px-4 text-center font-mono text-xs">{formatTime(item.end_hour)}</td>
-                      <td className="px-4 text-center">{renderAttendanceStatus(item.has_attendance_session)}</td>
-                      <td className="px-4">
-                        <div className="flex justify-center gap-3">
-                          <button title="Xem chi tiết" className="text-blue-500">
-                            <Eye className="cursor-pointer w-5 h-5" />
-                          </button>
-                          <button title="Chốt/Khóa công" className="text-amber-500">
-                            <LockKeyhole className="cursor-pointer w-5 h-5" />
-                          </button>
-                        </div>
+                      <td className="px-4 min-w-max">
+                        <button
+                          onClick={() => openTeacherDrilldown(personnel)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 transition-colors duration-150"
+                        >
+                          <View className="w-4 h-4" />
+                          Xem học phần giảng dạy
+                        </button>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        <div className="flex items-center justify-between px-2 mb-4">
-          <span className="text-sm text-gray-500">
-            Tổng: <strong>{pagination.total}</strong> bản ghi công
-          </span>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={pagination.total_pages || 1}
-            onPageChange={(page) => setCurrentPage(page)}
-          />
+
+            {/* PAGINATION */}
+            <div className="flex items-center justify-between px-2 mb-4">
+              <span className="text-sm text-gray-500">
+                Tổng: <strong>{pagination.total || 0}</strong> giảng viên
+              </span>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.totalPages || 1}
+                onPageChange={(page) => setCurrentPage(page)}
+                disabled={loading}
+              />
+            </div>
+
+            <ModalExportExcel
+              isOpen={modalExportExcel.isOpen}
+              onClose={closeExportExcelModal}
+              personnels={modalExportExcel.data}
+              onExport={handleExportExcel}
+            />
+
+            <ModalExportWorkloadDepartment
+              isOpen={modalExportWorkloadDept.isOpen}
+              onClose={() => {
+                if (!exportWorkloadDeptLoading) setModalExportWorkloadDept({ isOpen: false });
+              }}
+              onExport={handleExportWorkloadDept}
+              loading={exportWorkloadDeptLoading}
+              loadingText={exportWorkloadDeptText}
+            />
+          </div>
         </div>
       </div>
     </div>

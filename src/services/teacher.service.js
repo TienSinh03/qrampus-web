@@ -77,10 +77,12 @@ class TeacherService {
       );
 
       const coursesArray = response.data?.courses || response.data || [];
+      const pagination   = response.data?.pagination || null;
 
       return {
         success: response.success || true,
         data: Array.isArray(coursesArray) ? coursesArray : [],
+        pagination,
         message: response.message || ''
       };
     } catch (error) {
@@ -88,6 +90,7 @@ class TeacherService {
       return {
         success: false,
         data: [],
+        pagination: null,
         message: error.message || 'Đã có lỗi xảy ra khi tải học phần của giảng viên'
       };
     }
