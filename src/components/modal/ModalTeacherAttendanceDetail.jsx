@@ -254,7 +254,7 @@ export default function ModalTeacherAttendanceDetail({
         <div className="overflow-auto p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white border rounded-xl p-4">
-              <p className="text-sm text-gray-500">Tổng số buổi cần chấm</p>
+              <p className="text-sm text-gray-500">Tổng buổi dạy</p>
               <p className="text-2xl font-bold text-blue-600 mt-1">
                 {selectedCourse.totalSessions}
               </p>

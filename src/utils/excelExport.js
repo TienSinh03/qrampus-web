@@ -332,10 +332,9 @@ export const exportAttendanceWorkload = (sessions = [], filename = 'cong_day', m
       'Loại buổi': fmtScheduleType(session.schedule_type || cs.schedule_type),
       'Phòng học': room.room_code ? `${room.room_code}${room.room_name ? ' - ' + room.room_name : ''}` : '-',
       'Số nhóm TH': cs.number_group ?? '-',
-      'Ghi nhận chấm công': (session.has_attendance_session || cs.has_attendance_session) ? 'Đã ghi nhận' : 'Chưa ghi nhận',
-      'Tạo phiên lúc': fmtDatetime(latestAtt?.created_at),
-      'Hết hạn lúc': fmtDatetime(latestAtt?.expires_at),
+      'Chấm công lúc': fmtDatetime(latestAtt?.created_at),
       'Trạng thái buổi học': session.status || cs.status || '-',
+      'Ghi nhận chấm công': (session.has_attendance_session || cs.has_attendance_session) ? 'Đã ghi nhận' : 'Chưa ghi nhận',
       'Chấm công GV': fmtLecturerStatus(cs.lecturer_attendance_status),
     };
   };
@@ -362,10 +361,9 @@ export const exportAttendanceWorkload = (sessions = [], filename = 'cong_day', m
     { wch: 12 }, // Loại buổi
     { wch: 18 }, // Phòng học
     { wch: 10 }, // Số nhóm TH
-    { wch: 18 }, // Ghi nhận chấm công
-    { wch: 20 }, // Tạo phiên lúc
-    { wch: 20 }, // Hết hạn lúc
+    { wch: 20 }, // Chấm công lúc
     { wch: 18 }, // Trạng thái buổi học
+    { wch: 18 }, // Ghi nhận chấm công
     { wch: 20 }, // Chấm công GV
   ];
 
@@ -392,9 +390,8 @@ export const exportAttendanceWorkload = (sessions = [], filename = 'cong_day', m
     const EMPTY_ROW = {
       'STT': '', 'Mã môn học': '', 'Tên môn học': '', 'Học kỳ': '',
       'Ngày dạy': '', 'Giờ bắt đầu': '', 'Giờ kết thúc': '', 'Loại buổi': '',
-      'Phòng học': '', 'Số nhóm TH': '', 'Ghi nhận chấm công': '',
-      'Tạo phiên lúc': '', 'Hết hạn lúc': '',
-      'Trạng thái buổi học': '', 'Chấm công GV': '',
+      'Phòng học': '', 'Số nhóm TH': '', 'Chấm công lúc': '',
+      'Trạng thái buổi học': '', 'Ghi nhận chấm công': '', 'Chấm công GV': '',
     };
 
     groups.forEach(({ name, sessions: groupSessions }, code) => {
@@ -471,11 +468,10 @@ export const exportWorkloadAllTeachers = (
       'Phòng học':             room.room_code
         ? `${room.room_code}${room.room_name ? ' - ' + room.room_name : ''}` : '-',
       'Số nhóm TH':            cs.number_group ?? '-',
+      'Chấm công lúc':         fmtDatetime(att?.created_at),
+      'Trạng thái buổi học':   session.status || cs.status || '-',
       'Ghi nhận chấm công':    (session.has_attendance_session || cs.has_attendance_session)
         ? 'Đã ghi nhận' : 'Chưa ghi nhận',
-      'Tạo phiên lúc':         fmtDatetime(att?.created_at),
-      'Hết hạn lúc':           fmtDatetime(att?.expires_at),
-      'Trạng thái buổi học':   session.status || cs.status || '-',
       'Chấm công GV':          fmtLecturerStatus(cs.lecturer_attendance_status),
     };
   };
@@ -509,10 +505,9 @@ export const exportWorkloadAllTeachers = (
     { wch: 12 }, // Loại buổi
     { wch: 18 }, // Phòng học
     { wch: 10 }, // Số nhóm TH
-    { wch: 18 }, // Ghi nhận chấm công
-    { wch: 20 }, // Tạo phiên lúc
-    { wch: 20 }, // Hết hạn lúc
+    { wch: 20 }, // Chấm công lúc
     { wch: 18 }, // Trạng thái buổi học
+    { wch: 18 }, // Ghi nhận chấm công
     { wch: 20 }, // Chấm công GV
   ];
 
@@ -521,8 +516,8 @@ export const exportWorkloadAllTeachers = (
     'Mã môn học': '', 'Tên môn học': '', 'Học kỳ': '',
     'Ngày dạy': '', 'Giờ bắt đầu': '', 'Giờ kết thúc': '',
     'Loại buổi': '', 'Phòng học': '', 'Số nhóm TH': '',
-    'Ghi nhận chấm công': '', 'Tạo phiên lúc': '', 'Hết hạn lúc': '',
-    'Trạng thái buổi học': '', 'Chấm công GV': '',
+    'Chấm công lúc': '', 'Trạng thái buổi học': '',
+    'Ghi nhận chấm công': '', 'Chấm công GV': '',
   };
 
   const wb = XLSX.utils.book_new();
@@ -632,11 +627,10 @@ export const exportWorkloadToFolder = async (sessionsByTeacher, dirHandle) => {
       'Phòng học':           room.room_code
         ? `${room.room_code}${room.room_name ? ' - ' + room.room_name : ''}` : '-',
       'Số nhóm TH':          cs.number_group ?? '-',
+      'Chấm công lúc':       fmtDatetime(att?.created_at),
+      'Trạng thái buổi học': session.status || cs.status || '-',
       'Ghi nhận chấm công':  (session.has_attendance_session || cs.has_attendance_session)
         ? 'Đã ghi nhận' : 'Chưa ghi nhận',
-      'Tạo phiên lúc':       fmtDatetime(att?.created_at),
-      'Hết hạn lúc':         fmtDatetime(att?.expires_at),
-      'Trạng thái buổi học': session.status || cs.status || '-',
       'Chấm công GV':        fmtLecturerStatus(cs.lecturer_attendance_status),
     };
   };
@@ -644,16 +638,15 @@ export const exportWorkloadToFolder = async (sessionsByTeacher, dirHandle) => {
   const COL_WIDTHS = [
     { wch: 5 }, { wch: 14 }, { wch: 32 }, { wch: 10 },
     { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 },
-    { wch: 18 }, { wch: 10 }, { wch: 18 }, { wch: 20 },
-    { wch: 20 }, { wch: 18 }, { wch: 20 },
+    { wch: 18 }, { wch: 10 }, { wch: 20 }, { wch: 18 },
+    { wch: 18 }, { wch: 20 },
   ];
 
   const EMPTY = {
     'STT': '', 'Mã môn học': '', 'Tên môn học': '', 'Học kỳ': '',
     'Ngày dạy': '', 'Giờ bắt đầu': '', 'Giờ kết thúc': '', 'Loại buổi': '',
-    'Phòng học': '', 'Số nhóm TH': '', 'Ghi nhận chấm công': '',
-    'Tạo phiên lúc': '', 'Hết hạn lúc': '',
-    'Trạng thái buổi học': '', 'Chấm công GV': '',
+    'Phòng học': '', 'Số nhóm TH': '', 'Chấm công lúc': '',
+    'Trạng thái buổi học': '', 'Ghi nhận chấm công': '', 'Chấm công GV': '',
   };
 
   const sortSessions = (sessions) =>
