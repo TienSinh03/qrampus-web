@@ -7,6 +7,7 @@ import {
   ArrowUp,
   FileSearchIcon,
   FilterX,
+  Edit2Icon,
 } from "lucide-react";
 import Pagination from "../../../components/common/Pagination";
 import attendanceService from "../../../services/attendance.service";
@@ -395,6 +396,7 @@ const AttendanceLecturerSessionsPage = ({
                   <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">Ghi nhận chấm công</th>
                   <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase text-center">Số nhóm</th>
                   <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">Trạng thái buổi học</th>
+                  <th className="h-12 px-4 text-xs font-semibold text-slate-600 uppercase">Hành động</th>
                 </tr>
               </thead>
 
@@ -482,6 +484,18 @@ const AttendanceLecturerSessionsPage = ({
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusCfg.cls}`}>
                             {statusCfg.label}
                           </span>
+                        </td>
+
+                        <td>
+                          {/* //chỉnh sửa công cho giảng viên */}
+                          <button
+                            onClick={() => handleManualAdjust(session)}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            <Edit2Icon className="w-4 h-4 inline-block mr-1" />
+                            Điều chỉnh công
+                          </button>
+                            
                         </td>
                       </tr>
                     );
