@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, ResponsiveContainer,
   LineChart, Line, ReferenceLine, Dot,
 } from "recharts";
 import {
-  User, Mail, Building2, CheckCircle, Clock, XCircle, TrendingUp, CalendarDays,
+  User, Mail, Building2, CheckCircle, Clock, XCircle, TrendingUp,
+  CalendarDays, ChevronDown,
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, parseISO, startOfWeek } from "date-fns";
+import { useAttendance } from "@contexts/AttendanceContext";
 import attendanceService from "@services/attendance.service";
 
 const _now = new Date();
@@ -26,7 +28,18 @@ const PALETTE = {
   trend: "#0ea5e9",
 };
 
-// ─── small helpers ────────────────────────────────────────────────────────────
+const COURSE_BAR_LABELS = { onTime: "Đúng giờ", late: "Trễ", absent: "Vắng" };
+const COURSE_BAR_COLORS = { onTime: PALETTE.onTime, late: PALETTE.late, absent: PALETTE.absent };
+
+function getCourseUid(c) {
+  return c.practiceGroupId ? `${c.courseSectionId}_practice_${c.practiceGroupId}` : `${c.courseSectionId}_theory`;
+}
+
+function getCourseLabel(c) {
+  const base = c.courseName || c.courseCode || String(c.courseSectionId);
+  if (!c.practiceGroupId) return base;
+  return c.practiceGroupNumber ? `${base} - Nhóm TH${c.practiceGroupNumber}` : `${base} (TH)`;
+}
 
 function rateColor(rate) {
   if (rate >= 80) return { bar: "bg-green-500", text: "text-green-600" };
@@ -81,9 +94,7 @@ function MiniDonut({ items, total, title }) {
               dataKey="value"
               isAnimationActive={false}
             >
-              {items.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
-              ))}
+              {items.map((entry, i) => <Cell key={i} fill={entry.color} />)}
             </Pie>
             <Tooltip
               formatter={(val, name) => {
@@ -110,15 +121,29 @@ function MiniDonut({ items, total, title }) {
   );
 }
 
+const courseBarTooltip = ({ active, payload }) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload ?? {};
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-3 text-xs border border-gray-100 space-y-1 max-w-[240px]">
+      <p className="font-semibold text-gray-700 mb-1 break-words">{d.fullName || d.name}</p>
+      {payload.map((p) => (
+        <p key={p.dataKey} style={{ color: COURSE_BAR_COLORS[p.dataKey] || p.fill }}>
+          {COURSE_BAR_LABELS[p.dataKey] || p.name}:{" "}
+          <span className="font-bold">{p.value}</span> buổi
+        </p>
+      ))}
+    </div>
+  );
+};
+
 const stackedBarTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white shadow-lg rounded-lg p-3 text-xs border border-gray-100 space-y-1">
       <p className="font-semibold text-gray-700 mb-1">{label}</p>
       {payload.map((p) => (
-        <p key={p.dataKey} style={{ color: p.fill }}>
-          {p.name}: {p.value} buổi
-        </p>
+        <p key={p.dataKey} style={{ color: p.fill }}>{p.name}: {p.value} buổi</p>
       ))}
     </div>
   );
@@ -129,37 +154,85 @@ const lineTrendTooltip = ({ active, payload, label }) => {
   return (
     <div className="bg-white shadow-lg rounded-lg p-3 text-xs border border-gray-100">
       <p className="font-semibold text-gray-700 mb-1">Tuần {label}</p>
-      <p className="text-sky-600">Tỉ lệ ĐD: <span className="font-bold">{payload[0].value}%</span></p>
+      <p className="text-sky-600">
+        Tỉ lệ ĐD: <span className="font-bold">{payload[0].value}%</span>
+      </p>
     </div>
   );
 };
 
-// ─── main component ──────────────────────────────────────────────────────────
-
 export default function ReportPage() {
-  const [semester, setSemester] = useState(null);
+  const { fetchTeacherAttendanceDashboard } = useAttendance();
+  const hasInitSemester = useRef(false);
+  const courseDropdownRef = useRef(null);
+
+  // ── filter state ──
+  const [semester, setSemester] = useState("");
+  const [selectedCourseIds, setSelectedCourseIds] = useState([]);
+  const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
   const [fromDate, setFromDate] = useState(FIRST_OF_MONTH);
   const [toDate, setToDate] = useState(LAST_OF_MONTH);
 
-  const [dashboardData, setDashboardData] = useState(null);
+  // ── data state ──
+  const [dashboardData, setDashboardData] = useState({
+    teacher: null,
+    summary: {},
+    availableSemesters: [],
+    courseProgress: [],
+  });
   const [dashboardLoading, setDashboardLoading] = useState(false);
 
   const [workloadData, setWorkloadData] = useState(null);
   const [workloadLoading, setWorkloadLoading] = useState(false);
 
-  const fetchDashboard = useCallback(async (sem) => {
-    setDashboardLoading(true);
-    try {
-      const params = sem ? { semester: sem } : {};
-      const res = await attendanceService.getTeacherAttendanceDashboard(params);
-      setDashboardData(res?.data ?? res);
-    } catch {
-      setDashboardData(null);
-    } finally {
-      setDashboardLoading(false);
-    }
+  // Close course dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (courseDropdownRef.current && !courseDropdownRef.current.contains(e.target)) {
+        setCourseDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Reload dashboard whenever semester changes (auto-init pattern same as Timekeeping)
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      setDashboardLoading(true);
+      try {
+        const params = semester ? { semester } : {};
+        const res = await fetchTeacherAttendanceDashboard(params);
+        if (!isMounted) return;
+        if (res?.success && res?.data) {
+          const payload = res.data;
+          const availableSemesters = Array.isArray(payload.availableSemesters) ? payload.availableSemesters : [];
+          setDashboardData({
+            teacher: payload.teacher || null,
+            summary: payload.summary || {},
+            availableSemesters,
+            courseProgress: Array.isArray(payload.courseProgress) ? payload.courseProgress : [],
+          });
+          setSelectedCourseIds([]); // reset course filter when semester data reloads
+          if (!hasInitSemester.current && !semester && availableSemesters.length > 0) {
+            hasInitSemester.current = true;
+            setSemester(availableSemesters[0]); // triggers second fetch with specific semester
+          } else if (!hasInitSemester.current) {
+            hasInitSemester.current = true;
+          }
+        }
+      } catch {
+        // silently fail; data stays as previous
+      } finally {
+        if (isMounted) setDashboardLoading(false);
+      }
+    };
+    load();
+    return () => { isMounted = false; };
+  }, [semester, fetchTeacherAttendanceDashboard]);
+
+  // Workload fetch (by date range, independent of semester)
   const fetchWorkload = useCallback(async (from, to) => {
     setWorkloadLoading(true);
     try {
@@ -173,21 +246,9 @@ export default function ReportPage() {
   }, []);
 
   useEffect(() => {
-    fetchDashboard(null);
     fetchWorkload(FIRST_OF_MONTH, LAST_OF_MONTH);
-  }, [fetchDashboard, fetchWorkload]);
+  }, [fetchWorkload]);
 
-  useEffect(() => {
-    if (!semester && dashboardData?.availableSemesters?.length) {
-      setSemester(dashboardData.availableSemesters[0]);
-    }
-  }, [dashboardData, semester]);
-
-  const handleSemesterChange = (e) => {
-    const val = e.target.value;
-    setSemester(val);
-    fetchDashboard(val);
-  };
   const handleFromChange = (e) => {
     const val = e.target.value;
     setFromDate(val);
@@ -199,46 +260,86 @@ export default function ReportPage() {
     fetchWorkload(fromDate, val);
   };
 
-  const summary = dashboardData?.summary ?? {};
-  const teacher = dashboardData?.teacher ?? {};
+  // Unique courses available for the current semester (theory and practice as separate entries)
+  const uniqueCourses = useMemo(() => {
+    const map = new Map();
+    for (const c of dashboardData.courseProgress) {
+      const uid = getCourseUid(c);
+      if (!map.has(uid)) {
+        map.set(uid, { id: uid, name: getCourseLabel(c), code: c.courseCode });
+      }
+    }
+    return Array.from(map.values());
+  }, [dashboardData.courseProgress]);
 
-  // Donut 1 — attendance distribution
+  const toggleCourse = (id) =>
+    setSelectedCourseIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+
+  // Filtered course progress (client-side, no extra API call)
+  const filteredCourseProgress = useMemo(() => {
+    const all = dashboardData.courseProgress || [];
+    if (selectedCourseIds.length === 0) return all;
+    return all.filter((c) => selectedCourseIds.includes(getCourseUid(c)));
+  }, [dashboardData.courseProgress, selectedCourseIds]);
+
+  // Summary derived from filtered courses
+  const filteredSummary = useMemo(() => {
+    if (selectedCourseIds.length === 0) return dashboardData.summary || {};
+    return filteredCourseProgress.reduce(
+      (acc, c) => ({
+        totalTeachingSessions: acc.totalTeachingSessions + (c.totalTeachingSessions || 0),
+        onTimeCheckins: acc.onTimeCheckins + (c.onTimeCheckins || 0),
+        lateCheckins: acc.lateCheckins + (c.lateCheckins || 0),
+        absentCheckins: acc.absentCheckins + (c.absentCheckins || 0),
+      }),
+      { totalTeachingSessions: 0, onTimeCheckins: 0, lateCheckins: 0, absentCheckins: 0 }
+    );
+  }, [filteredCourseProgress, selectedCourseIds, dashboardData.summary]);
+
+  const filteredAttendanceRate = useMemo(() => {
+    if (selectedCourseIds.length === 0) return dashboardData.summary?.attendanceRate ?? null;
+    const total = filteredSummary.totalTeachingSessions || 0;
+    const success = (filteredSummary.onTimeCheckins || 0) + (filteredSummary.lateCheckins || 0);
+    return total > 0 ? Math.round((success / total) * 100) : 0;
+  }, [filteredSummary, selectedCourseIds, dashboardData.summary]);
+
+  // Attendance distribution donut (from filtered courseProgress)
   const attendanceDonut = useMemo(() => {
     const items = [
-      { name: "Đúng giờ", value: summary.onTimeCheckins ?? 0, color: PALETTE.onTime },
-      { name: "Trễ", value: summary.lateCheckins ?? 0, color: PALETTE.late },
-      { name: "Vắng", value: summary.absentCheckins ?? 0, color: PALETTE.absent },
+      { name: "Đúng giờ", value: filteredSummary.onTimeCheckins ?? 0, color: PALETTE.onTime },
+      { name: "Trễ", value: filteredSummary.lateCheckins ?? 0, color: PALETTE.late },
+      { name: "Vắng", value: filteredSummary.absentCheckins ?? 0, color: PALETTE.absent },
     ];
     return { items, total: items.reduce((s, d) => s + d.value, 0) };
-  }, [summary]);
+  }, [filteredSummary]);
 
-  // Donut 2 — theory vs practice (from workload sessions[])
+  // Theory vs Practice donut (from filtered courseProgress, not workload)
   const scheduleTypeDonut = useMemo(() => {
     let theory = 0;
     let practice = 0;
-    for (const d of workloadData?.data ?? []) {
-      for (const s of d.sessions ?? []) {
-        if (s.schedule_type === "theory") theory++;
-        else if (s.schedule_type === "practice") practice++;
-      }
+    for (const c of filteredCourseProgress) {
+      const sessions = c.totalTeachingSessions || 0;
+      if (c.practiceGroupId) practice += sessions;
+      else theory += sessions;
     }
     const items = [
       { name: "Lý thuyết", value: theory, color: PALETTE.theory },
       { name: "Thực hành", value: practice, color: PALETTE.practice },
     ];
     return { items, total: theory + practice };
-  }, [workloadData]);
+  }, [filteredCourseProgress]);
 
-  // Course progress for progress-bar list
-  const courseProgressData = useMemo(() => {
-    const raw = dashboardData?.courseProgress ?? [];
+  // Course progress bars (grouped by composite uid — phân biệt LT và TH)
+  const courseProgressBars = useMemo(() => {
     const map = new Map();
-    for (const item of raw) {
-      const id = item.courseSectionId;
-      if (!map.has(id)) {
-        map.set(id, { name: item.courseName, onTime: 0, late: 0, total: 0 });
+    for (const item of filteredCourseProgress) {
+      const uid = getCourseUid(item);
+      if (!map.has(uid)) {
+        map.set(uid, { name: getCourseLabel(item), onTime: 0, late: 0, total: 0 });
       }
-      const g = map.get(id);
+      const g = map.get(uid);
       g.onTime += item.onTimeCheckins ?? 0;
       g.late += item.lateCheckins ?? 0;
       g.total += item.totalTeachingSessions ?? 0;
@@ -247,12 +348,36 @@ export default function ReportPage() {
       .map((g) => ({
         name: g.name,
         rate: g.total > 0 ? Math.round(((g.onTime + g.late) / g.total) * 100) : 0,
+        done: g.onTime + g.late,
         total: g.total,
       }))
       .sort((a, b) => a.rate - b.rate);
-  }, [dashboardData]);
+  }, [filteredCourseProgress]);
 
-  // Weekly trend line (from workload)
+  // Course comparison grouped bar chart (onTime / late / absent per course, phân biệt LT/TH)
+  const courseComparisonData = useMemo(() => {
+    const map = new Map();
+    for (const c of filteredCourseProgress) {
+      const uid = getCourseUid(c);
+      const fullName = getCourseLabel(c);
+      if (!map.has(uid)) {
+        map.set(uid, {
+          fullName,
+          name: fullName.length > 22 ? fullName.slice(0, 22) + "…" : fullName,
+          onTime: 0,
+          late: 0,
+          absent: 0,
+        });
+      }
+      const g = map.get(uid);
+      g.onTime += c.onTimeCheckins || 0;
+      g.late += c.lateCheckins || 0;
+      g.absent += c.absentCheckins || 0;
+    }
+    return Array.from(map.values());
+  }, [filteredCourseProgress]);
+
+  // Weekly trend line (from workload — date-range filtered)
   const weekLineData = useMemo(() => {
     const map = new Map();
     for (const d of workloadData?.data ?? []) {
@@ -274,7 +399,7 @@ export default function ReportPage() {
       }));
   }, [workloadData]);
 
-  // Stacked bar — day breakdown
+  // Stacked daily bar (from workload — date-range filtered)
   const stackedData = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -292,10 +417,14 @@ export default function ReportPage() {
     });
   }, [workloadData]);
 
+  const teacher = dashboardData.teacher ?? {};
   const bothDonutsEmpty = attendanceDonut.total === 0 && scheduleTypeDonut.total === 0;
 
+  const courseFilterLabel = selectedCourseIds.length === 0 ? "Tất cả môn học"
+      : selectedCourseIds.length === 1 ? (uniqueCourses.find((c) => c.id === selectedCourseIds[0])?.name ?? "1 môn") : `${selectedCourseIds.length} môn đã chọn`;
+
   return (
-    <div className="min-h-screen bg-gray-50  space-y-5">
+    <div className="min-h-screen bg-gray-50 space-y-5">
 
       {/* Teacher info */}
       {(teacher.fullName || teacher.department || teacher.email) && (
@@ -304,7 +433,9 @@ export default function ReportPage() {
             <User className="w-5 h-5 text-blue-600" />
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            {teacher.fullName && <span className="font-semibold text-gray-800">{teacher.fullName}</span>}
+            {teacher.fullName && (
+              <span className="font-semibold text-gray-800">{teacher.fullName}</span>
+            )}
             {teacher.department && (
               <span className="text-gray-500 flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5" /> {teacher.department}
@@ -320,46 +451,168 @@ export default function ReportPage() {
       )}
 
       {/* Filter bar */}
-      <div className="bg-white shadow-sm border border-gray-100 px-6 py-4 flex flex-wrap items-center gap-5">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Học kỳ</label>
-          <select
-            value={semester ?? ""}
-            onChange={handleSemesterChange}
-            disabled={dashboardLoading}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 min-w-[180px] disabled:opacity-60"
-          >
-            {!semester && <option value="">-- Chọn học kỳ --</option>}
-            {(dashboardData?.availableSemesters ?? []).map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+      <div className="bg-white shadow-sm border border-gray-100 px-6 py-4">
+        <div className="flex flex-wrap items-end gap-5">
+
+          {/* Semester */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Học kỳ</label>
+            <select
+              value={semester}
+              onChange={(e) => setSemester(e.target.value)}
+              disabled={dashboardLoading}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 min-w-[180px] disabled:opacity-60"
+            >
+              <option value="">-- Tất cả --</option>
+              {dashboardData.availableSemesters.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Course multi-select */}
+          <div className="flex flex-col gap-1" ref={courseDropdownRef}>
+            <label className="text-xs font-medium text-gray-500">Môn học</label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setCourseDropdownOpen((o) => !o)}
+                disabled={uniqueCourses.length === 0 || dashboardLoading}
+                className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 min-w-[230px] disabled:opacity-60"
+              >
+                <span className="flex-1 text-left truncate text-gray-700">{courseFilterLabel}</span>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${courseDropdownOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {courseDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-30 min-w-[270px] max-h-72 flex flex-col">
+                  {/* "All" option */}
+                  <div className="p-2 border-b border-gray-100 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCourseIds([])}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition ${
+                        selectedCourseIds.length === 0
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      Tất cả môn học
+                    </button>
+                  </div>
+
+                  {/* Course list */}
+                  <div className="overflow-y-auto flex-1 p-2 space-y-0.5">
+                    {uniqueCourses.map((c) => (
+                      <label
+                        key={c.id}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition text-sm ${
+                          selectedCourseIds.includes(c.id)
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedCourseIds.includes(c.id)}
+                          onChange={() => toggleCourse(c.id)}
+                          className="w-3.5 h-3.5 accent-blue-600 shrink-0"
+                        />
+                        <span className="truncate" title={c.name}>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Date range (for workload charts) */}
+          <div className="flex items-end gap-3 ml-auto">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-500">
+                Từ ngày <span className="text-gray-400 font-normal">(biểu đồ theo ngày/tuần)</span>
+              </label>
+              <input
+                type="date"
+                value={fromDate}
+                max={toDate}
+                onChange={handleFromChange}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-500">Đến ngày</label>
+              <input
+                type="date"
+                value={toDate}
+                min={fromDate}
+                onChange={handleToChange}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Từ ngày</label>
-          <input
-            type="date" value={fromDate} max={toDate} onChange={handleFromChange}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Đến ngày</label>
-          <input
-            type="date" value={toDate} min={fromDate} onChange={handleToChange}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-          />
-        </div>
+
+        {/* Active course filter chips */}
+        {selectedCourseIds.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+            {selectedCourseIds.map((id) => {
+              const c = uniqueCourses.find((x) => x.id === id);
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full"
+                >
+                  {c?.name ?? id}
+                  <button
+                    type="button"
+                    onClick={() => toggleCourse(id)}
+                    className="hover:text-blue-900 leading-none"
+                  >
+                    ×
+                  </button>
+                </span>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setSelectedCourseIds([])}
+              className="text-xs text-gray-400 hover:text-gray-600 underline"
+            >
+              Xóa tất cả
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <SummaryCard icon={CalendarDays} title="Tổng buổi dạy" value={summary.totalTeachingSessions} iconClass="text-blue-600" bgClass="bg-blue-50" />
-        <SummaryCard icon={CheckCircle} title="Đúng giờ" value={summary.onTimeCheckins} iconClass="text-green-600" bgClass="bg-green-50" />
-        <SummaryCard icon={Clock} title="Trễ" value={summary.lateCheckins} iconClass="text-amber-600" bgClass="bg-amber-50" />
-        <SummaryCard icon={XCircle} title="Vắng" value={summary.absentCheckins} iconClass="text-red-600" bgClass="bg-red-50" />
+        <SummaryCard
+          icon={CalendarDays} title="Tổng buổi dạy"
+          value={filteredSummary.totalTeachingSessions}
+          iconClass="text-blue-600" bgClass="bg-blue-50"
+        />
+        <SummaryCard
+          icon={CheckCircle} title="Đúng giờ"
+          value={filteredSummary.onTimeCheckins}
+          iconClass="text-green-600" bgClass="bg-green-50"
+        />
+        <SummaryCard
+          icon={Clock} title="Trễ"
+          value={filteredSummary.lateCheckins}
+          iconClass="text-amber-600" bgClass="bg-amber-50"
+        />
+        <SummaryCard
+          icon={XCircle} title="Vắng"
+          value={filteredSummary.absentCheckins}
+          iconClass="text-red-600" bgClass="bg-red-50"
+        />
         <SummaryCard
           icon={TrendingUp} title="Tỉ lệ điểm danh"
-          value={summary.attendanceRate != null ? `${summary.attendanceRate}%` : undefined}
+          value={filteredAttendanceRate != null ? `${filteredAttendanceRate}%` : undefined}
           iconClass="text-purple-600" bgClass="bg-purple-50 col-span-2 sm:col-span-1"
         />
       </div>
@@ -367,36 +620,46 @@ export default function ReportPage() {
       {/* Row 1: double donut | course progress bars */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        {/* Double donut card */}
         <ChartCard
           title="Phân bố buổi dạy"
           subtitle="Trái: đúng giờ / trễ / vắng — Phải: lý thuyết / thực hành"
-          loading={dashboardLoading || workloadLoading}
-          empty={!dashboardLoading && !workloadLoading && bothDonutsEmpty}
+          loading={dashboardLoading}
+          empty={!dashboardLoading && bothDonutsEmpty}
           minH="h-56"
         >
           <div className="flex justify-around items-start pt-2 flex-wrap gap-4">
-            <MiniDonut items={attendanceDonut.items} total={attendanceDonut.total} title="Đúng giờ / Trễ / Vắng" />
-            <MiniDonut items={scheduleTypeDonut.items} total={scheduleTypeDonut.total} title="Lý thuyết / Thực hành" />
+            <MiniDonut
+              items={attendanceDonut.items}
+              total={attendanceDonut.total}
+              title="Đúng giờ / Trễ / Vắng"
+            />
+            <MiniDonut
+              items={scheduleTypeDonut.items}
+              total={scheduleTypeDonut.total}
+              title="Lý thuyết / Thực hành"
+            />
           </div>
         </ChartCard>
 
-        {/* Course progress bars */}
         <ChartCard
           title="Tiến độ điểm danh theo môn"
           subtitle="Xanh ≥ 80% · Vàng 50–79% · Đỏ < 50%"
           loading={dashboardLoading}
-          empty={!dashboardLoading && courseProgressData.length === 0}
+          empty={!dashboardLoading && courseProgressBars.length === 0}
           minH="h-56"
         >
           <div className="space-y-3 overflow-y-auto max-h-[300px] pr-1">
-            {courseProgressData.map((c) => {
+            {courseProgressBars.map((c) => {
               const { bar, text } = rateColor(c.rate);
               return (
                 <div key={c.name}>
                   <div className="flex justify-between items-baseline mb-1">
-                    <span className="text-xs text-gray-700 truncate max-w-[75%]" title={c.name}>{c.name}</span>
-                    <span className={`text-xs font-bold ${text} ml-2 shrink-0`}>{c.rate}%</span>
+                    <span className="text-xs text-gray-700 truncate max-w-[68%]" title={c.name}>
+                      {c.name}
+                    </span>
+                    <span className={`text-xs font-bold ${text} ml-2 shrink-0`}>
+                      {c.rate}% ({c.done}/{c.total})
+                    </span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2">
                     <div
@@ -411,59 +674,114 @@ export default function ReportPage() {
         </ChartCard>
       </div>
 
-      {/* Row 2: weekly trend line chart */}
+      {/* Row 2: Course comparison grouped bar chart */}
       <ChartCard
-        title="Xu hướng điểm danh theo tuần"
-        subtitle="Tỉ lệ buổi đã tạo ĐD / tổng buổi trong mỗi tuần — đường tham chiếu 80%"
-        loading={workloadLoading}
-        empty={!workloadLoading && weekLineData.length < 2}
-        minH="h-56"
+        title="So sánh điểm danh theo môn học"
+        subtitle={
+          selectedCourseIds.length > 0
+            ? `${selectedCourseIds.length} môn được chọn · số buổi đúng giờ / trễ / vắng`
+            : "Tất cả môn học · số buổi đúng giờ / trễ / vắng — chọn môn học để lọc"
+        }
+        loading={dashboardLoading}
+        empty={!dashboardLoading && courseComparisonData.length === 0}
       >
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart data={weekLineData} margin={{ top: 8, right: 24, left: 0, bottom: 4 }}>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            data={courseComparisonData}
+            margin={{ top: 4, right: 16, left: 0, bottom: 48 }}
+          >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="week" tick={{ fontSize: 11 }} />
-            <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 11 }} />
-            <ReferenceLine y={80} stroke="#22c55e" strokeDasharray="5 3" label={{ value: "80%", position: "right", fontSize: 10, fill: "#22c55e" }} />
-            <Tooltip content={lineTrendTooltip} />
-            <Line
-              type="monotone"
-              dataKey="rate"
-              name="Tỉ lệ ĐD"
-              stroke={PALETTE.trend}
-              strokeWidth={2.5}
-              dot={<Dot r={4} fill={PALETTE.trend} stroke="#fff" strokeWidth={2} />}
-              activeDot={{ r: 6 }}
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 10 }}
+              interval={0}
+              angle={-30}
+              textAnchor="end"
+              height={64}
             />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      {/* Row 3: stacked bar by day */}
-      <ChartCard
-        title="Phân bố buổi dạy theo ngày"
-        loading={workloadLoading}
-        empty={!workloadLoading && stackedData.length === 0}
-      >
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={stackedData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-            <Tooltip content={stackedBarTooltip} />
+            <Tooltip content={courseBarTooltip} />
             <Legend
-              iconType="square" iconSize={10}
-              formatter={(v) => {
-                const labels = { created: "Đã điểm danh", notCreatedMissed: "Chưa ĐD (đã qua)", notCreatedScheduled: "Chưa ĐD (sắp tới)" };
-                return <span className="text-xs text-gray-600">{labels[v] ?? v}</span>;
-              }}
+              iconType="square"
+              iconSize={10}
+              formatter={(v) => (
+                <span className="text-xs text-gray-600">{COURSE_BAR_LABELS[v] ?? v}</span>
+              )}
             />
-            <Bar dataKey="created" name="created" stackId="a" fill={PALETTE.created} />
-            <Bar dataKey="notCreatedMissed" name="notCreatedMissed" stackId="a" fill={PALETTE.missedNotCreated} />
-            <Bar dataKey="notCreatedScheduled" name="notCreatedScheduled" stackId="a" fill={PALETTE.scheduledNotCreated} />
+            <Bar dataKey="onTime" name="onTime" fill={PALETTE.onTime} radius={[3, 3, 0, 0]} />
+            <Bar dataKey="late" name="late" fill={PALETTE.late} radius={[3, 3, 0, 0]} />
+            <Bar dataKey="absent" name="absent" fill={PALETTE.absent} radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
+
+      {/* Row 3: weekly trend line + stacked daily bar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <ChartCard
+          title="Xu hướng điểm danh theo tuần"
+          subtitle={`${fromDate} → ${toDate} · tỉ lệ buổi đã tạo ĐD / tổng buổi — đường tham chiếu 80%`}
+          loading={workloadLoading}
+          empty={!workloadLoading && weekLineData.length < 2}
+          minH="h-56"
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart data={weekLineData} margin={{ top: 8, right: 24, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="week" tick={{ fontSize: 11 }} />
+              <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 11 }} />
+              <ReferenceLine
+                y={80}
+                stroke="#22c55e"
+                strokeDasharray="5 3"
+                label={{ value: "80%", position: "right", fontSize: 10, fill: "#22c55e" }}
+              />
+              <Tooltip content={lineTrendTooltip} />
+              <Line
+                type="monotone"
+                dataKey="rate"
+                name="Tỉ lệ ĐD"
+                stroke={PALETTE.trend}
+                strokeWidth={2.5}
+                dot={<Dot r={4} fill={PALETTE.trend} stroke="#fff" strokeWidth={2} />}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard
+          title="Phân bố buổi dạy theo ngày"
+          subtitle={`${fromDate} → ${toDate}`}
+          loading={workloadLoading}
+          empty={!workloadLoading && stackedData.length === 0}
+          minH="h-56"
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={stackedData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+              <Tooltip content={stackedBarTooltip} />
+              <Legend
+                iconType="square"
+                iconSize={10}
+                formatter={(v) => {
+                  const labels = {
+                    created: "Đã điểm danh",
+                    notCreatedMissed: "Chưa ĐD (đã qua)",
+                    notCreatedScheduled: "Chưa ĐD (sắp tới)",
+                  };
+                  return <span className="text-xs text-gray-600">{labels[v] ?? v}</span>;
+                }}
+              />
+              <Bar dataKey="created" name="created" stackId="a" fill={PALETTE.created} />
+              <Bar dataKey="notCreatedMissed" name="notCreatedMissed" stackId="a" fill={PALETTE.missedNotCreated} />
+              <Bar dataKey="notCreatedScheduled" name="notCreatedScheduled" stackId="a" fill={PALETTE.scheduledNotCreated} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
 
     </div>
   );
