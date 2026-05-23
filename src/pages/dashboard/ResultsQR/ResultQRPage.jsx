@@ -23,7 +23,10 @@ import {
   FileSpreadsheet,
   FileSearchIcon,
   RefreshCcw,
+  Smartphone,
 } from "lucide-react";
+import { toast } from "sonner";
+import studentService from "@services/student.service";
 import Pagination from "../../../components/common/Pagination";
 import TeacherPhotosModal from "../admin/components/TeacherPhotosModal";
 import FaceVerificationsModal from "./components/FaceVerificationsModal";
@@ -120,6 +123,22 @@ const ResultQRPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState(null);
   const [isFaceModalOpen, setIsFaceModalOpen] = useState(false);
+  const [resettingDevice, setResettingDevice] = useState(null);
+
+  const handleResetDevice = useCallback(async (studentCode) => {
+    if (!studentCode) return;
+    if (!window.confirm(`Reset thiết bị của sinh viên ${studentCode}?`)) return;
+
+    setResettingDevice(studentCode);
+    try {
+      await studentService.updateStudentByAdmin(studentCode, { device_id: null });
+      toast.success(`Đã reset thiết bị cho sinh viên ${studentCode}`);
+    } catch (err) {
+      toast.error(err.message || "Không thể reset thiết bị");
+    } finally {
+      setResettingDevice(null);
+    }
+  }, []);
 
   const scheduleFromStorage = useMemo(() => readAttendanceSchedule(), []);
   const selectedSchedule = location.state?.schedule || scheduleFromStorage || null;
@@ -201,6 +220,7 @@ const ResultQRPage = () => {
 
       return {
         id: item.student?.student_code || "---",
+        studentCode: item.student?.student_code || null,
         name: item.student?.full_name || "Unknown student",
         dob: item.student?.dob ? formatDate(item.student.dob) : "N/A",
         qrGenerated: formatTime(item.student?.qr_created_at),
@@ -644,7 +664,7 @@ const ResultQRPage = () => {
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600"><MapPin className="w-3.5 h-3.5 text-indigo-400" />{student.location}</div></td>
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600">{student.note}</div></td>
                   <td className="px-6 py-4">
-                    <div className="flex justify-center">
+                    <div className="flex justify-center gap-1">
                       <button
                         type="button"
                         onClick={() => {
@@ -656,6 +676,15 @@ const ResultQRPage = () => {
                         title={student.isFinalized ? "Kết quả đã chốt, không thể chỉnh sửa" : "Chỉnh sửa kết quả"}
                       >
                         <Edit3 className="w-5 h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleResetDevice(student.studentCode)}
+                        disabled={resettingDevice === student.studentCode}
+                        className="p-2 hover:bg-amber-50 text-amber-600 rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Reset thiết bị sinh viên"
+                      >
+                        <Smartphone className="w-5 h-5" />
                       </button>
                     </div>
                   </td>

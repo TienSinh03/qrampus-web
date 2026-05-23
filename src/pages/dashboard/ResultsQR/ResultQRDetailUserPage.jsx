@@ -1,14 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     SquareStar, MapPin, Monitor, Clock, Calendar,
     CheckCircle2, XCircle, Info, User, Phone, Mail, GraduationCap,
-    ScanFace, ZoomIn, UserCircle2,
+    ScanFace, ZoomIn, UserCircle2, Smartphone,
 } from 'lucide-react';
 import Lightbox from '@components/common/Lightbox';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAttendance } from '@contexts/AttendanceContext';
+import { toast } from 'sonner';
+import studentService from '@services/student.service';
 
 const getSafeDate = (value) => {
     if (!value) return null;
@@ -177,6 +179,7 @@ const ResultQRDetailUserPage = () => {
     const [attendanceData, setAttendanceData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [resettingDevice, setResettingDevice] = useState(false);
 
     const detailPayload = useMemo(() => {
         if (location.state?.detailPayload) {
@@ -186,6 +189,21 @@ const ResultQRDetailUserPage = () => {
 
     const schedule = detailPayload?.schedule || null;
     const fallbackStudent = detailPayload?.student || {};
+
+    const handleResetDevice = useCallback(async () => {
+        const studentCode = fallbackStudent?.studentCode;
+        if (!studentCode) return;
+        if (!window.confirm(`Reset thiết bị của sinh viên ${studentCode}?`)) return;
+        setResettingDevice(true);
+        try {
+            await studentService.updateStudentByAdmin(studentCode, { device_id: null });
+            toast.success(`Đã reset thiết bị cho sinh viên ${studentCode}`);
+        } catch (err) {
+            toast.error(err.message || 'Không thể reset thiết bị');
+        } finally {
+            setResettingDevice(false);
+        }
+    }, [fallbackStudent?.studentCode]);
     const studentId = fallbackStudent?.studentId || fallbackStudent?.id || null;
     const courseSectionId = detailPayload?.courseSectionId || schedule?.course_section_id || null;
     const practiceGroupId = detailPayload?.practiceGroupId || null;
@@ -404,6 +422,16 @@ const ResultQRDetailUserPage = () => {
                                     <span className="text-xs font-bold text-slate-600">{studentInfo.phone}</span>
                                 </div>
                             </div>
+
+                            <button
+                                type="button"
+                                onClick={handleResetDevice}
+                                disabled={resettingDevice}
+                                className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 text-xs font-bold hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Smartphone className="w-4 h-4" />
+                                {resettingDevice ? 'Đang reset...' : 'Reset thiết bị'}
+                            </button>
                         </div>
                     </div>
                 </div>
