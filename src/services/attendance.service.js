@@ -303,6 +303,203 @@ class AttendanceService {
   }
 
   /**
+   * Điều chỉnh thủ công trạng thái chấm công giảng viên cho 1 buổi học (multipart)
+   * @param {string} classSessionId
+   * @param {Object} payload - {
+   *   lecturer_attendance_status, lecturer_checkin_at?, late_minutes?, reason?,
+   *   evidence?: File[]
+   * }
+   */
+  async manualAdjustLecturerAttendance(classSessionId, payload) {
+    try {
+      const fd = new FormData();
+      if (payload.lecturer_attendance_status) fd.append('lecturer_attendance_status', payload.lecturer_attendance_status);
+      if (payload.lecturer_checkin_at)        fd.append('lecturer_checkin_at', payload.lecturer_checkin_at);
+      if (payload.late_minutes !== undefined) fd.append('late_minutes', String(payload.late_minutes));
+      if (payload.reason)                     fd.append('reason', payload.reason);
+      if (Array.isArray(payload.evidence)) {
+        for (const file of payload.evidence) {
+          if (file instanceof File || file instanceof Blob) fd.append('evidence', file);
+        }
+      }
+
+      const response = await axiosClient.patch(
+        ATTENDANCE_ENDPOINTS.SCHEDULE_MANUAL_ADJUST(classSessionId),
+        fd,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Lấy lịch sử điều chỉnh thủ công của 1 buổi học
+   * @param {string} classSessionId
+   */
+  async getAdjustmentHistory(classSessionId) {
+    try {
+      const response = await axiosClient.get(
+        ATTENDANCE_ENDPOINTS.SCHEDULE_ADJUSTMENT_HISTORY(classSessionId),
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // ───── Attendance Adjustment Requests (staff/admin) ─────
+
+  /**
+   * Staff/Admin lấy danh sách yêu cầu điều chỉnh chấm công (mặc định pending)
+   * @param {Object} params - { status, course_code, teacher_name, from_date, to_date, page, limit }
+   */
+  async listAdjustmentRequests(params = {}) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.ADJUSTMENT_REQUESTS, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async countPendingAdjustmentRequests() {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.ADJUSTMENT_REQUESTS_COUNT_PENDING);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async approveAdjustmentRequest(requestId, reviewNote) {
+    try {
+      const response = await axiosClient.patch(
+        ATTENDANCE_ENDPOINTS.ADJUSTMENT_REQUEST_APPROVE(requestId),
+        { review_note: reviewNote },
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async rejectAdjustmentRequest(requestId, reviewNote) {
+    try {
+      const response = await axiosClient.patch(
+        ATTENDANCE_ENDPOINTS.ADJUSTMENT_REQUEST_REJECT(requestId),
+        { review_note: reviewNote },
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // ───── Adjustment Requests (teacher self-service) ─────
+
+  /**
+   * GV gửi yêu cầu điều chỉnh chấm công (multipart)
+   * @param {Object} payload - {
+   *   class_session_id, requested_status, requested_checkin_at?, reason, evidence?: File[]
+   * }
+   */
+  async createMyAdjustmentRequest(payload) {
+    try {
+      const fd = new FormData();
+      if (payload.class_session_id)     fd.append('class_session_id', payload.class_session_id);
+      if (payload.requested_status)     fd.append('requested_status', payload.requested_status);
+      if (payload.requested_checkin_at) fd.append('requested_checkin_at', payload.requested_checkin_at);
+      if (payload.reason)               fd.append('reason', payload.reason);
+      if (Array.isArray(payload.evidence)) {
+        for (const file of payload.evidence) {
+          if (file instanceof File || file instanceof Blob) fd.append('evidence', file);
+        }
+      }
+      const response = await axiosClient.post(
+        ATTENDANCE_ENDPOINTS.ADJUSTMENT_REQUESTS,
+        fd,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * GV xem các request của chính mình
+   * @param {Object} params - { status?, page?, limit? }
+   */
+  async getMyAdjustmentRequests(params = {}) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.ADJUSTMENT_REQUESTS_ME, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * GV huỷ request pending của mình
+   */
+  async cancelMyAdjustmentRequest(requestId) {
+    try {
+      const response = await axiosClient.patch(
+        ATTENDANCE_ENDPOINTS.ADJUSTMENT_REQUEST_CANCEL(requestId),
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Thống kê chấm công GV cho BPCC
+   * @param {Object} params - { semester, department, teacher_id, course_section_id, course_code, from_date, to_date, granularity }
+   */
+  async getAttendanceStatistics(params = {}) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SCHEDULE_STATISTICS, { params });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getStatsFilterSemesters() {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SCHEDULE_FILTER_SEMESTERS);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getStatsFilterPersonnel(department) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SCHEDULE_FILTER_PERSONNEL, {
+        params: department ? { department } : {},
+      });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getStatsFilterTeacherCourses(teacherId, semester) {
+    try {
+      const response = await axiosClient.get(ATTENDANCE_ENDPOINTS.SCHEDULE_FILTER_TEACHER_COURSES, {
+        params: { teacher_id: teacherId, semester: semester || undefined },
+      });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Thống kê nhanh số buổi hôm nay đã/chưa tạo phiên điểm danh
    */
   async getScheduleTodayStats() {

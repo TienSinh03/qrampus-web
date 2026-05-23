@@ -20,6 +20,7 @@ import ResultQRextendStudentPage from "../pages/dashboard/ResultsQR/ResultQRexte
 import AccountPage from "@pages/dashboard/AccountSetting/AccountPage";
 import QRViewPage from "../pages/dashboard/teacher/QRViewPage";
 import Timekeeping from "../pages/dashboard/teacher/Timekeeping";
+import MyAdjustmentRequestsPage from "../pages/dashboard/teacher/MyAdjustmentRequestsPage";
 import SurveyPage from "../pages/dashboard/teacher/SurveyPage";
 import LeavePage from "../pages/dashboard/teacher/LeavePage";
 import AnnouncementPage from "../pages/dashboard/teacher/AnnouncementPage";
@@ -53,6 +54,8 @@ import AttendanceTimesheetManagementPage from "@pages/dashboard/departmentAttend
 import AttendanceTeacherPage from "@pages/dashboard/departmentAttendance/AttendanceTeacherPage";
 import AttendanceSchedulePage from "@pages/dashboard/departmentAttendance/AttendanceSchedulePage";
 import AttendanceSessionQRPage from "@pages/dashboard/departmentAttendance/AttendanceSessionQRPage";
+import AttendanceAdjustmentRequestsPage from "@pages/dashboard/departmentAttendance/AttendanceAdjustmentRequestsPage";
+import AttendanceStatisticsPage from "@pages/dashboard/departmentAttendance/AttendanceStatisticsPage";
 
 
 // chung
@@ -203,6 +206,14 @@ const router = createBrowserRouter([
         element: (
           <RoleRoute requiredRoles={[ROLES.TEACHER]}>
             <Timekeeping />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "timekeeping/my-adjustment-requests",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <MyAdjustmentRequestsPage />
           </RoleRoute>
         ),
       },
@@ -446,6 +457,22 @@ const router = createBrowserRouter([
             <AttendanceSessionQRPage />
           </RoleRoute>
         )
+      },
+      {
+        path: "attendance-adjustment-requests",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF, ROLES.ADMIN]}>
+            <AttendanceAdjustmentRequestsPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "attendance-statistics",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF, ROLES.ADMIN]}>
+            <AttendanceStatisticsPage />
+          </RoleRoute>
+        ),
       },
       {
         path: "manage-notifications",

@@ -39,6 +39,20 @@ export const ATTENDANCE_ENDPOINTS = {
   SCHEDULE: `${API_VERSION}/attendance-schedule`,
   SCHEDULE_TODAY_STATS: `${API_VERSION}/attendance-schedule/today-stats`,
   SCHEDULE_WORKLOAD_BY_COURSE: `${API_VERSION}/attendance-schedule/workload`,
+  SCHEDULE_MANUAL_ADJUST: (classSessionId) => `${API_VERSION}/attendance-schedule/${classSessionId}/manual-adjust`,
+  SCHEDULE_ADJUSTMENT_HISTORY: (classSessionId) => `${API_VERSION}/attendance-schedule/${classSessionId}/adjustments`,
+  SCHEDULE_STATISTICS: `${API_VERSION}/attendance-schedule/statistics`,
+  SCHEDULE_FILTER_SEMESTERS: `${API_VERSION}/attendance-schedule/filter-options/semesters`,
+  SCHEDULE_FILTER_PERSONNEL: `${API_VERSION}/attendance-schedule/filter-options/personnel`,
+  SCHEDULE_FILTER_TEACHER_COURSES: `${API_VERSION}/attendance-schedule/filter-options/teacher-courses`,
+
+  // Attendance adjustment requests (GV gửi → staff duyệt)
+  ADJUSTMENT_REQUESTS: `${API_VERSION}/attendance-adjustment-requests`,
+  ADJUSTMENT_REQUESTS_ME: `${API_VERSION}/attendance-adjustment-requests/me`,
+  ADJUSTMENT_REQUESTS_COUNT_PENDING: `${API_VERSION}/attendance-adjustment-requests/count-pending`,
+  ADJUSTMENT_REQUEST_CANCEL: (requestId) => `${API_VERSION}/attendance-adjustment-requests/${requestId}/cancel`,
+  ADJUSTMENT_REQUEST_APPROVE: (requestId) => `${API_VERSION}/attendance-adjustment-requests/${requestId}/approve`,
+  ADJUSTMENT_REQUEST_REJECT: (requestId) => `${API_VERSION}/attendance-adjustment-requests/${requestId}/reject`,
 
   // Teacher attendance workload
   TEACHER_WORKLOAD: `${API_VERSION}/teachers/me/attendance-workload`,

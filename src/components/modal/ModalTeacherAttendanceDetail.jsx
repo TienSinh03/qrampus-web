@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Clock,
   CheckCircle2,
@@ -10,9 +10,13 @@ import {
   Settings,
   FileSearchIcon,
   X,
+  Send,
+  Check,
 } from "lucide-react";
 import Pagination from "../common/Pagination";
 import { useAttendance } from "@contexts/AttendanceContext";
+import attendanceService from "@services/attendance.service";
+import TeacherAdjustmentRequestModal from "./TeacherAdjustmentRequestModal";
 
 const MODAL_TABLE_PAGE_SIZE = 8;
 
@@ -64,8 +68,30 @@ export default function ModalTeacherAttendanceDetail({
     creator: true,
     group: true,
     status: true,
+    request: true,
     detail: true,
   });
+
+  // Map: classSessionId -> request object (lấy về 1 lần khi mở modal)
+  const [myRequestsMap, setMyRequestsMap] = useState({});
+  const [requestModalTarget, setRequestModalTarget] = useState(null); // { session, existingRequest }
+
+  const reloadMyRequests = useCallback(async () => {
+    try {
+      const res = await attendanceService.getMyAdjustmentRequests({ limit: 100 });
+      const items = res?.data?.items || [];
+      const map = {};
+      // Ưu tiên giữ request mới nhất per class_session (mảng đã sort DESC theo requested_at từ BE)
+      for (const it of items) {
+        const csId = it.class_session_id || it.class_session?.id;
+        if (!csId) continue;
+        if (!map[csId]) map[csId] = it;
+      }
+      setMyRequestsMap(map);
+    } catch {
+      setMyRequestsMap({});
+    }
+  }, []);
 
   const selectedCourseSectionId = selectedCourse?.courseSectionId;
   const selectedPracticeGroupId = selectedCourse?.practiceGroupId;
@@ -127,6 +153,26 @@ export default function ModalTeacherAttendanceDetail({
     selectedMonthNumber,
     fetchTeacherCourseAttendanceSessions,
   ]);
+
+  // Khi modal mở, load các request của GV để hiển thị tình trạng per session
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    attendanceService.getMyAdjustmentRequests({ limit: 100 })
+      .then((res) => {
+        if (cancelled) return;
+        const items = res?.data?.items || [];
+        const map = {};
+        for (const it of items) {
+          const csId = it.class_session_id || it.class_session?.id;
+          if (!csId) continue;
+          if (!map[csId]) map[csId] = it;
+        }
+        setMyRequestsMap(map);
+      })
+      .catch(() => { if (!cancelled) setMyRequestsMap({}); });
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   const sessionsToRender = useMemo(() => {
     const normalizedStatus = selectedStatus || "Tất cả";
@@ -521,6 +567,7 @@ export default function ModalTeacherAttendanceDetail({
                         ["creator", "Người tạo"],
                         ["group", "Nhóm thực hành"],
                         ["status", "Trạng thái"],
+                        ["request", "Yêu cầu điều chỉnh"],
                       ].map(([key, label]) => {
                         const active = visibleCols[key];
 
@@ -576,13 +623,16 @@ export default function ModalTeacherAttendanceDetail({
                     {visibleCols.status && (
                       <th className="px-6 py-4 text-center">Trạng thái</th>
                     )}
+                    {visibleCols.request && (
+                      <th className="px-6 py-4 text-center">Yêu cầu điều chỉnh</th>
+                    )}
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-gray-200">
                   {sessionsLoading ? (
                     <tr>
-                      <td colSpan="9" className="px-6 py-10 text-center text-gray-500">
+                      <td colSpan="10" className="px-6 py-10 text-center text-gray-500">
                         Đang tải dữ liệu...
                       </td>
                     </tr>
@@ -636,12 +686,74 @@ export default function ModalTeacherAttendanceDetail({
                       {visibleCols.status && (
                         <td className="px-6 py-4 text-center">{getStatusBadge(session.lecturerAttendanceStatus)}</td>
                       )}
+
+                      {visibleCols.request && (() => {
+                        const csId = session.classSessionId || session.id;
+                        const myReq = csId ? myRequestsMap[csId] : null;
+                        const isAbsent = String(session.lecturerAttendanceStatus || "").toLowerCase() === "absent";
+                        const isPast = session.classDate
+                          ? new Date(`${session.classDate}T00:00:00`) <= new Date()
+                          : true;
+
+                        // Có request → hiển thị badge + nút xem
+                        if (myReq) {
+                          const reqCfg = {
+                            pending:   { label: "Đang chờ duyệt", cls: "bg-yellow-100 text-yellow-700" },
+                            approved:  { label: "Đã được duyệt",  cls: "bg-emerald-100 text-emerald-700" },
+                            rejected:  { label: "Đã từ chối",     cls: "bg-red-100 text-red-700" },
+                            cancelled: { label: "Đã huỷ",         cls: "bg-gray-100 text-gray-600" },
+                          }[myReq.status] || { label: myReq.status, cls: "bg-gray-100 text-gray-600" };
+                          return (
+                            <td className="px-6 py-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setRequestModalTarget({ session, existingRequest: myReq })}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${reqCfg.cls} hover:opacity-80`}
+                                title="Xem chi tiết yêu cầu"
+                              >
+                                {reqCfg.label}
+                              </button>
+                            </td>
+                          );
+                        }
+
+                        // Đủ điều kiện gửi: absent + đã qua/đang ngày + có classSessionId
+                        if (isAbsent && isPast && csId) {
+                          return (
+                            <td className="px-6 py-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setRequestModalTarget({ session, existingRequest: null })}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium border border-blue-200"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                Gửi yêu cầu
+                              </button>
+                            </td>
+                          );
+                        }
+
+                        // Đã chấm thành công (on_time/late/manual_override)
+                        const status = String(session.lecturerAttendanceStatus || "").toLowerCase();
+                        if (["on_time", "late", "manual_override"].includes(status)) {
+                          return (
+                            <td className="px-6 py-4 text-center">
+                              <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                                <Check className="w-3.5 h-3.5" />
+                                Đã ghi nhận
+                              </span>
+                            </td>
+                          );
+                        }
+
+                        return <td className="px-6 py-4 text-center text-xs text-gray-300">--</td>;
+                      })()}
                     </tr>
                   ))}
 
                   {!sessionsLoading && paginatedSessions.length === 0 && (
                     <tr>
-                      <td colSpan="9" className="px-6 py-10 text-center text-gray-500">
+                      <td colSpan="10" className="px-6 py-10 text-center text-gray-500">
                         {sessionsError || "Chưa có dữ liệu chấm công cho học phần này."}
                       </td>
                     </tr>
@@ -663,6 +775,15 @@ export default function ModalTeacherAttendanceDetail({
           </div>
         </div>
       </div>
+
+      {requestModalTarget && (
+        <TeacherAdjustmentRequestModal
+          session={requestModalTarget.session}
+          existingRequest={requestModalTarget.existingRequest}
+          onClose={() => setRequestModalTarget(null)}
+          onSubmitted={reloadMyRequests}
+        />
+      )}
     </div>
   );
 }

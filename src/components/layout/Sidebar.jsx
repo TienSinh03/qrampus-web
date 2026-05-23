@@ -25,9 +25,12 @@ import {
   LucideTestTube,
   List,
   ListChecks,
+  ClipboardCheck,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ROLES } from '@constants/roles';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -78,11 +81,25 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       path: '/dashboard/survey-page',
       roles: [ROLES.TEACHER]
     },
-    { 
-      icon: FileText, 
-      label: 'Quản lý Chấm Công', 
-      path: '/dashboard/timekeeping',
-      roles: [ROLES.TEACHER]
+    {
+      icon: FileText,
+      label: 'Quản lý Chấm Công',
+      key: 'teacher-timekeeping',
+      roles: [ROLES.TEACHER],
+      children: [
+        {
+          icon: LayoutDashboard,
+          label: 'Tổng quan',
+          path: '/dashboard/timekeeping',
+          roles: [ROLES.TEACHER],
+        },
+        {
+          icon: ClipboardCheck,
+          label: 'Giải trình Công dạy',
+          path: '/dashboard/timekeeping/my-adjustment-requests',
+          roles: [ROLES.TEACHER],
+        },
+      ],
     },
     { 
       icon: ImagePlus, 
@@ -207,7 +224,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     {
       icon: BarChart,
       label: 'Thống kê Chấm Công',
-      parth: '/dashboard/attendance-statistics',
+      path: '/dashboard/attendance-statistics',
       roles: [ROLES.ATTENDANCE_STAFF]
     },
     {
@@ -221,6 +238,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: CalendarClock,
       label: 'Danh sách Lịch dạy',
       path: '/dashboard/attendance-schedule',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    //Yêu cầu điều chỉnh chấm công của GV
+    {
+      icon: ClipboardCheck,
+      label: 'Yêu cầu điều chỉnh',
+      path: '/dashboard/attendance-adjustment-requests',
       roles: [ROLES.ATTENDANCE_STAFF]
     },
     //quản lý điểm danh
@@ -259,6 +283,27 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     (!activeRole && userRoles.length === 1 && userRoles.includes(ROLES.ATTENDANCE_STAFF));
 
   const isActive = (path) => location.pathname === path;
+
+  // State quản lý dropdown nào đang mở (theo key của parent menu)
+  const [expandedKeys, setExpandedKeys] = useState({});
+
+  const toggleExpand = (key) => {
+    setExpandedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Auto-expand parent nếu route hiện tại trùng với 1 child của nó
+  useEffect(() => {
+    const toOpen = {};
+    for (const item of menuItems) {
+      if (Array.isArray(item.children) && item.children.some((c) => isActive(c.path))) {
+        toOpen[item.key || item.path] = true;
+      }
+    }
+    if (Object.keys(toOpen).length > 0) {
+      setExpandedKeys((prev) => ({ ...prev, ...toOpen }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, menuItems]);
 
   // Toggle thu gọn (chỉ áp dụng trên desktop)
   const toggleCollapse = () => {
@@ -417,11 +462,15 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             ) : (
               menuItems.map((item, index) => {
                 const Icon = item.icon;
-                const active = isActive(item.path);
                 const showSeparator = item.separator && index > 0;
+                const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+                const menuKey = item.key || item.path;
+                const isExpanded = !!expandedKeys[menuKey];
+                const hasActiveChild = hasChildren && item.children.some((c) => isActive(c.path));
+                const active = hasChildren ? hasActiveChild : isActive(item.path);
 
                 return (
-                  <div key={item.path}>
+                  <div key={menuKey}>
                     {/* Separator line */}
                     {showSeparator && !isCollapsed && (
                       <div className="my-3 border-t border-slate-200" />
@@ -430,38 +479,108 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                       <div className="my-2" />
                     )}
 
-                    <Link
-                      to={item.path}
-                      onClick={() => window.innerWidth < 1024 && toggleSidebar()}
-                      className={`
-                        group relative flex items-center
-                        ${isCollapsed ? 'justify-center' : 'gap-3 px-4'}
-                        py-3 rounded-sm transition-all duration-200
-                        ${active
-                        ? 'bg-[#153898] text-white shadow-md'
-                        : 'text-slate-700 hover:bg-slate-100'
-                        }
-                      `}
-                      title={isCollapsed ? item.label : undefined} // tooltip khi thu gọn
-                    >
-                      {/* Active indicator */}
-                      {active && !isCollapsed && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
-                      )}
+                    {hasChildren ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isCollapsed) {
+                              // Khi collapsed → click navigate đến child đầu tiên
+                              return;
+                            }
+                            toggleExpand(menuKey);
+                          }}
+                          className={`
+                            group relative flex items-center w-full text-left
+                            ${isCollapsed ? 'justify-center' : 'gap-3 px-4'}
+                            py-3 rounded-sm transition-all duration-200
+                            ${active
+                              ? 'bg-[#153898] text-white shadow-md'
+                              : 'text-slate-700 hover:bg-slate-100'
+                            }
+                          `}
+                          title={isCollapsed ? item.label : undefined}
+                        >
+                          {active && !isCollapsed && (
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+                          )}
+                          <Icon
+                            className={`
+                              w-6 h-6 shrink-0
+                              ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}
+                            `}
+                          />
+                          {!isCollapsed && (
+                            <>
+                              <span className="font-medium truncate flex-1">{item.label}</span>
+                              {isExpanded ? (
+                                <ChevronDown className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                              ) : (
+                                <ChevronRight className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                              )}
+                            </>
+                          )}
+                        </button>
 
-                      <Icon
+                        {/* Children dropdown */}
+                        {!isCollapsed && isExpanded && (
+                          <div className="mt-1 ml-2 pl-3 border-l-2 border-slate-200 space-y-1">
+                            {item.children.map((child) => {
+                              const ChildIcon = child.icon;
+                              const childActive = isActive(child.path);
+                              return (
+                                <Link
+                                  key={child.path}
+                                  to={child.path}
+                                  onClick={() => window.innerWidth < 1024 && toggleSidebar()}
+                                  className={`
+                                    group relative flex items-center gap-3 px-3 py-2 rounded-sm text-sm
+                                    transition-all duration-200
+                                    ${childActive
+                                      ? 'bg-blue-50 text-[#153898] font-medium'
+                                      : 'text-slate-600 hover:bg-slate-100'
+                                    }
+                                  `}
+                                >
+                                  <ChildIcon
+                                    className={`w-4 h-4 shrink-0 ${childActive ? 'text-[#153898]' : 'text-slate-400'}`}
+                                  />
+                                  <span className="truncate">{child.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <Link
+                        to={item.path}
+                        onClick={() => window.innerWidth < 1024 && toggleSidebar()}
                         className={`
-                          w-6 h-6 shrink-0
-                          ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}
+                          group relative flex items-center
+                          ${isCollapsed ? 'justify-center' : 'gap-3 px-4'}
+                          py-3 rounded-sm transition-all duration-200
+                          ${active
+                            ? 'bg-[#153898] text-white shadow-md'
+                            : 'text-slate-700 hover:bg-slate-100'
+                          }
                         `}
-                      />
-
-                      {!isCollapsed && (
-                        <span className="font-medium truncate">
-                          {item.label}
-                        </span>
-                      )}
-                    </Link>
+                        title={isCollapsed ? item.label : undefined}
+                      >
+                        {active && !isCollapsed && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+                        )}
+                        <Icon
+                          className={`
+                            w-6 h-6 shrink-0
+                            ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}
+                          `}
+                        />
+                        {!isCollapsed && (
+                          <span className="font-medium truncate">{item.label}</span>
+                        )}
+                      </Link>
+                    )}
                   </div>
                 );
               })
