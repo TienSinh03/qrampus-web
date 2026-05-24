@@ -1,249 +1,210 @@
-import React, { useState } from 'react';
-import { Upload, X, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { Eye, EyeOff, ArrowLeft, Check, X } from "lucide-react"; // Thêm Check, X để làm icon note
+import { useNavigate } from "react-router-dom";
+import AuthService from "@services/AuthService";
 
-const AccountPage = () => {
-    const [activeTab, setActiveTab] = useState('tài khoản'); // Active tab state
-    const [avatar, setAvatar] = useState(null);
-    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+const ChangePasswordPage = () => {
+  const [show, setShow] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
 
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file && file.size <= 800 * 1024) { // Giới hạn 800KB
-            setAvatar(URL.createObjectURL(file));
-        } else if (file) {
-            alert('File quá lớn! Kích thước tối đa là 800KB.');
-        }
-    };
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
-    const resetAvatar = () => setAvatar(null);
+  const navigate = useNavigate();
 
-    // Toggle password visibility
-    const toggleCurrentPasswordVisibility = () => {
-        setShowCurrentPassword(!showCurrentPassword);
-    };
+  // --- HÀM KIỂM TRA ĐIỀU KIỆN MẬT KHẨU ---
+  const getPasswordRequirements = (password) => {
+    return [
+      { label: "Ít nhất 8 ký tự", met: password.length >= 8 },
+      { label: "Ít nhất 1 chữ hoa", met: /[A-Z]/.test(password) },
+      { label: "Ít nhất 1 chữ thường", met: /[a-z]/.test(password) },
+      { label: "Ít nhất 1 chữ số", met: /\d/.test(password) },
+      { label: "Ít nhất 1 ký tự đặc biệt (!@#$%...)", met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+    ];
+  };
 
-    const toggleNewPasswordVisibility = () => {
-        setShowNewPassword(!showNewPassword);
-    };
+  const handleInputChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    if (errors[field]) setErrors({ ...errors, [field]: "" });
+    if (message.text) setMessage({ type: "", text: "" });
+  };
 
-    const toggleConfirmPasswordVisibility = () => {
-        setShowConfirmPassword(!showConfirmPassword);
-    };
+  const validateForm = () => {
+    const newErrors = {};
+    const requirements = getPasswordRequirements(formData.newPassword);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // Xử lý thay đổi mật khẩu ở đây
-        console.log('Current Password:', currentPassword);
-        console.log('New Password:', newPassword);
-        console.log('Confirm Password:', confirmPassword);
-    };
+    if (!formData.currentPassword) {
+      newErrors.currentPassword = "Vui lòng nhập mật khẩu hiện tại";
+    }
 
-    return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="mx-auto px-4 sm:px-4 lg:px-4">
-                {/* Tabs */}
-                <div className="flex space-x-8 border-b border-gray-200 mb-8">
-                    {['Tài khoản', 'Security'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab.toLowerCase())}
-                            className={`pb-4 px-2 text-lg font-medium transition-colors relative ${activeTab === tab.toLowerCase()
-                                ? 'text-purple-600'
-                                : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                        >
-                            {tab}
-                            {activeTab === tab.toLowerCase() && (
-                                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600"></span>
-                            )}
-                        </button>
-                    ))}
-                </div>
+    if (!formData.newPassword) {
+      newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
+    } else {
+      // Kiểm tra xem tất cả các yêu cầu trong note đã khớp chưa
+      const unmet = requirements.filter(r => !r.met);
+      if (unmet.length > 0) {
+        newErrors.newPassword = "Mật khẩu mới chưa đủ mạnh";
+      }
+    }
 
-                {/* Account Tab Content */}
-                {activeTab === 'tài khoản' && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                        {/* Avatar Section */}
-                        <div className="flex flex-col md:flex-row items-start space-x-0 md:space-x-8 mb-10">
-                            <div className="flex flex-col items-center">
-                                <div className="relative">
-                                    <img
-                                        src={avatar || 'https://www.w3schools.com/w3images/avatar2.png'}
-                                        alt="Avatar"
-                                        className="w-28 h-28 rounded-full object-cover border-4 border-gray-100 shadow-md"
-                                    />
-                                    {avatar && (
-                                        <button
-                                            onClick={resetAvatar}
-                                            className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-lg border border-gray-300 hover:bg-gray-50"
-                                        >
-                                            <X className="w-5 h-5 text-gray-600" />
-                                        </button>
-                                    )}
-                                </div>
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu mới";
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+    }
 
-                                <div className="mt-4 text-center">
-                                    <label className="cursor-pointer">
-                                        <span className="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition">
-                                            <Upload className="w-4 h-4 mr-2" />
-                                            Tải lên hình ảnh mới
-                                        </span>
-                                        <input
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/gif"
-                                            onChange={handleImageUpload}
-                                            className="hidden"
-                                        />
-                                    </label>
-                                    <button
-                                        onClick={resetAvatar}
-                                        className="block mt-2 text-red-600 text-sm hover:text-red-700 font-medium"
-                                    >
-                                        Đặt lại
-                                    </button>
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        Cho phép JPG, GIF hoặc PNG. Kích thước tối đa 800K
-                                    </p>
-                                </div>
-                            </div>
+    if (formData.currentPassword && formData.newPassword && 
+        formData.currentPassword === formData.newPassword) {
+      newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu hiện tại";
+    }
 
-                            {/* Form Grid */}
-                            <div className="flex-1 space-y-6">
-                                {/* Các trường thông tin tài khoản */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên Giảng viên</label>
-                                        <input
-                                            type="text"
-                                            defaultValue="Nguyễn Văn A"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nã nhân sự</label>
-                                        <input
-                                            type="text"
-                                            defaultValue="1012345"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                        />
-                                    </div>
-                                </div>
-                                {/* Các trường thông tin khác */}
-                                {/* ... */}
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-                                {/* Liên kết đến trang thay đổi mật khẩu */}
-                                <div className="pt-4">
-                                    <button
-                                        onClick={() => setActiveTab('security')}
-                                        className="text-sm text-purple-600 hover:text-purple-800 font-medium"
-                                    >
-                                        Thay đổi mật khẩu
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-                {/* Change Password Tab Content */}
-                {activeTab === 'security' && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Change Password</h2>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Current Password */}
-                            <div>
-                                <label htmlFor="current-password" className="block text-sm font-medium text-gray-700">Current Password</label>
-                                <div className="relative mt-1">
-                                    <input
-                                        type={showCurrentPassword ? 'text' : 'password'}
-                                        id="current-password"
-                                        value={currentPassword}
-                                        onChange={(e) => setCurrentPassword(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={toggleCurrentPasswordVisibility}
-                                        className="absolute inset-y-0 right-2 flex items-center text-gray-600"
-                                    >
-                                        {showCurrentPassword ? <EyeOff /> : <Eye />}
-                                    </button>
-                                </div>
-                            </div>
+    setLoading(true);
+    try {
+      await AuthService.changePassword(formData.currentPassword, formData.newPassword);
+      setMessage({ type: "success", text: "Đổi mật khẩu thành công! Đang chuyển hướng..." });
+      setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setTimeout(() => navigate("/dashboard/account-setting"), 2000);
+    } catch (error) {
+      setMessage({ type: "error", text: error.message || "Đổi mật khẩu thất bại." });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                            {/* New Password */}
-                            <div>
-                                <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">New Password</label>
-                                <div className="relative mt-1">
-                                    <input
-                                        type={showNewPassword ? 'text' : 'password'}
-                                        id="new-password"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={toggleNewPasswordVisibility}
-                                        className="absolute inset-y-0 right-2 flex items-center text-gray-600"
-                                    >
-                                        {showNewPassword ? <EyeOff /> : <Eye />}
-                                    </button>
-                                </div>
-                            </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="mx-auto px-4 max-w-xl">
+        <div className="h-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-xl" />
+        <div className="bg-white rounded-b-xl shadow-sm border p-8">
+          <button
+            onClick={() => navigate("/dashboard/account-setting")}
+            className="flex items-center text-sm text-purple-600 mb-6 hover:underline"
+          >
+            <ArrowLeft size={18} className="mr-1" />
+            Quay lại tài khoản
+          </button>
 
-                            {/* Confirm Password */}
-                            <div>
-                                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">Confirm New Password</label>
-                                <div className="relative mt-1">
-                                    <input
-                                        type={showConfirmPassword ? 'text' : 'password'}
-                                        id="confirm-password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={toggleConfirmPasswordVisibility}
-                                        className="absolute inset-y-0 right-2 flex items-center text-gray-600"
-                                    >
-                                        {showConfirmPassword ? <EyeOff /> : <Eye />}
-                                    </button>
-                                </div>
-                            </div>
+          <h2 className="text-2xl font-bold mb-6">Đổi mật khẩu</h2>
 
-                            {/* Buttons */}
-                            <div className="flex space-x-4">
-                                <button
-                                    type="submit"
-                                    className="w-full py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition"
-                                >
-                                    Save Changes
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); }}
-                                    className="w-full py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition"
-                                >
-                                    Reset
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                )}
+          {message.text && (
+            <div className={`mb-4 p-4 rounded-lg border ${
+              message.type === "success" ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"
+            }`}>
+              {message.text}
             </div>
+          )}
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <PasswordInput
+              label="Mật khẩu hiện tại"
+              value={formData.currentPassword}
+              onChange={(e) => handleInputChange("currentPassword", e.target.value)}
+              show={show.current}
+              toggle={() => setShow({ ...show, current: !show.current })}
+              error={errors.currentPassword}
+              disabled={loading}
+            />
+
+            <div>
+              <PasswordInput
+                label="Mật khẩu mới"
+                value={formData.newPassword}
+                onChange={(e) => handleInputChange("newPassword", e.target.value)}
+                show={show.next}
+                toggle={() => setShow({ ...show, next: !show.next })}
+                error={errors.newPassword}
+                disabled={loading}
+              />
+              
+              {/* --- PHẦN GHI CHÚ MẬT KHẨU --- */}
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Yêu cầu mật khẩu:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {getPasswordRequirements(formData.newPassword).map((req, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      {req.met ? (
+                        <Check size={14} className="text-green-500" />
+                      ) : (
+                        <X size={14} className="text-gray-300" />
+                      )}
+                      <span className={`text-xs ${req.met ? "text-green-700" : "text-gray-500"}`}>
+                        {req.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <PasswordInput
+              label="Xác nhận mật khẩu mới"
+              value={formData.confirmPassword}
+              onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+              show={show.confirm}
+              toggle={() => setShow({ ...show, confirm: !show.confirm })}
+              error={errors.confirmPassword}
+              disabled={loading}
+            />
+
+            <div className="flex gap-4 pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-all"
+              >
+                {loading ? "Đang xử lý..." : "Cập nhật mật khẩu"}
+              </button>
+            </div>
+          </form>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
-export default AccountPage;
+// Component con giữ nguyên logic style nhưng gọn gàng hơn
+const PasswordInput = ({ label, show, toggle, value, onChange, error, disabled }) => (
+  <div className="w-full">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <div className="relative">
+      <input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none transition-all ${
+          error ? "border-red-500 bg-red-50" : "border-gray-300"
+        }`}
+        placeholder={`Nhập ${label.toLowerCase()}`}
+      />
+      <button
+        type="button"
+        onClick={toggle}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      >
+        {show ? <EyeOff size={20} /> : <Eye size={20} />}
+      </button>
+    </div>
+    {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+  </div>
+);
+
+export default ChangePasswordPage;

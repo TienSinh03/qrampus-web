@@ -1,0 +1,1137 @@
+import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import Pagination from "../../../components/common/Pagination";
+import Search from "../../../components/common/Search";
+import ModalBulkUploadPersonnel from "../../../components/modal/ModalBulkUploadPersonnel";
+import ModalAddTeacher from "../../../components/modal/ModalAddTeacher";
+import ModalEditTeacher from "../../../components/modal/ModalEditTeacher";
+import ModalViewTeacher from "../../../components/modal/ModalViewTeacher";
+import ModalConfirmAction from "../../../components/modal/ModalConfirmAction";
+import ModalExportExcel from "../../../components/modal/ModalExportExcel";
+import personnelService from "../../../services/personnel.service";
+import userService from "../../../services/user.service";
+import reportService from "../../../services/report.service";
+import LoadingSpinner from "@components/layout/LoadingSpinner";
+import EmptyState from "@components/layout/EmptyState";
+import { toast } from "sonner";
+import { DEPARTMENTS } from "../../../constants/departments";
+import { exportPersonnelToExcel } from "../../../utils/excelExport";
+import {
+  CirclePlus,
+  Trash2,
+  CloudUpload,
+  Eye,
+  MoreVertical,
+  PencilLine,
+  Users,
+  UserCheck,
+  UserX,
+  UserPlus,
+  X, ArrowDown, ArrowUp, FileSpreadsheet, FilterX, FileSearchIcon,
+  ArrowDownToLine,
+} from "lucide-react";
+import StatsCard from "../../../components/common/StatsCard";
+const AdminTeacherPage = () => {
+  const { t } = useTranslation();
+
+  // API Data states
+  const [personnels, setPersonnels] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [cardLoading, setCardLoading] = useState(false);
+  const [cardStats, setCardStats] = useState({
+    teachers: {
+      total: 0,
+      this_month: 0,
+      growth: 0,
+      active: 0,
+      active_rate: 0,
+    },
+  });
+
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: "",
+    teacherCode: "",
+    fullName: "",
+    department: "",
+    status: "",
+    email: "",
+    phone: "",
+    dob: "",
+    role: "" // teacher/attendance_staff/admin
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [openUpload, setOpenUpload] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectAllPages, setSelectAllPages] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
+  const [expanded, setExpanded] = useState(false);
+
+  // Modal states
+  const [modalAddTeacher, setModalAddTeacher] = useState(false);
+  const [modalEditTeacher, setModalEditTeacher] = useState({ isOpen: false, teacherData: null });
+  const [modalViewTeacher, setModalViewTeacher] = useState({ isOpen: false, teacherData: null });
+  const [modalConfirmAction, setModalConfirmAction] = useState({
+    isOpen: false,
+    actionType: null,
+    title: "",
+    message: "",
+    confirmText: "",
+    onConfirm: null,
+  });
+  const [modalExportExcel, setModalExportExcel] = useState({ isOpen: false, data: [] });
+
+  // Modal handlers
+  const openAddTeacherModal = () => setModalAddTeacher(true);
+  const closeAddTeacherModal = () => setModalAddTeacher(false);
+
+  const openEditTeacherModal = async (teacher) => {
+    try {
+      // Fetch chi tiết teacher từ API
+      const response = await personnelService.getTeacherByCode(teacher.teacher_code);
+      if (response.success) {
+        setModalEditTeacher({ isOpen: true, teacherData: response.data });
+      } else {
+        toast.error('Không thể tải thông tin giảng viên');
+      }
+    } catch (error) {
+      console.error('Error fetching teacher detail:', error);
+      toast.error(error.message || 'Lỗi khi tải thông tin giảng viên');
+    }
+  };
+  const closeEditTeacherModal = () => setModalEditTeacher({ isOpen: false, teacherData: null });
+
+  const openViewTeacherModal = async (teacher) => {
+    try {
+      // Fetch chi tiết teacher từ API
+      const response = await personnelService.getTeacherByCode(teacher.teacher_code);
+      if (response.success) {
+        setModalViewTeacher({ isOpen: true, teacherData: response.data });
+      } else {
+        toast.error('Không thể tải thông tin giảng viên');
+      }
+    } catch (error) {
+      console.error('Error fetching teacher detail:', error);
+      toast.error(error.message || 'Lỗi khi tải thông tin giảng viên');
+    }
+  };
+  const closeViewTeacherModal = () => setModalViewTeacher({ isOpen: false, teacherData: null });
+
+  const openConfirmActionModal = (actionType, title, message, confirmText, onConfirm) => {
+    setModalConfirmAction({ isOpen: true, actionType, title, message, confirmText, onConfirm });
+  };
+  const closeConfirmActionModal = () => setModalConfirmAction({ ...modalConfirmAction, isOpen: false });
+
+  const openExportExcelModal = async () => {
+    if (selectedCount === 0) {
+      toast.warning("Vui lòng chọn ít nhất 1 nhân sự để xuất dữ liệu");
+      return;
+    }
+
+    // Nếu chọn tất cả trang, fetch toàn bộ rồi lọc bỏ excluded
+    if (selectAllPages) {
+      try {
+        const params = {
+          page: 1,
+          limit: pagination.total,
+        };
+        if (filters.search) params.search = filters.search;
+        if (filters.teacherCode) params.search = filters.teacherCode;
+        if (filters.fullName) params.search = filters.fullName;
+        if (filters.department) params.department = filters.department;
+        if (filters.status) params.status = filters.status;
+        if (filters.email) params.email = filters.email;
+        if (filters.phone) params.phone = filters.phone;
+        if (filters.dob) params.dob = filters.dob;
+        if (filters.role) params.role = filters.role;
+
+        const response = await personnelService.getAllPersonnels(params);
+        if (response.success && response.data) {
+          const allPersonnels = (response.data.personnels || []).filter(p => !excludedIds.includes(p.id));
+          setModalExportExcel({ isOpen: true, data: allPersonnels });
+        }
+      } catch {
+        toast.error("Không thể tải danh sách nhân sự để xuất.");
+      }
+      return;
+    }
+
+    // Lấy dữ liệu personnel đã chọn (trang hiện tại)
+    const selectedPersonnels = personnels.filter(p => selectedIds.includes(p.id));
+    setModalExportExcel({ isOpen: true, data: selectedPersonnels });
+  };
+
+  const closeExportExcelModal = () => setModalExportExcel({ isOpen: false, data: [] });
+
+  const handleExportExcel = ({ selectedColumns, filename }) => {
+    try {
+      exportPersonnelToExcel(modalExportExcel.data, filename, selectedColumns);
+      toast.success(`Đã xuất ${modalExportExcel.data.length} nhân sự ra file Excel thành công`);
+      closeExportExcelModal();
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Không thể xuất file Excel. Vui lòng thử lại!");
+    }
+  };
+
+  const handleAddTeacher = async (formData) => {
+    try {
+      console.log("Add teacher form data:", formData);
+      
+      // Role mapping
+      const roleMap = {
+        "Giảng viên": "teacher",
+        "Quản trị viên": "admin",
+        "Bộ phận chấm công": "attendance_staff"
+      };
+      
+      // Transform data từ form format sang API format
+      const apiData = {
+        code: formData.teacherId,
+        full_name: formData.fullName,
+        email: formData.email,
+        dob: formData.dateOfBirth,
+        department: formData.department,
+        phone: formData.phoneNumber,
+        avatar_url: "", // TODO: Handle file upload
+        role: roleMap[formData.role] || "teacher"
+      };
+      
+      // Validate required fields
+      if (!apiData.code || !apiData.full_name || !apiData.email) {
+        toast.error("Vui lòng điền đầy đủ thông tin bắt buộc!");
+        return;
+      }
+      
+      // Call API to create personnel
+      const response = await personnelService.createPersonnel(apiData);
+      
+      if (response.success) {
+        toast.success(response.message || "Đã thêm nhân sự thành công!");
+        closeAddTeacherModal();
+        // Refresh danh sách
+        fetchPersonnels();
+      }
+    } catch (error) {
+      console.error("Error creating personnel:", error);
+      toast.error(error.message || "Không thể thêm nhân sự. Vui lòng thử lại!");
+    }
+  };
+
+  const handleBulkUpload = async (personnelList) => {
+    try {
+      console.log("Bulk upload personnel:", personnelList);
+      
+      // Call API to bulk create personnel
+      const response = await personnelService.bulkCreatePersonnel(personnelList);
+      
+      if (response.success) {
+        const { successCount, failCount } = response.data;
+        
+        if (failCount > 0) {
+          // Show warning with details
+          toast.warning(
+            `Đã thêm ${successCount} nhân sự thành công. ${failCount} bản ghi lỗi.`,
+            {
+              duration: 5000,
+              description: 'Vui lòng xem chi tiết lỗi trong modal và tải xuống file lỗi.'
+            }
+          );
+        } else {
+          // All success
+          toast.success(`Đã thêm ${successCount} nhân sự thành công!`);
+          // Close modal after 2 seconds if all success
+          setTimeout(() => {
+            setOpenUpload(false);
+          }, 2000);
+        }
+        
+        // Refresh list
+        fetchPersonnels();
+        
+        // Return result to modal
+        return response;
+      }
+    } catch (error) {
+      console.error("Error bulk creating personnel:", error);
+      toast.error(error.message || "Không thể tải lên danh sách nhân sự. Vui lòng thử lại!");
+      throw error; // Re-throw to let modal handle it
+    }
+  };
+
+  const handleEditTeacher = async (formData) => {
+    try {
+      console.log("Edit teacher form data:", formData);
+      
+      // Validate roles
+      if (!formData.roles || formData.roles.length === 0) {
+        toast.error("Vui lòng chọn ít nhất 1 quyền!");
+        return;
+      }
+      
+      // Map form data to API format
+      const updateData = {
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phoneNumber,
+        dob: formData.dateOfBirth || null,
+        department: formData.department,
+        office_hours: formData.officeHours || null,
+        roles: formData.roles // Send roles array
+      };
+
+      // Remove empty/null values except roles
+      Object.keys(updateData).forEach(key => {
+        if (key !== 'roles' && (updateData[key] === null || updateData[key] === '')) {
+          delete updateData[key];
+        }
+      });
+
+      console.log("Sending update data:", updateData);
+
+      // Call API with teacher_code
+      const response = await personnelService.updatePersonnelByAdmin(
+        formData.teacherId,
+        updateData
+      );
+
+      if (formData.avatarFile) {
+        await personnelService.uploadPersonnelAvatarByAdmin(
+          formData.teacherId,
+          formData.avatarFile
+        );
+      }
+      
+      if (response.success) {
+        toast.success("Đã cập nhật thông tin nhân sự thành công!");
+        closeEditTeacherModal();
+        // Refresh data
+        fetchPersonnels();
+      } else {
+        toast.error(response.message || "Không thể cập nhật thông tin");
+      }
+    } catch (error) {
+      console.error("Error updating personnel:", error);
+      toast.error(error.message || "Không thể cập nhật thông tin. Vui lòng thử lại!");
+    }
+  };
+
+  // Toggle user status (active/inactive)
+  const handleToggleUserStatus = async (personnel) => {
+    try {
+      console.log("Toggling user status for:", personnel.user?.user_name);
+      
+      const response = await userService.toggleUserStatus(personnel.user?.user_name);
+      
+      if (response.success) {
+        const newStatus = response.data.status;
+        const statusText = newStatus === 'active' ? 'kích hoạt' : 'tạm ngưng';
+        toast.success(`Đã ${statusText} tài khoản thành công!`);
+        
+        // Refresh data
+        fetchPersonnels();
+      } else {
+        toast.error(response.message || "Không thể cập nhật trạng thái tài khoản");
+      }
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      toast.error(error.message || "Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại!");
+    }
+  };
+
+  // Fetch personnels from API
+  const fetchPersonnels = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Build query params
+      const params = {
+        page: currentPage,
+        limit: pagination.limit || 10,
+      };
+
+      // Add filters if they have values
+      if (filters.search) params.search = filters.search;
+      if (filters.teacherCode) params.search = filters.teacherCode; // Use search for teacher code
+      if (filters.fullName) params.search = filters.fullName; // Use search for full name
+      if (filters.department) params.department = filters.department;
+      if (filters.status) params.status = filters.status;
+      if (filters.email) params.email = filters.email;
+      if (filters.phone) params.phone = filters.phone;
+      if (filters.dob) params.dob = filters.dob;
+      if (filters.role) params.role = filters.role;
+
+      const response = await personnelService.getAllPersonnels(params);
+      
+      if (response.success && response.data) {
+        setPersonnels(response.data.personnels || []);
+        setPagination(response.data.pagination || {
+          total: 0,
+          page: 1,
+          limit: 10,
+          totalPages: 0
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching personnels:", err);
+      setError(err.message || "Không thể tải danh sách nhân sự");
+      toast.error(err.message || "Không thể tải danh sách nhân sự");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCardPersonnel = async () => {
+    try {
+      setCardLoading(true);
+      const response = await reportService.getCardpersonnel();
+      if (response?.data?.teachers) {
+        setCardStats({
+          teachers: {
+            total: Number(response.data.teachers.total) || 0,
+            this_month: Number(response.data.teachers.this_month) || 0,
+            growth: Number(response.data.teachers.growth) || 0,
+            active: Number(response.data.teachers.active) || 0,
+            active_rate: Number(response.data.teachers.active_rate) || 0,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching card personnel stats:", err);
+      toast.error(err.message || "Không thể tải thống kê giảng viên");
+    } finally {
+      setCardLoading(false);
+    }
+  };
+
+  // Fetch data on mount and when filters/currentPage change
+  useEffect(() => {
+    fetchPersonnels();
+    if (!selectAllPages) {
+      setSelectedIds([]);
+    }
+  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchCardPersonnel();
+  }, []);
+
+  // Khi selectAllPages = true và dữ liệu trang mới load xong, tự động chọn tất cả trên trang đó (trừ excluded)
+  useEffect(() => {
+    if (selectAllPages && personnels.length > 0) {
+      setSelectedIds(personnels.filter(p => !excludedIds.includes(p.id)).map(p => p.id));
+    }
+  }, [personnels]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+  // Handle filter change
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // Handle search/filter submit
+  const handleSearch = () => {
+    setCurrentPage(1); // Reset to page 1
+    fetchPersonnels();
+  };
+
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setFilters({
+      search: "",
+      teacherCode: "",
+      fullName: "",
+      department: "",
+      status: "",
+      email: "",
+      phone: "",
+      dob: "",
+      role: ""
+    });
+    setCurrentPage(1);
+    setSelectedIds([]);
+    setSelectAllPages(false);
+    setExcludedIds([]);
+    // Fetch will be triggered by useEffect
+    setTimeout(() => fetchPersonnels(), 100);
+  };
+
+  const pillStyle = {
+    active: "bg-green-100 text-green-600",
+    inactive: "bg-gray-200 text-gray-600",
+    pending: "bg-yellow-100 text-yellow-600",
+  };
+
+  // Role mapping
+  const roleMapping = {
+    teacher: "Giảng viên",
+    admin: "Quản trị viên",
+    attendance_staff: "Ban chấm công"
+  };
+
+  // Role color mapping
+  const roleColorMapping = {
+    teacher: "bg-blue-100 text-blue-700 border border-blue-200",
+    admin: "bg-red-100 text-red-700 border border-red-200",
+    attendance_staff: "bg-green-100 text-green-700 border border-green-200"
+  };
+
+  // Checkbox handlers
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      // Bỏ các id trên trang này khỏi excluded khi chọn lại header
+      const pageIds = personnels.map(item => item.id);
+      setSelectedIds(pageIds);
+      if (selectAllPages) {
+        setExcludedIds(excludedIds.filter(id => !pageIds.includes(id)));
+      }
+    } else {
+      setSelectedIds([]);
+      setSelectAllPages(false);
+      setExcludedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    if (selectAllPages) {
+      if (excludedIds.includes(id)) {
+        // Re-select: xóa khỏi excluded, thêm vào selected
+        setExcludedIds(excludedIds.filter(eid => eid !== id));
+        setSelectedIds([...selectedIds, id]);
+      } else {
+        // Deselect: thêm vào excluded, xóa khỏi selected
+        setExcludedIds([...excludedIds, id]);
+        setSelectedIds(selectedIds.filter(sid => sid !== id));
+      }
+    } else {
+      if (selectedIds.includes(id)) {
+        setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+      } else {
+        setSelectedIds([...selectedIds, id]);
+      }
+    }
+  };
+
+  // Số lượng thực sự đang được chọn
+  const selectedCount = selectAllPages ? pagination.total - excludedIds.length : selectedIds.length;
+
+  const isAllSelected = personnels.length > 0 && selectedIds.length === personnels.length;
+  const isSomeSelected = selectedIds.length > 0 && selectedIds.length < personnels.length;
+  const inactiveTeachers = Math.max(cardStats.teachers.total - cardStats.teachers.active, 0);
+  const inactiveRate = Math.max(100 - cardStats.teachers.active_rate, 0);
+  const formatNumber = (value) => new Intl.NumberFormat('vi-VN').format(value || 0);
+  const formatPercent = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(1)}%`;
+
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return "?";
+    const words = name.trim().split(" ");
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  };
+
+  // Get color for avatar based on name
+  const getAvatarColor = (name) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-green-500", 
+      "bg-yellow-500",
+      "bg-red-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-teal-500"
+    ];
+    const index = name ? name.charCodeAt(0) % colors.length : 0;
+    return colors[index];
+  };
+
+  // CỘT, BẢNG
+
+  return (
+
+    <div className="min-h-screen">
+      <div className="bg-gray-50 p-1">
+        <div className="mx-auto">
+          {/* Header */}
+          <div className="h-1 bg-gradient-to-r from-blue-600 to-blue-800" />
+          <div className="">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <StatsCard
+                title="Tổng giảng viên"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.total)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.growth)})`}
+                positive={cardStats.teachers.growth >= 0}
+                subtitle="Toàn hệ thống"
+                icon={<Users className="w-6 h-6 text-purple-600" />}
+                iconBg="bg-purple-100"
+              />
+
+              <StatsCard
+                title="Giảng viên mới"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.this_month)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.growth)})`}
+                positive={cardStats.teachers.growth >= 0}
+                subtitle="Trong tháng này"
+                icon={<UserPlus className="w-6 h-6 text-rose-600" />}
+                iconBg="bg-rose-100"
+              />
+
+              <StatsCard
+                title="Giảng viên hoạt động"
+                value={cardLoading ? '...' : formatNumber(cardStats.teachers.active)}
+                percent={cardLoading ? '...' : `(${formatPercent(cardStats.teachers.active_rate)})`}
+                positive={cardStats.teachers.active_rate >= 50}
+                subtitle="Tỷ lệ active"
+                icon={<UserCheck className="w-6 h-6 text-green-600" />}
+                iconBg="bg-green-100"
+              />
+
+              <StatsCard
+                title="Giảng viên chưa active"
+                value={cardLoading ? '...' : formatNumber(inactiveTeachers)}
+                percent={cardLoading ? '...' : `(${formatPercent(inactiveRate)})`}
+                positive={false}
+                subtitle="Tỷ lệ chưa active"
+                icon={<UserX className="w-6 h-6 text-yellow-600" />}
+                iconBg="bg-yellow-100"
+              />
+            </div>
+            {/* FILTERS */}
+            <div className="bg-white border  p-6">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-4 text-gray-800 font-semibold">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+                </svg>
+                <span>Bộ lọc thống kê</span>
+                <button onClick={() => setExpanded(!expanded)} className="flex items-center text-blue-600 hover:text-blue-800 ml-auto">
+                  {expanded ? (
+                    <>
+                      <ArrowUp size={16} className="mr-1" />
+                      Thu gọn
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDown size={16} className="mr-1" />
+                        Mở rộng
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Form */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mã số nhân sự
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: 4203001549"
+                    value={filters.teacherCode}
+                    onChange={(e) => handleFilterChange('teacherCode', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Họ và tên
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Nhập họ tên"
+                    value={filters.fullName}
+                    onChange={(e) => handleFilterChange('fullName', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Khoa/Viện
+                  </label>
+                  <select
+                    value={filters.department}
+                    onChange={(e) => handleFilterChange('department', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    {DEPARTMENTS.map((dept, index) => (
+                      <option key={index} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Trạng thái
+                  </label>
+                  <select 
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="inactive">Tạm ngưng</option>
+                  </select>
+                </div>
+                {expanded && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mail
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: example@iuh.edu.vn"
+                        value={filters.email}
+                        onChange={(e) => handleFilterChange('email', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Số điện thoại
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: 0912345678"
+                        value={filters.phone}
+                        onChange={(e) => handleFilterChange('phone', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày sinh
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.dob}
+                        onChange={(e) => handleFilterChange('dob', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Vai trò
+                      </label>
+                      <select 
+                        value={filters.role}
+                        onChange={(e) => handleFilterChange('role', e.target.value)}
+                        className="w-full rounded-lg border px-3 py-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Tất cả</option>
+                        <option value="teacher">Giảng viên</option>
+                        <option value="admin">Quản trị viên</option>
+                        <option value="attendance_staff">Ban chấm công</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+
+              </div>
+
+              {/* Actions */}
+              <div className="mt-6 flex flex-wrap items-center justify-between justify-start md:justify-end">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={openAddTeacherModal}
+                    className="flex items-center gap-2  border border-emerald-500 text-emerald-500 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:ring-offset-1 transition-all duration-200"
+                    title="thêm giảng viên, thủ công"
+                  >
+                    <CirclePlus className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (selectedCount === 0) {
+                        toast.warning("Vui lòng chọn ít nhất 1 nhân sự để đổi trạng thái");
+                        return;
+                      }
+
+                      let usernames = [];
+                      if (selectAllPages) {
+                        try {
+                          const params = { page: 1, limit: pagination.total };
+                          if (filters.department) params.department = filters.department;
+                          if (filters.status) params.status = filters.status;
+                          if (filters.role) params.role = filters.role;
+                          const res = await personnelService.getAllPersonnels(params);
+                          if (res.success && res.data) {
+                            usernames = (res.data.personnels || [])
+                              .filter(p => !excludedIds.includes(p.id))
+                              .map(p => p.user?.user_name)
+                              .filter(Boolean);
+                          }
+                        } catch {
+                          toast.error("Không thể tải danh sách để cập nhật trạng thái");
+                          return;
+                        }
+                      } else {
+                        const selectedPersonnels = personnels.filter(p => selectedIds.includes(p.id));
+                        usernames = selectedPersonnels.map(p => p.user?.user_name).filter(Boolean);
+                      }
+
+                      if (usernames.length === 0) {
+                        toast.error("Không tìm thấy user_name cho các tài khoản đã chọn");
+                        return;
+                      }
+
+                      openConfirmActionModal(
+                        "lock",
+                        "Xác nhận cập nhật trạng thái tài khoản",
+                        `Bạn có chắc chắn muốn thay đổi trạng thái ${usernames.length} tài khoản đã chọn?`,
+                        "Xác nhận",
+                        async () => {
+                          try {
+                            const response = await userService.bulkToggleUserStatus(usernames);
+
+                            if (response.success) {
+                              const { successCount, failCount } = response.data;
+
+                              if (failCount > 0) {
+                                toast.warning(
+                                  `Đã cập nhật ${successCount} tài khoản thành công. ${failCount} tài khoản thất bại.`
+                                );
+                              } else {
+                                toast.success(`Đã cập nhật ${successCount} tài khoản thành công!`);
+                              }
+
+                              setSelectedIds([]);
+                              setSelectAllPages(false);
+                              setExcludedIds([]);
+                              fetchPersonnels();
+                            }
+                          } catch (error) {
+                            console.error("Error bulk toggling active/inactive:", error);
+                            toast.error(error.message || "Có lỗi xảy ra khi cập nhật trạng thái");
+                          }
+                        }
+                      );
+                    }}
+                    className={`flex items-center gap-2 border px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedCount > 0
+                        ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700 hover:shadow-md focus:ring-amber-500"
+                        : "border-amber-400 text-amber-400 hover:bg-amber-100 hover:shadow-md focus:ring-amber-500"
+                    }`}
+                    title={selectedCount > 0 ? `Đổi trạng thái ${selectedCount} mục đã chọn` : "Chọn nhân sự để đổi trạng thái"}
+                  >
+                    <UserCheck className="w-5 h-5" />
+                    {selectedCount > 0 && <span className="text-sm">({selectedCount})</span>}
+                  </button>
+
+                  <button
+                    onClick={() => setOpenUpload(true)}
+                    className="flex items-center gap-2 border border-blue-400 text-blue-400 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200"
+                    title="Upload danh sách giảng viên, vui lòng tải mẫu excel bên dưới"
+                  >
+                    <CloudUpload className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    onClick={handleSearch}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-blue-300 text-blue-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-blue-100 hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" 
+                    title="Tìm kiếm"
+                  >
+                    {loading ? <LoadingSpinner size="sm" color="blue" /> : <FileSearchIcon className="w-5 h-5" />}
+                  </button>
+
+                  <button
+                    onClick={openExportExcelModal}
+                    disabled={selectedCount === 0}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-1 transition-all duration-200 ${
+                      selectedCount > 0
+                        ? 'border border-emerald-400 text-emerald-400 hover:bg-emerald-100 hover:shadow-md focus:ring-emerald-500'
+                        : 'border border-gray-300 text-gray-400 cursor-not-allowed'
+                    }`}
+                    title={selectedCount > 0 ? `Xuất ${selectedCount} mục đã chọn` : "Xuất danh sách excel"}
+                  >
+                    <FileSpreadsheet className="w-5 h-5" />
+                    {selectedCount > 0 && (
+                      <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+                        {selectedCount}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleClearFilters}
+                    disabled={loading}
+                    className="flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-gray-100 hover:border-gray-400 hover:shadow-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Xóa bộ lọc, truy vấn bộ lọc khác"
+                  >
+                    <FilterX className="w-5 h-5" />
+                  </button>
+
+                </div>
+              </div>
+            </div>
+
+            {/* Select all pages banner */}
+            {isAllSelected && !selectAllPages && pagination.total > personnels.length && (
+              <div className="bg-blue-50 border-x border-b border-blue-200 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedIds.length}</strong> nhân sự trên trang này.{" "}
+                <button
+                  onClick={() => setSelectAllPages(true)}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Chọn tất cả {pagination.total} nhân sự trong tất cả trang
+                </button>
+              </div>
+            )}
+            {selectAllPages && (
+              <div className="bg-blue-100 border-x border-b border-blue-300 px-4 py-2.5 text-sm text-center text-blue-800">
+                Đã chọn <strong>{selectedCount}</strong> nhân sự trong tất cả trang.{" "}
+                <button
+                  onClick={() => { setSelectAllPages(false); setSelectedIds([]); setExcludedIds([]); }}
+                  className="text-blue-600 underline font-medium hover:text-blue-800"
+                >
+                  Bỏ chọn tất cả
+                </button>
+              </div>
+            )}
+
+            {/* TABLE */}
+            <div className="w-full overflow-x-auto bg-white shadow mb-6">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="w-12">
+                      <input 
+                        type="checkbox" 
+                        className="ml-4 cursor-pointer"
+                        checked={isAllSelected}
+                        ref={(input) => {
+                          if (input) {
+                            input.indeterminate = isSomeSelected;
+                          }
+                        }}
+                        onChange={handleSelectAll}
+                      />
+                    </th>
+                    <th className="h-12 px-4">Ảnh</th>
+                    <th className="h-12 px-4">Mã nhân sự</th>
+                    <th className="h-12 px-4">{t("users.name")}</th>
+                    <th className="h-12 px-4">{t("users.email")}</th>
+                    <th className="h-12 px-4">{t("users.role")}</th>
+                    <th className="h-12 px-4">{t("users.status")}</th>
+                    <th className="h-12 px-4">{t("users.actions")}</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-12">
+                        <LoadingSpinner size="lg" color="blue" text="Đang tải dữ liệu..." />
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-12">
+                        <p className="text-red-500">{error}</p>
+                        <button
+                          onClick={fetchPersonnels}
+                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Thử lại
+                        </button>
+                      </td>
+                    </tr>
+                  ) : personnels.length === 0 ? (
+                    <EmptyState
+                      title="Không tìm thấy nhân sự"
+                      description="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm."
+                      colSpan={8}
+                    />
+                  ) : personnels.map((personnel) => (
+                    <tr key={personnel.id} className={`border-t hover:bg-slate-50 ${
+                      selectedIds.includes(personnel.id) ? 'bg-blue-50' : ''
+                    }`}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          className="ml-4 cursor-pointer"
+                          checked={selectedIds.includes(personnel.id)}
+                          onChange={() => handleSelectOne(personnel.id)}
+                        />
+                      </td>
+                      <td className="px-2 h-10 flex items-center gap-2 p-6">
+                        {personnel.avatar_url ? (
+                          <img 
+                            src={personnel.avatar_url} 
+                            alt={personnel.full_name}
+                            className="w-8 h-8 rounded-full object-cover" 
+                          />
+                        ) : (
+                          <div className={`w-8 h-8 rounded-full ${getAvatarColor(personnel.full_name)} flex items-center justify-center text-white text-xs font-semibold`}>
+                            {getInitials(personnel.full_name)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4">{personnel.teacher_code}</td>
+                      <td className="px-4 min-w-max">{personnel.full_name}</td>
+
+                      <td className="px-4">{personnel.email}</td>
+                      <td className="px-4">
+                        {personnel.user?.roles && personnel.user.roles.length > 0 
+                          ? (
+                            <div className="flex flex-wrap gap-1">
+                              {personnel.user.roles.map((role, index) => (
+                                <span 
+                                  key={`${personnel.id}-${role.id || role.name || index}`}
+                                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    roleColorMapping[role.name] || "bg-gray-100 text-gray-700 border border-gray-200"
+                                  }`}
+                                >
+                                  {roleMapping[role.name] || role.name}
+                                </span>
+                              ))}
+                            </div>
+                          )
+                          : "-"}
+                      </td>
+
+                      <td className="px-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs ${
+                            pillStyle[personnel.user?.status?.toLowerCase()] || 'bg-gray-200 text-gray-600'
+                          }`}
+                        >
+                          {personnel.user?.status === 'active' ? 'Hoạt động' : 
+                           personnel.user?.status === 'inactive' ? 'Tạm ngưng' : 
+                           personnel.user?.status || '-'}
+                        </span>
+                      </td>
+
+                      <td className="px-4">
+                        <div className="flex gap-3">
+                          <button
+                            title="Xem chi tiết"
+                            onClick={() => openViewTeacherModal(personnel)}
+                          >
+                            <Eye className="text-blue-500 cursor-pointer w-5 h-5" />
+                          </button>
+                          <button
+                            title="Chỉnh sửa"
+                            onClick={() => openEditTeacherModal(personnel)}
+                          >
+                            <PencilLine className="text-amber-500 cursor-pointer w-5 h-5" />
+                          </button>
+                          <button
+                            title={personnel.user?.status === 'active' ? "Chuyển sang tạm ngưng" : "Kích hoạt tài khoản"}
+                            onClick={() => openConfirmActionModal(
+                              "lock",
+                              personnel.user?.status === 'active' ? "Xác nhận tạm ngưng tài khoản" : "Xác nhận kích hoạt tài khoản",
+                              personnel.user?.status === 'active' 
+                                ? `Bạn có chắc chắn muốn tạm ngưng tài khoản của ${personnel.full_name}?`
+                                : `Bạn có chắc chắn muốn kích hoạt tài khoản của ${personnel.full_name}?`,
+                              personnel.user?.status === 'active' ? "Tạm ngưng" : "Kích hoạt",
+                              () => handleToggleUserStatus(personnel)
+                            )}
+                          >
+                            {personnel.user?.status === 'active' ? (
+                              <UserX className="text-amber-500 cursor-pointer w-5 h-5" />
+                            ) : (
+                              <UserCheck className="text-green-500 cursor-pointer w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+
+            {/* PAGINATION */}
+            <div className="flex items-center justify-between px-2 mb-4">
+              <span className="text-sm text-gray-500">
+                Tổng: <strong>{pagination.total || 0}</strong> giảng viên
+              </span>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.totalPages || 1}
+                onPageChange={(page) => setCurrentPage(page)}
+                disabled={loading}
+              />
+            </div>
+
+            {/* MODALS */}
+            <ModalBulkUploadPersonnel 
+              open={openUpload} 
+              onClose={() => setOpenUpload(false)}
+              onUpload={handleBulkUpload}
+            />
+            
+            <ModalAddTeacher
+              isOpen={modalAddTeacher}
+              onClose={closeAddTeacherModal}
+              onSubmit={handleAddTeacher}
+            />
+
+            <ModalEditTeacher
+              isOpen={modalEditTeacher.isOpen}
+              onClose={closeEditTeacherModal}
+              teacherData={modalEditTeacher.teacherData}
+              onSubmit={handleEditTeacher}
+            />
+
+            <ModalViewTeacher
+              isOpen={modalViewTeacher.isOpen}
+              onClose={closeViewTeacherModal}
+              teacherData={modalViewTeacher.teacherData}
+            />
+
+            <ModalConfirmAction
+              isOpen={modalConfirmAction.isOpen}
+              onClose={closeConfirmActionModal}
+              actionType={modalConfirmAction.actionType}
+              title={modalConfirmAction.title}
+              message={modalConfirmAction.message}
+              confirmText={modalConfirmAction.confirmText}
+              onConfirm={modalConfirmAction.onConfirm}
+            />
+
+            <ModalExportExcel
+              isOpen={modalExportExcel.isOpen}
+              onClose={closeExportExcelModal}
+              personnels={modalExportExcel.data}
+              onExport={handleExportExcel}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminTeacherPage;

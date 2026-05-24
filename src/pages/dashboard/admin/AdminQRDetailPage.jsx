@@ -1,164 +1,193 @@
-import React from "react";
-import { Users, Phone, Mail, Building2, IdCard, BookAudioIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+    Users,
+    Phone,
+    Mail,
+    Building2,
+    IdCard,
+    BookAudio,
+} from "lucide-react";
+import { useCourse } from "@contexts/CourseContext";
 
 const AdminQRDetailPage = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { teacherId } = useParams();
 
+    const {
+        teacherCourses,
+        teacherCoursesLoading,
+        teacherCoursesError,
+        fetchTeacherCourses,
+    } = useCourse();
 
-    const lecturer = {
-        code: "10000001",
-        name: "Nguyễn Văn A",
-        phone: "0909 123 456",
-        email: "nguyenvana@iuh.edu.vn",
-        department: "Khoa Công nghệ Thông tin",
-        avatar_url:
-            "https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png",
-    };
+    const teacherInfo = location.state?.teacher || null;
+    const [selectedSemester, setSelectedSemester] = useState("");
 
-    const courses = [
+    const gradients = [
+        "from-blue-500 to-indigo-500",
+        "from-emerald-500 to-teal-500",
+        "from-violet-500 to-purple-500",
+        "from-orange-500 to-amber-500",
+    ];
+
+    useEffect(() => {
+        if (!teacherId) return;
+
+        fetchTeacherCourses(
+            teacherId,
+            selectedSemester ? { semester: selectedSemester } : {}
+        );
+    }, [teacherId, selectedSemester, fetchTeacherCourses]);
+
+    const semesters = useMemo(() => {
+        const unique = new Set(
+            (teacherCourses || []).map((course) => course?.semester).filter(Boolean)
+        );
+        return Array.from(unique).sort((a, b) => b.localeCompare(a));
+    }, [teacherCourses]);
+
+    const infoRows = [
+        { icon: IdCard, label: "Mã nhân sự", value: teacherInfo?.teacher_code || "-" },
+        { icon: Users, label: "Tên giảng viên", value: teacherInfo?.full_name || "-" },
+        { icon: Phone, label: "Số điện thoại", value: teacherInfo?.phone || "-" },
+        { icon: Mail, label: "Email", value: teacherInfo?.email || "-" },
         {
-            title: "Pretest Kỹ thuật phần mềm HK2/2025",
-            mahocphan: "420300143202",
-            code: "CNTT_HK2_24_25",
-            image: "https://via.placeholder.com/200/FFCC00/FFFFFF?text=Pretest",
-        },
-        {
-            title: "Đảm bảo chất lượng và Kiểm thử phần mềm",
-            mahocphan: "420300143203",
-            code: "CNTT_HK1_24_25",
-            image: "https://via.placeholder.com/200/FF99CC/FFFFFF?text=Chất+lượng",
-        },
-        {
-            title: "Nhập môn dữ liệu lớn",
-            mahocphan: "420300143204",
-            code: "CNTT_HK1_25_26",
-            image: "https://via.placeholder.com/200/CCCCCC/FFFFFF?text=Nhập+môn",
-        },
-        {
-            title: "Automat & ngôn ngữ hình thức",
-            mahocphan: "420300143205",
-            code: "CNTT_HK1_24_25",
-            image: "https://via.placeholder.com/200/6666FF/FFFFFF?text=Automat",
-        },
-        {
-            title: "Phát triển ứng dụng",
-            mahocphan: "420300143206",
-            code: "CNTT_HK1_23_24",
-            image: "https://via.placeholder.com/200/9900FF/FFFFFF?text=Ứng+dụng",
+            icon: Building2,
+            label: "Khoa",
+            value: teacherInfo?.department || "-",
+            colSpan: true,
         },
     ];
-    const patterns = [
-        "leaves.png",
-        "tic-tac-toe.png",
-        "embossed-diamond.png",
-        "floor-tile.png",
-        "email-pattern.png",
-        "intersection.png",
-        "memphis-colorful.png"
-    ];
+
     return (
-        <div className="space-y-3 mx-auto">
-            {/* Header */}
-            <div className="flex items-center gap-2 text-xl font-semibold text-blue-600">
-                <Users className="w-6 h-6" />
-                Chi tiết giảng viên
-            </div>
+        <div className="min-h-screen bg-gray-50">
+            {/* Top accent */}
+            <div className="h-1 bg-[#153898] mb-6" />
 
-            {/* Card */}
-            <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col md:flex-row gap-6">
-                {/* Avatar */}
-                <img
-                    src={lecturer.avatar_url}
-                    alt={lecturer.name}
-                    className="w-32 h-32 rounded-full object-cover mx-auto md:mx-0 border"
-                />
-
-                {/* Info */}
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                        { icon: <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 border"><IdCard className="w-5 h-5" /></div>, label: "Mã nhân sự", value: lecturer.code },
-                        { icon: <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-green-50 text-green-600 border"><Users className="w-5 h-5" /></div>, label: "Tên giảng viên", value: lecturer.name },
-                        { icon: <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-yellow-50 text-yellow-600 border"><Phone className="w-5 h-5" /></div>, label: "Số điện thoại", value: lecturer.phone },
-                        { icon: <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-purple-50 text-purple-600 border"><Mail className="w-5 h-5" /></div>, label: "Email", value: lecturer.email },
-                        { icon: <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 border"><Building2 className="w-5 h-5" /></div>, label: "Khoa", value: lecturer.department }
-                    ].map(({ icon, label, value }, index) => (
-                        <div key={index} className={`flex items-center gap-3 ${index === 4 ? "md:col-span-2" : ""}`}>
-                            {icon}
-                            <div>
-                                <p className="text-sm text-gray-500">{label}</p>
-                                <p className="font-medium">{value}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-xl font-semibold text-blue-600">
-                <BookAudioIcon className="w-6 h-6" />
-                Học phần kỳ này
-            </div>
-
-            {/* Course List */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-xl font-semibold">Danh sách các khóa học</h1>
-
+            {/* ================= GIẢNG VIÊN ================= */}
+            <div className="bg-white shadow-lg p-6 md:p-8">
+                <div className="flex items-center gap-3 mb-6">
+                    <Users className="w-7 h-7 text-blue-600" />
+                    <h2 className="text-xl font-bold text-gray-800">
+                        Chi tiết giảng viên
+                    </h2>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {courses.map((course, index) => (
-                        <div
-                            key={index}
-                            className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 overflow-hidden cursor-pointer"
+                <div className="flex flex-col md:flex-row gap-8">
+                    {/* Avatar */}
+                    <div className="flex justify-center md:justify-start">
+                        <img
+                            src={teacherInfo?.avatar_url || "https://via.placeholder.com/144"}
+                            alt={teacherInfo?.full_name || "Giảng viên"}
+                            className="w-36 h-36 rounded-full border-4 border-blue-100 shadow-md object-cover"
+                        />
+                    </div>
 
-                            //AdminDetailSessionQRPage
-                            onClick={() => { window.location.href = '/dashboard/admin/qrcode/session/qrcode-detail/session-detail' }}
-
-
-                        >
-                            {/* Header Pattern */}
+                    {/* Info */}
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {infoRows.map(({ icon: Icon, label, value, colSpan }, i) => (
                             <div
-                                className="h-36 w-full relative"
-                                style={{
-                                    backgroundImage: `url('https://www.toptal.com/designers/subtlepatterns/uploads/${patterns[index % patterns.length]}')`,
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center",
-                                }}
+                                key={i}
+                                className={`flex items-center gap-4 ${colSpan ? "md:col-span-2" : ""}`}
                             >
-                                <div className="absolute inset-0" />
+                                <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-200 shadow-sm">
+                                    <Icon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 font-medium">{label}</p>
+                                    <p className="text-lg font-semibold text-gray-900">{value}</p>
+                                </div>
                             </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
 
-                            {/* Content */}
-                            <div className="p-6 space-y-4">
-                                {/* Title */}
-                                <p className="font-bold text-gray-900 text-lg leading-snug truncate">
-                                    {course.title.length > 40
-                                        ? course.title.slice(0, 40) + "..."
-                                        : course.title}
-                                </p>
+            {/* ================= HỌC PHẦN ================= */}
+            <div className="bg-white rounded-b-xl shadow-lg p-6 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-3">
+                        <BookAudio className="w-7 h-7 text-blue-600" />
+                        <h2 className="text-xl font-bold text-gray-800">
+                            Danh sách học phần
+                        </h2>
+                    </div>
 
-                                {/* Divider */}
-                                <div className="h-px bg-gray-300" />
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-600">Học kỳ</label>
+                        <select
+                            value={selectedSemester}
+                            onChange={(e) => setSelectedSemester(e.target.value)}
+                            className="rounded-lg border px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Tất cả</option>
+                            {semesters.map((semester) => (
+                                <option key={semester} value={semester}>
+                                    {semester}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
 
-                                {/* Meta Information */}
-                                <div className="flex flex-col gap-2 text-sm text-gray-700">
-                                    <div className="flex justify-between">
-                                        <span className="font-medium text-gray-800">Mã học phần</span>
-                                        <span className="font-medium text-gray-800">{course.mahocphan}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="font-medium text-gray-800">Mã lớp</span>
-                                        <span className="font-medium text-gray-800">{course.code}</span>
+                {/* {teacherCoursesError && (
+                    <div className="mb-4 text-sm text-red-600">
+                        {teacherCoursesError}
+                    </div>
+                )} */}
+
+                {teacherCoursesLoading && (
+                    <div className="text-sm text-gray-500">Đang tải học phần...</div>
+                )}
+
+                {!teacherCoursesLoading && teacherCourses.length === 0 && (
+                    <div className="text-sm text-gray-500">Chưa có học phần phù hợp.</div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {!teacherCoursesLoading &&
+                        teacherCourses.map((course, index) => (
+                            <div
+                                key={course.id || `${course.code}-${index}`}
+                                onClick={() =>
+                                    navigate(
+                                        "/dashboard/admin/qrcode/session/qrcode-detail/sessions", 
+                                        { state: { course, teacher: teacherInfo } }
+                                    )
+                                }
+                                className="group cursor-pointer bg-white border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
+                            >
+                                <div
+                                    className={`h-0.5 bg-gradient-to-r ${
+                                        gradients[index % gradients.length]
+                                    }`}
+                                />
+
+                                <div className="p-6">
+                                    <h3 className="font-bold text-lg text-gray-900 mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                        {course.name || "Chưa có tên học phần"}
+                                    </h3>
+
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Mã học phần</span>
+                                            <span className="font-semibold text-gray-800">
+                                                {course.code || "-"}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Học kỳ</span>
+                                            <span className="font-semibold text-gray-800">
+                                                {course.semester || "-"}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
                 </div>
-
-
-
-
-
             </div>
         </div>
     );

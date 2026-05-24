@@ -1,8 +1,9 @@
 import { useAuth } from "@contexts/AuthContext";
 import { Navigate } from "react-router-dom";
+import { ROLES } from "@constants/roles";
 
 export const PublicRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, activeRole } = useAuth();
 
   if (loading) {
     return (
@@ -12,5 +13,14 @@ export const PublicRoute = ({ children }) => {
     );
   }
 
-  return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) {
+    // Admin chưa chọn role -> redirect về /role
+    const hasAdminRole = user?.roles?.includes(ROLES.ADMIN);
+    if (hasAdminRole && !activeRole) {
+      return <Navigate to="/role" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 };

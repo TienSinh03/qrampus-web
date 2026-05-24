@@ -1,0 +1,77 @@
+import axiosClient from '@api/axiosClient';
+import { LEAVE_REQUEST_ENDPOINTS } from '@constants/endpoints/leave-request.endpoints';
+
+class LeaveRequestService {
+  async getTeacherLeaves(params = {}) {
+    try {
+      const response = await axiosClient.get(LEAVE_REQUEST_ENDPOINTS.TEACHER_BASE, { params });
+
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || '',
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getTeacherLeaveDashboard() {
+    try {
+      const response = await axiosClient.get(LEAVE_REQUEST_ENDPOINTS.TEACHER_DASHBOARD);
+
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || '',
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async approveLeaveRequest(leaveRequestId) {
+    try {
+      const response = await axiosClient.put(LEAVE_REQUEST_ENDPOINTS.APPROVE(leaveRequestId));
+
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || '',
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async rejectLeaveRequest(leaveRequestId, rejectedReason) {
+    try {
+      const response = await axiosClient.put(LEAVE_REQUEST_ENDPOINTS.REJECT(leaveRequestId), {
+        rejected_reason: rejectedReason,
+      });
+
+      return {
+        success: response.success || true,
+        data: response.data || {},
+        message: response.message || '',
+      };
+    } catch (error) {      
+      throw this.handleError(error);
+    }  
+  }
+
+
+  handleError(error) {
+    const message = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra';
+    const status = error.response?.status || 500;
+
+    const formattedError = new Error(message);
+    formattedError.status = status;
+    formattedError.originalError = error;
+
+    return formattedError;
+  }
+}
+
+const leaveRequestService = new LeaveRequestService();
+export default leaveRequestService;

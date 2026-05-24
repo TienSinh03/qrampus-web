@@ -1,34 +1,73 @@
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
 
 import LoginPage from "@pages/auth/LoginPage";
 import RegisterPage from "@pages/auth/RegisterPage";
-import DashboardPage from "@pages/dashboard/DashboardPage";
-import SchedulePage from "@pages/dashboard/SchedulePage";
-import UsersPage from "@pages/dashboard/UsersPage";
-import QRPage from "@pages/dashboard/QRPage";
+import ChangePasswordPage from "@pages/dashboard/AccountSetting/ChangePasswordPage";
+
+// giảng viên
+import DashboardPage from "@pages/dashboard/teacher/DashboardPage";
+import SchedulePage from "@pages/dashboard/teacher/SchedulePage";
+import QRPage from "@pages/dashboard/teacher/QRPage";
+import QRSessionDetailPage from "@pages/dashboard/teacher/QRSessionDetailPage";
 import StudySessionPage from "@pages/dashboard/StudySession/StudySessionPage";
 import ResultQRPage from "@pages/dashboard/ResultsQR/ResultQRPage";
-import ResultQRextendPage from "../pages/dashboard/ResultsQR/ResultQRextendPage";
 import ResultQRDetailUserPage from "../pages/dashboard/ResultsQR/ResultQRDetailUserPage";
 import ResultQRextendStudentPage from "../pages/dashboard/ResultsQR/ResultQRextendStudentPage";
 import AccountPage from "@pages/dashboard/AccountSetting/AccountPage";
-import QRViewPage from "../pages/dashboard/QRViewPage";
-import Timekeeping from "../pages/dashboard/Timekeeping";
-import SurveyPage from "../pages/dashboard/SurveyPage";
-import LeavePage from "../pages/dashboard/LeavePage";
-import AnnouncementPage from "../pages/dashboard/AnnouncementPage";
-import Setting from "../pages/dashboard/SettingPage";
-import ReportPage from "../pages/dashboard/ReportPage";
+import QRViewPage from "../pages/dashboard/teacher/QRViewPage";
+import Timekeeping from "../pages/dashboard/teacher/Timekeeping";
+import MyAdjustmentRequestsPage from "../pages/dashboard/teacher/MyAdjustmentRequestsPage";
+import SurveyPage from "../pages/dashboard/teacher/SurveyPage";
+import LeavePage from "../pages/dashboard/teacher/LeavePage";
+import AnnouncementPage from "../pages/dashboard/teacher/AnnouncementPage";
+import Setting from "../pages/dashboard/teacher/SettingPage";
+import ReportPage from "../pages/dashboard/teacher/ReportPage";
 
 // ADMIN
+import AdminDashboardPage from "@pages/dashboard/admin/AdminDashboardPage";
 import AdminQRPage from "@pages/dashboard/admin/AdminQRPage";
 import AdminQRDetailPage from "@pages/dashboard/admin/AdminQRDetailPage";
-import AdminDetailSessionQRPage from "@pages/dashboard/admin/AdminDetailSessionQRPage";
+import AdminSessionQRPage from "@pages/dashboard/admin/AdminSessionQRPage";
+import AdminQRSessionDetailPage from "@pages/dashboard/admin/AdminQRSessionDetailPage";
+import AdminStudentPage from "@pages/dashboard/admin/AdminStudentPage";
+import AdminTeacherPage from "@pages/dashboard/admin/AdminTeacherPage";
+import AdminAccountPage from "@pages/dashboard/admin/AdminAccountPage";
+import AdminSurveyPage from "@pages/dashboard/admin/AdminSurveyPage";
+import AdminSchedulePage from "@pages/dashboard/admin/AdminSchedulePage";
+import AdminCoursePage from "@pages/dashboard/admin/AdminCoursePage";
+import AdminEnrollPage from "@pages/dashboard/admin/AdminEnrollPage";
+import AdminRoomPage from "../pages/dashboard/admin/AdminRoomPage";
+import AdminDetailSurveyPage from "../pages/dashboard/admin/AdminDetailSurveyPage";
+import AdminResultQRPage from "../pages/dashboard/admin/AdminResultQRPage";
+import AdminAnnouncementPage from "../pages/dashboard/admin/AdminAnnouncementPage";
+import AdminNotificationPage from "../pages/dashboard/admin/AdminNotificationPage";
+import TeacherNotificationPage from "../pages/dashboard/teacher/TeacherNotificationPage";
 
+
+// attendance 
+import AttendanceDashboardPage from "@pages/dashboard/departmentAttendance/AttendanceDashboardPage";
+import AttendanceTimesheetManagementPage from "@pages/dashboard/departmentAttendance/AttendanceTimesheetManagementPage";
+import AttendanceTeacherPage from "@pages/dashboard/departmentAttendance/AttendanceTeacherPage";
+import AttendanceSchedulePage from "@pages/dashboard/departmentAttendance/AttendanceSchedulePage";
+import AttendanceSessionQRPage from "@pages/dashboard/departmentAttendance/AttendanceSessionQRPage";
+import AttendanceAdjustmentRequestsPage from "@pages/dashboard/departmentAttendance/AttendanceAdjustmentRequestsPage";
+import AttendanceStatisticsPage from "@pages/dashboard/departmentAttendance/AttendanceStatisticsPage";
+
+
+// chung
 import { PublicRoute } from "./PublicRoute";
 import { PrivateRoute } from "./PrivateRoute";
-
+import { RoleRoute } from "./RoleRoute";
+import RoleSwitchPage from "@pages/dashboard/RoleSwitchPage";
+import DashboardRedirect from "../components/common/DashboardRedirect";
+import ContentNotification from "../components/common/ContentNotification";
+import NotificationPage from "../components/common/NotificationPage";
 import LayoutMain from "@components/layout/LayoutMain";
+import { ROLES } from "@constants/roles";
 
 // Router setup
 const router = createBrowserRouter([
@@ -53,6 +92,12 @@ const router = createBrowserRouter([
       </PublicRoute>
     ),
   },
+  {
+    path: "/role",
+    element: <RoleSwitchPage />,
+  },
+
+
 
   // Private routes (requires login)
   {
@@ -65,87 +110,391 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: <DashboardRedirect />,
       },
-      {
-        path: "users",
-        element: <UsersPage />,
-      },
+      // TEACHER ROUTES - Schedule
       {
         path: "schedule",
-        element: <SchedulePage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <SchedulePage />
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - Reports
       {
         path: "reports",
-        element: <div className="p-8"><h1 className="text-2xl font-bold">Báo cáo</h1></div>,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <div className="p-8">
+              <h1 className="text-2xl font-bold">Báo cáo</h1>
+            </div>
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - QR Code Management
       {
         path: "qrcode",
-        element: <QRPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <QRPage />
+          </RoleRoute>
+        ),
       },
+      {
+        path: "qrcode-session-detail",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <QRSessionDetailPage />
+          </RoleRoute>
+        ),
+      },
+      // TEACHER ROUTES - Study Session
       {
         path: "study-session",
-        element: <StudySessionPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <StudySessionPage />
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - Results QR
       {
         path: "results-qr",
-        element: <ResultQRPage />,
-      },
-      {
-        path: "results-qr-extend",
-        element: <ResultQRextendPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ResultQRPage />
+          </RoleRoute>
+        ),
       },
       {
         path: "results-qr-detail-user",
-        element: <ResultQRDetailUserPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ResultQRDetailUserPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "results-qr-extend-student",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ResultQRextendStudentPage />
+          </RoleRoute>
+        ),
       },
       {
         path: "account-setting",
         element: <AccountPage />,
       },
       {
-        path: "qrcode-fullscreen",
-        element: <QRViewPage />,
+        path: "change-password",
+        element: <ChangePasswordPage />,
       },
+      // TEACHER ROUTES - QR Fullscreen
+      {
+        path: "qrcode-fullscreen",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <QRViewPage />
+          </RoleRoute>
+        ),
+      },
+      // TEACHER ROUTES - Timekeeping
       {
         path: "timekeeping",
-        element: <Timekeeping />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <Timekeeping />
+          </RoleRoute>
+        ),
       },
+      {
+        path: "timekeeping/my-adjustment-requests",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <MyAdjustmentRequestsPage />
+          </RoleRoute>
+        ),
+      },
+      // TEACHER ROUTES - Survey
       {
         path: "survey-page",
-        element: <SurveyPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <SurveyPage />
+          </RoleRoute>
+        ),
       },
+      // TEACHER ROUTES - Leave Management
       {
         path: "leave-management",
-        element: <LeavePage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <LeavePage />
+          </RoleRoute>
+        ),
       },
+      // ALL ROLES - Notifications
       {
         path: "notifications",
         element: <AnnouncementPage />,
-      }, {
+      },
+      {
+        path: "notifications/:id",
+        element: <ContentNotification />,
+      },
+      // TEACHER ROUTES - Settings
+      {
         path: "setting",
-        element: <Setting />,
-      }, {
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <Setting />
+          </RoleRoute>
+        ),
+      },
+      // TEACHER ROUTES - Report Page
+      {
         path: "report-page",
-        element: <ReportPage />,
-      }, {
-        path: "results-qr-extend-student",
-        element: <ResultQRextendStudentPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <ReportPage />
+          </RoleRoute>
+        ),
       },
 
-      // ADMIN ROUTES
+      // ==================== ADMIN ROUTES ====================
+      // Admin Dashboard (Main)
+      {
+        path: "admin",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminDashboardPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/dashboard",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminDashboardPage />
+          </RoleRoute>
+        ),
+      },
       {
         path: "admin/qrcode",
-        element: <AdminQRPage />,
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminQRPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/qrcode/session/qrcode-detail/:teacherId",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminQRDetailPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/qrcode/session/qrcode-detail/sessions",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminSessionQRPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/qrcode/session/qrcode-detail/sessions/detail",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminQRSessionDetailPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/students",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminStudentPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/teachers",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminTeacherPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/accounts",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminAccountPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/surveys",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminSurveyPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/schedules",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminSchedulePage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/courses",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminCoursePage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/enrollments",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminEnrollPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/rooms",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminRoomPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/surveys/detail-survey",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminDetailSurveyPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/results-qr",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}> 
+            <AdminResultQRPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/announcement",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminAnnouncementPage />
+          </RoleRoute>
+        ),
+      },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      // ==================== ATTENDANCE STAFF ROUTES ====================
+      {
+        path: "attendance-dashboard",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceDashboardPage />
+          </RoleRoute>
+        ),
 
       },
       {
-        path: "admin/qrcode/session/qrcode-detail",
-        element: <AdminQRDetailPage />,
-      }, {
-        path: "admin/qrcode/session/qrcode-detail/session-detail",
-        element: <AdminDetailSessionQRPage />,
+        path: "attendance-timesheet",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceTimesheetManagementPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "attendance-teacher",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceTeacherPage />
+          </RoleRoute>
+         ),
+      },
+      {
+        path: "attendance-schedule",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceSchedulePage />
+          </RoleRoute>
+        ),  
+      },
+      {
+        path: "attendance-results",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF]}>
+            <AttendanceSessionQRPage />
+          </RoleRoute>
+        )
+      },
+      {
+        path: "attendance-adjustment-requests",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF, ROLES.ADMIN]}>
+            <AttendanceAdjustmentRequestsPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "attendance-statistics",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ATTENDANCE_STAFF, ROLES.ADMIN]}>
+            <AttendanceStatisticsPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "manage-notifications",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.TEACHER]}>
+            <TeacherNotificationPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "admin/notifications",
+        element: (
+          <RoleRoute requiredRoles={[ROLES.ADMIN]}>
+            <AdminNotificationPage />
+          </RoleRoute>
+        ),
       }
+
+
+
+
+
     ],
   },
 

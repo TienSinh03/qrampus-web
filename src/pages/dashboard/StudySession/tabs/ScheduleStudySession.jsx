@@ -5,6 +5,7 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import vi from "date-fns/locale/vi";
 import en from "date-fns/locale/en-US";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const locales = {
     vi: vi,
@@ -114,54 +115,6 @@ const ScheduleStudySession = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">{t('schedulePage.title')}</h1>
-                    <p className="text-sm text-gray-500">
-                        {t('schedulePage.description')}
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <button
-                        className="px-3 py-1 text-sm border rounded-lg"
-                        onClick={() => setDate(new Date())}
-                    >
-                        Hôm nay
-                    </button>
-                    <button
-                        className="px-3 py-1 text-sm border rounded-lg"
-                        onClick={() =>
-                            setDate(
-                                new Date(date.getFullYear(), date.getMonth(), date.getDate() - 7)
-                            )
-                        }
-                    >
-                        ◀ Tuần trước
-                    </button>
-                    <button
-                        className="px-3 py-1 text-sm border rounded-lg"
-                        onClick={() =>
-                            setDate(
-                                new Date(date.getFullYear(), date.getMonth(), date.getDate() + 7)
-                            )
-                        }
-                    >
-                        Tuần sau ▶
-                    </button>
-
-                    <select
-                        className="px-2 py-1 text-sm border rounded-lg"
-                        value={view}
-                        onChange={(e) => setView(e.target.value)}
-                    >
-                        <option value={Views.MONTH}>Tháng</option>
-                        <option value={Views.WEEK}>Tuần</option>
-                        <option value={Views.DAY}>Ngày</option>
-                        <option value={Views.AGENDA}>Danh sách</option>
-                    </select>
-                </div>
-            </div>
 
             {/* Calendar */}
             <div className="bg-white rounded-xl shadow p-4 h-[700px]">

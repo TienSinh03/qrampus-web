@@ -1,30 +1,135 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import DescriptionTab from "./tabs/DescriptionTab";
 import StudentStudySession from "./tabs/StudentStudySession";
 import ScheduleStudySession from "./tabs/ScheduleStudySession";
 import QRCodeTab from "./tabs/QRCodeTab";
-import { FileImage, FileUser, Calendar, QrCode, SquareStar } from "lucide-react";
+import { FileImage, FileUser, Calendar, QrCode, SquareStar, ScanQrCode, AlertCircle, Activity } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { vi } from "date-fns/locale";
+import { useAttendance } from "@contexts/AttendanceContext";
+import { useTeacherSchedule } from "@contexts/TeacherScheduleContext";
 
 const StudySessionPage = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [currentTab, setCurrentTab] = useState("description");
+    const { checkActiveSession, syncActiveSession } = useAttendance();
+    const { fetchClassSessionDetail } = useTeacherSchedule();
+    
+    // Get schedule from navigate state
+    const scheduleFromState = location.state?.schedule;
+    const [schedule, setSchedule] = useState(scheduleFromState || null);
+    const [hasActiveSession, setHasActiveSession] = useState(schedule?.has_active_session || false);
+    const [checkingSession, setCheckingSession] = useState(false);
 
-    const renderTab = () => {
-        switch (currentTab) {
-            case "description":
-                return <DescriptionTab />;
-            case "student":
-                return <StudentStudySession />;
-            case "schedule":
-                return <ScheduleStudySession />;
-            case "qr":
-                return <QRCodeTab />;
-            default:
-                return <DescriptionTab />;
+    useEffect(() => {
+        if (!schedule?.id) return;
+
+        let isMounted = true;
+
+        const refreshSchedule = async () => {
+            try {
+                const response = await fetchClassSessionDetail(schedule?.id);
+                if (!isMounted) return;
+
+                if (response?.success && response.data) {
+                    setSchedule(response.data);
+                }
+            } catch (error) {
+                console.error('Error fetching class session detail:', error);
+            }
+        };
+
+        refreshSchedule();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [schedule?.id, fetchClassSessionDetail]);
+
+    // Kiểm tra active session khi load page hoặc khi schedule thay đổi
+    useEffect(() => {
+        if (!schedule?.id) return;
+
+        if (schedule?.has_active_session) {
+            setHasActiveSession(true);
+            return;
+        }
+
+        setCheckingSession(true);
+        const check = async () => {
+            try {
+                let activeSessionData = checkActiveSession(schedule?.id);
+                if (!activeSessionData) {
+                    activeSessionData = await syncActiveSession(schedule?.id);
+                }
+                setHasActiveSession(!!activeSessionData);
+            } catch (error) {
+                console.error('Error checking active session:', error);
+                setHasActiveSession(false);
+            } finally {
+                setCheckingSession(false);
+            }
+        };
+        check();
+    }, [schedule?.id, checkActiveSession, syncActiveSession, schedule?.has_active_session]);
+
+    // Lắng nghe realtime khi GV tạo/đóng phiên điểm danh để cập nhật UI ngay lập tức
+    const handleAttendanceClick = () => {
+        // Lưu schedule vào sessionStorage
+        sessionStorage.setItem('attendanceSchedule', JSON.stringify(schedule));
+        
+        if (hasActiveSession) {
+            // Nếu có active session, mở tab với session đang chạy
+            window.open('/dashboard/results-qr-extend-student', '_blank');
+        } else {
+            // Nếu chưa có, mở tab để tạo mới
+            window.open('/dashboard/results-qr-extend-student', '_blank');
         }
     };
 
+    const renderTab = () => {
+        if (!schedule) {
+            return (
+                <div className="flex items-center justify-center p-8 text-gray-500">
+                    <div className="text-center">
+                        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                        <p>Không tìm thấy thông tin lịch học</p>
+                        <button 
+                            onClick={() => navigate('/dashboard/schedule')}
+                            className="mt-4 btn-blue"
+                        >
+                            Quay lại lịch học
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        switch (currentTab) {
+            case "description":
+                return <DescriptionTab schedule={schedule} />;
+            case "student":
+                return <StudentStudySession schedule={schedule} />;
+            case "schedule":
+                return <ScheduleStudySession schedule={schedule} />;
+            case "qr":
+                return <QRCodeTab schedule={schedule} />;
+            default:
+                return <DescriptionTab schedule={schedule} />;
+        }
+    };
+
+    // Format display data from schedule
+    const courseCode = schedule?.courseSection?.code || 'N/A';
+    const courseName = schedule?.courseSection?.name || 'Chưa có tên môn học';
+    const semester = schedule?.courseSection?.semester || 'N/A';
+    const scheduleType = schedule?.schedule_type === 'theory' ? 'Lý thuyết' : 'Thực hành';
+    const practiceGroupName = schedule?.practiceGroup?.group_name || null;
+
     return (
-        <div className="mx-auto space-y-6">
+      <div className="mx-auto">
             {/* HEADER - bạn giữ nguyên code UI ở trên của bạn */}
             <div className="overflow-hidden bg-white shadow-sm">
                 {/* Cover */}
@@ -35,31 +140,58 @@ const StudySessionPage = () => {
                     <div className="flex items-center gap-4">
                         {/* Avatar card */}
                         <div className="-mt-16 h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-indigo-100 shadow-sm">
-                            {/* Thay bằng <img src="..." /> nếu có hình thật */}
                             <div className="flex h-full w-full items-center justify-center text-5xl">
-                                🙂
+                                {schedule?.schedule_type === 'practice' ? '💻' : '📚'}
                             </div>
                         </div>
 
                         <div>
                             <h2 className="text-2xl font-semibold text-slate-900">
-                                LẬP TRÌNH THIẾT BỊ DI DỘNG
+                                {courseName}
                             </h2>
                             <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                                <h2>42345677843</h2>
+                                <span className="font-medium">{courseCode}</span>
                                 <span className="flex items-center gap-1">
-                                    <SquareStar className="w-5 h-5 " />
-                                    HK1
+                                    <SquareStar className="w-5 h-5" />
+                                    {semester}
                                 </span>
                                 <span className="flex items-center gap-1">
-                                    <span>📅</span> 2025 - 2026
+                                    <Calendar className="w-5 h-5" />
+                                    {schedule?.class_date && format(parseISO(schedule.class_date), 'dd/MM/yyyy', { locale: vi })}
+                                </span>
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                                    {scheduleType}
+                                    {practiceGroupName && ` - ${practiceGroupName}`}
                                 </span>
                             </div>
                         </div>
                     </div>
-
-                    <button className="inline-flex items-center gap-2 rounded-full bg-violet-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-violet-600">
-                        <span>Connected</span>
+                    <button 
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm focus:outline-none focus:ring-1 focus:ring-offset-2 transition-all duration-200 w-full md:w-auto ${
+                            hasActiveSession 
+                                ? 'border border-orange-500 text-orange-500 hover:bg-orange-50 focus:ring-orange-500'
+                                : 'border border-teal-500 text-teal-500 hover:bg-teal-50 focus:ring-teal-500'
+                        }`}
+                        title={hasActiveSession ? "Xem phiên điểm danh đang hoạt động" : "Tạo điểm danh mới"} 
+                        onClick={handleAttendanceClick}
+                        disabled={checkingSession}
+                    >
+                        {checkingSession ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                <span>Đang kiểm tra...</span>
+                            </>
+                        ) : hasActiveSession ? (
+                            <>
+                                <Activity className="w-5 h-5 animate-pulse" />
+                                <span>Phiên đang hoạt động</span>
+                            </>
+                        ) : (
+                            <>
+                                <ScanQrCode className="w-5 h-5" />
+                                <span>Tạo điểm danh</span>
+                            </>
+                        )}
                     </button>
                 </div>
 
@@ -118,9 +250,10 @@ const StudySessionPage = () => {
                     </button>
                 </div>
             </div>
-
             {/* --- CONTENT --- */}
             <div>{renderTab()}</div>
+
+
         </div>
     );
 };

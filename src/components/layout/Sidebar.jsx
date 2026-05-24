@@ -16,49 +16,324 @@ import {
   Bell,
   BarChart,
   FolderCog,
+  IdCardLanyard,
+  UserCog,
+  CalendarClock,
+  FolderOpenDot,
+  UserStar,
+  Grid2X2,
+  LucideTestTube,
+  List,
+  ListChecks,
+  ClipboardCheck,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
+import { useState, useMemo, useEffect } from 'react';
+import { ROLES } from '@constants/roles';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const { logout, user } = useAuth();
+  const { logout, user, activeRole } = useAuth();
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: t('sidebar.dashboard'), path: '/dashboard' },
-    { icon: Calendar, label: t('sidebar.schedule'), path: '/dashboard/schedule' },
-    { icon: BarChart3, label: t('sidebar.reports'), path: '/dashboard/report-page' },
-    { icon: ScanQrCode, label: t('sidebar.qrcode'), path: '/dashboard/qrcode' },
-    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/survey-page' },
-    // 
-    // chấm Công
-    { icon: FileText, label: 'Quản lý Chấm Công', path: '/dashboard/timekeeping' },
-    // quản lý nghỉ phép
-    { icon: ImagePlus, label: 'Quản lý Nghỉ phép', path: '/dashboard/leave-management' },
-    //thông báo
-    { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/notifications' },
+  // Thêm state để kiểm soát chế độ thu gọn
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [selectedSchoolYear, setSelectedSchoolYear] = useState('2025-2026');
+  const [selectedSemester, setSelectedSemester] = useState('HK2');
 
+  const schoolYearOptions = ['2023-2024', '2024-2025', '2025-2026', '2026-2027'];
+  const semesterOptions = ['HK1', 'HK2', 'Hè'];
 
-    { icon: Settings, label: t('sidebar.settings'), path: '/dashboard/setting' },
+  // Định nghĩa tất cả menu items với roles được phép truy cập
+  const allMenuItems = useMemo(() => [
+    // ==================== TEACHER DASHBOARD ====================
+    { 
+      icon: LayoutDashboard, 
+      label: 'Bảng điều khiển', 
+      path: '/dashboard',
+      roles: [ROLES.TEACHER]
+    },
+    
+    // ==================== TEACHER MENU ====================
+    { 
+      icon: Calendar, 
+      label: t('sidebar.schedule'), 
+      path: '/dashboard/schedule',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: BarChart3, 
+      label: t('sidebar.reports'), 
+      path: '/dashboard/report-page',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: ScanQrCode, 
+      label: t('sidebar.qrcode'), 
+      path: '/dashboard/qrcode',
+      roles: [ROLES.TEACHER]
+    },
+    { 
+      icon: BookOpen, 
+      label: 'Quản lý Khảo sát', 
+      path: '/dashboard/survey-page',
+      roles: [ROLES.TEACHER]
+    },
+    {
+      icon: FileText,
+      label: 'Quản lý Chấm Công',
+      key: 'teacher-timekeeping',
+      roles: [ROLES.TEACHER],
+      children: [
+        {
+          icon: LayoutDashboard,
+          label: 'Tổng quan',
+          path: '/dashboard/timekeeping',
+          roles: [ROLES.TEACHER],
+        },
+        {
+          icon: ClipboardCheck,
+          label: 'Giải trình Công dạy',
+          path: '/dashboard/timekeeping/my-adjustment-requests',
+          roles: [ROLES.TEACHER],
+        },
+      ],
+    },
+    { 
+      icon: ImagePlus, 
+      label: 'Quản lý Nghỉ phép', 
+      path: '/dashboard/leave-management',
+      roles: [ROLES.TEACHER]
+    },
+    {
+      icon: ListChecks,
+      label: 'Quản lý thông báo',
+      key: 'teacher-notifications',
+      roles: [ROLES.TEACHER],
+      children: [
+        {
+          icon: Bell,
+          label: 'Tạo thông báo',
+          path: '/dashboard/notifications',
+          roles: [ROLES.TEACHER],
+        },
+        {
+          icon: ListChecks,
+          label: 'Danh sách thông báo',
+          path: '/dashboard/manage-notifications',
+          roles: [ROLES.TEACHER],
+        },
+      ],
+    },
+    { 
+      icon: Settings, 
+      label: t('sidebar.settings'), 
+      path: '/dashboard/setting',
+      roles: [ROLES.TEACHER]
+    },
 
-    { icon: Users, label: t('sidebar.users'), path: '/dashboard/users' },
-    { icon: BookOpen, label: 'Quản lý Khảo sát', path: '/dashboard/admin/survey-page' },
-    { icon: ScanQrCode, label: 'Quản lý Điểm danh', path: '/dashboard/admin/qrcode' },
-    { icon: BarChart, label: 'Quản lý Thống kê', path: '/dashboard/admin/statistics' },
+    // ==================== ADMIN DASHBOARD & MENU ====================
+    {
+      icon: ListChecks,
+      label: 'Quản lý thông báo',
+      key: 'admin-notifications',
+      roles: [ROLES.ADMIN],
+      children: [
+        {
+          icon: Bell,
+          label: 'Tạo thông báo',
+          path: '/dashboard/admin/announcemen',
+          roles: [ROLES.ADMIN],
+        },
+        {
+          icon: ListChecks,
+          label: 'Danh sách thông báo',
+          path: '/dashboard/admin/notifications',
+          roles: [ROLES.ADMIN],
+        },
+      ],
+    },
+    { 
+      icon: LayoutDashboard, 
+      label: 'Bảng điều khiển', 
+      path: '/dashboard/admin',
+      roles: [ROLES.ADMIN],
+      separator: true // Thêm separator trước admin section
+    },
+    { 
+      icon: UserCog, 
+      label: 'Quản lý Tài khoản', 
+      path: '/dashboard/admin/accounts',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: IdCardLanyard, 
+      label: 'Quản lý Nhân sự', 
+      path: '/dashboard/admin/teachers',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: Users, 
+      label: 'Quản lý Sinh viên', 
+      path: '/dashboard/admin/students',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: BookOpen, 
+      label: 'Quản lý Khảo sát', 
+      path: '/dashboard/admin/surveys',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: ScanQrCode, 
+      label: 'Quản lý Điểm danh', 
+      path: '/dashboard/admin/qrcode',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: BarChart, 
+      label: 'Quản lý Thống kê', 
+      path: '/dashboard/admin/statistics',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: FolderOpenDot, 
+      label: 'Quản lý Khóa học', 
+      path: '/dashboard/admin/courses',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: CalendarClock, 
+      label: 'Quản lý Lịch dạy', 
+      path: '/dashboard/admin/schedules',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: UserStar, 
+      label: 'Quản lý Học phần', 
+      path: '/dashboard/admin/enrollments',
+      roles: [ROLES.ADMIN]
+    },
+    { 
+      icon: Grid2X2, 
+      label: 'Quản lý Phòng học', 
+      path: '/dashboard/admin/rooms',
+      roles: [ROLES.ADMIN]
+    },
 
-    { icon: Bell, label: 'Quản lý Thông báo', path: '/dashboard/admin/notifications' },
-    { icon: FolderCog, label: 'Quản lý Học Phần', path: '/dashboard/admin/schedule' },
+    // ==================== ATTENDANCE STAFF DASHBOARD ====================
+    { 
+      icon: LayoutDashboard, 
+      label: 'Bảng điều khiển', 
+      path: '/dashboard/attendance-dashboard',
+      roles: [ROLES.ATTENDANCE_STAFF],
+      separator: true // Thêm separator trước attendance section
+    },
+    {
+      icon: CalendarClock,
+      label: 'Quản lý Chấm Công',
+      path: '/dashboard/attendance-timesheet',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    {
+      icon: BarChart,
+      label: 'Thống kê Chấm Công',
+      path: '/dashboard/attendance-statistics',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    {
+      icon: Calendar,
+      label: 'Danh sách giảng viên',
+      path: '/dashboard/attendance-teacher',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    //lịch dạy
+    {
+      icon: CalendarClock,
+      label: 'Danh sách Lịch dạy',
+      path: '/dashboard/attendance-schedule',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    //Yêu cầu điều chỉnh chấm công của GV
+    {
+      icon: ClipboardCheck,
+      label: 'Yêu cầu điều chỉnh',
+      path: '/dashboard/attendance-adjustment-requests',
+      roles: [ROLES.ATTENDANCE_STAFF]
+    },
+    //quản lý điểm danh
+    // {
+    //   icon: ScanQrCode,
+    //   label: 'Kết quả Điểm danh',
+    //   path: '/dashboard/attendance-results',
+    //   roles: [ROLES.ATTENDANCE_STAFF]
+    // },
+    // {
+    //   icon: Bell,
+    //   label: 'Quản lý thông báo',
+    //   path: '/dashboard/manage-notifications',
+    //   roles: [ROLES.ATTENDANCE_STAFF]
+    // }
+  ], [t]);
 
-  ];
+  // Filter menu items dựa trên activeRole của user
+  const menuItems = useMemo(() => {
+    // Sử dụng activeRole nếu có, nếu không thì dùng tất cả roles của user
+    const effectiveRoles = activeRole ? [activeRole] : (user?.roles || []);
+    
+    if (effectiveRoles.length === 0) {
+      return [];
+    }
+
+    return allMenuItems.filter(item => {
+      // Kiểm tra xem activeRole có trong danh sách roles của item không
+      return item.roles.some(role => effectiveRoles.includes(role));
+    });
+  }, [user?.roles, activeRole, allMenuItems]);
+
+  const userRoles = user?.roles || [];
+  const isAttendanceRoleActive =
+    activeRole === ROLES.ATTENDANCE_STAFF ||
+    (!activeRole && userRoles.length === 1 && userRoles.includes(ROLES.ATTENDANCE_STAFF));
 
   const isActive = (path) => location.pathname === path;
 
+  // State quản lý dropdown nào đang mở (theo key của parent menu)
+  const [expandedKeys, setExpandedKeys] = useState({});
+
+  const toggleExpand = (key) => {
+    setExpandedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Auto-expand parent nếu route hiện tại trùng với 1 child của nó
+  useEffect(() => {
+    const toOpen = {};
+    for (const item of menuItems) {
+      if (Array.isArray(item.children) && item.children.some((c) => isActive(c.path))) {
+        toOpen[item.key || item.path] = true;
+      }
+    }
+    if (Object.keys(toOpen).length > 0) {
+      setExpandedKeys((prev) => ({ ...prev, ...toOpen }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, menuItems]);
+
+  // Toggle thu gọn (chỉ áp dụng trên desktop)
+  const toggleCollapse = () => {
+    if (window.innerWidth >= 1024) {
+      setIsCollapsed(!isCollapsed);
+    }
+  };
+
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Overlay mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={toggleSidebar}
         />
       )}
@@ -66,78 +341,283 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-screen bg-white border-r border-gray-200 
-          transition-transform duration-300 ease-in-out
+          fixed top-0 left-0 z-50 h-screen
+          bg-white/90 backdrop-blur-xl
+          border-r border-slate-200
+          transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0 lg:static lg:z-0
-          w-64
+          lg:translate-x-0 lg:static
+          ${isCollapsed ? 'w-20' : 'w-64'}
         `}
       >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-100">
-            <div className="flex items-center space-x-2">
-              <img src="/assets/images/logo-qrampus.png" alt="Logo" className="w-12 h-12 rounded-2xl" />
-              <span className="text-xl font-bold text-gray-800">QRampus</span>
-            </div>
+        <div className="flex flex-col h-full relative">
+
+          {/* LOGO + Collapse Button */}
+          <div className={`
+            relative flex items-center 
+            ${isCollapsed ? 'justify-center' : 'justify-between'} 
+            px-4 py-4 border-b 
+            bg-[#153898]
+          `}>
+            {/* Logo */}
+            {isCollapsed ? (
+              <img
+                src="/src/assets/logo-rutgon.png" // ← Đổi thành img-1 của bạn
+                alt="Logo Small"
+                className="w-10 h-10 rounded-xl bg-white p-1.5 shadow-md"
+              />
+            ) : (
+              <div className="flex items-center gap-3">
+                <img
+                  src="/assets/images/logo-qrampus.png"
+                  alt="Logo"
+                  className="w-10 h-10 rounded-xl bg-white p-1"
+                />
+                <span className="text-lg font-bold text-white tracking-wide">
+                  QRampus
+                </span>
+              </div>
+            )}
+
+            {/* Nút thu gọn - chỉ hiện trên desktop */}
+            <button
+              onClick={toggleCollapse}
+              className="absolute -right-4 top-5 bg-white p-1.5 shadow-lg border border-slate-200 hidden lg:block hover:bg-slate-50 transition"
+              title={isCollapsed ? 'Mở rộng' : 'Thu gọn'}
+            >
+              {isCollapsed ? (
+                <Menu className="w-5 h-5 text-slate-600" />
+              ) : (
+                <X className="w-5 h-5 text-slate-600" />
+              )}
+            </button>
+
+            {/* Nút đóng trên mobile */}
             <button
               onClick={toggleSidebar}
-              className="lg:hidden text-gray-500 hover:text-gray-700"
+              className="lg:hidden text-white/80 hover:text-white"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
 
-          {/* User Info */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-                {user?.name?.charAt(0) || 'A'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">
-                  {user?.name || 'Admin User'}
-                </p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+          {/* USER INFO - ẩn khi thu gọn */}
+          {!isCollapsed && (
+            <div className="px-5 py-4 border-b">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-[#153898] flex items-center justify-center text-white font-bold text-lg shadow">
+                  {user?.user_name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">
+                    {user?.user_name || 'User'}
+                  </p>
+                  {user?.roles && user.roles.length > 0 && (
+                    <div className="flex gap-1 mt-1">
+                      {user.roles.map((role) => (
+                        <span
+                          key={role}
+                          className={`
+                            text-[10px] px-2 py-0.5 rounded-full font-medium
+                            ${role === ROLES.ADMIN ? 'bg-blue-100 text-purple-700' :
+                              role === ROLES.TEACHER ? 'bg-blue-100 text-blue-700' :
+                              'bg-amber-100 text-amber-700'}
+                          `}
+                        >
+                          {role === ROLES.ADMIN ? 'Admin' :
+                           role === ROLES.TEACHER ? 'GV' :
+                           'BPCC'}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Navigation Menu */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
+          {/* MENU */}
+          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll">
+            {!isCollapsed && isAttendanceRoleActive && (
+              <div className="mb-4 border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                  Năm học / Kỳ
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  <select
+                    value={selectedSchoolYear}
+                    onChange={(e) => setSelectedSchoolYear(e.target.value)}
+                    className="w-full  border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {schoolYearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        Năm học {year}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedSemester}
+                    onChange={(e) => setSelectedSemester(e.target.value)}
+                    className="w-full border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {semesterOptions.map((semester) => (
+                      <option key={semester} value={semester}>
+                        Kỳ {semester}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`
-                    flex items-center space-x-3 px-4 py-3 rounded-lg
-                    transition-all duration-200
-                    ${active
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-gray-100'
-                    }
-                  `}
-                  onClick={() => window.innerWidth < 1024 && toggleSidebar()}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </Link>
-              );
-            })}
+            {menuItems.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-slate-500 text-center">
+                Không có menu nào khả dụng
+              </div>
+            ) : (
+              menuItems.map((item, index) => {
+                const Icon = item.icon;
+                const showSeparator = item.separator && index > 0;
+                const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+                const menuKey = item.key || item.path;
+                const isExpanded = !!expandedKeys[menuKey];
+                const hasActiveChild = hasChildren && item.children.some((c) => isActive(c.path));
+                const active = hasChildren ? hasActiveChild : isActive(item.path);
+
+                return (
+                  <div key={menuKey}>
+                    {/* Separator line */}
+                    {showSeparator && !isCollapsed && (
+                      <div className="my-3 border-t border-slate-200" />
+                    )}
+                    {showSeparator && isCollapsed && (
+                      <div className="my-2" />
+                    )}
+
+                    {hasChildren ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isCollapsed) {
+                              // Khi collapsed → click navigate đến child đầu tiên
+                              return;
+                            }
+                            toggleExpand(menuKey);
+                          }}
+                          className={`
+                            group relative flex items-center w-full text-left
+                            ${isCollapsed ? 'justify-center' : 'gap-3 px-4'}
+                            py-3 rounded-sm transition-all duration-200
+                            ${active
+                              ? 'bg-[#153898] text-white shadow-md'
+                              : 'text-slate-700 hover:bg-slate-100'
+                            }
+                          `}
+                          title={isCollapsed ? item.label : undefined}
+                        >
+                          {active && !isCollapsed && (
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+                          )}
+                          <Icon
+                            className={`
+                              w-6 h-6 shrink-0
+                              ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}
+                            `}
+                          />
+                          {!isCollapsed && (
+                            <>
+                              <span className="font-medium truncate flex-1">{item.label}</span>
+                              {isExpanded ? (
+                                <ChevronDown className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                              ) : (
+                                <ChevronRight className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
+                              )}
+                            </>
+                          )}
+                        </button>
+
+                        {/* Children dropdown */}
+                        {!isCollapsed && isExpanded && (
+                          <div className="mt-1 ml-2 pl-3 border-l-2 border-slate-200 space-y-1">
+                            {item.children.map((child) => {
+                              const ChildIcon = child.icon;
+                              const childActive = isActive(child.path);
+                              return (
+                                <Link
+                                  key={child.path}
+                                  to={child.path}
+                                  onClick={() => window.innerWidth < 1024 && toggleSidebar()}
+                                  className={`
+                                    group relative flex items-center gap-3 px-3 py-2 rounded-sm text-sm
+                                    transition-all duration-200
+                                    ${childActive
+                                      ? 'bg-blue-50 text-[#153898] font-medium'
+                                      : 'text-slate-600 hover:bg-slate-100'
+                                    }
+                                  `}
+                                >
+                                  <ChildIcon
+                                    className={`w-4 h-4 shrink-0 ${childActive ? 'text-[#153898]' : 'text-slate-400'}`}
+                                  />
+                                  <span className="truncate">{child.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <Link
+                        to={item.path}
+                        onClick={() => window.innerWidth < 1024 && toggleSidebar()}
+                        className={`
+                          group relative flex items-center
+                          ${isCollapsed ? 'justify-center' : 'gap-3 px-4'}
+                          py-3 rounded-sm transition-all duration-200
+                          ${active
+                            ? 'bg-[#153898] text-white shadow-md'
+                            : 'text-slate-700 hover:bg-slate-100'
+                          }
+                        `}
+                        title={isCollapsed ? item.label : undefined}
+                      >
+                        {active && !isCollapsed && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+                        )}
+                        <Icon
+                          className={`
+                            w-6 h-6 shrink-0
+                            ${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}
+                          `}
+                        />
+                        {!isCollapsed && (
+                          <span className="font-medium truncate">{item.label}</span>
+                        )}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </nav>
 
-          {/* Logout Button */}
-          <div className="p-4 border-t border-gray-200">
+          {/* LOGOUT - cũng thu gọn */}
+          <div className="px-4 py-4 border-t">
             <button
               onClick={logout}
-              className="flex items-center space-x-3 w-full px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-200"
+              className={`
+                flex items-center w-full rounded-sm transition
+                ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'}
+                text-red-600 hover:bg-red-50
+              `}
+              title={isCollapsed ? t('common.logout') : undefined}
             >
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">{t('common.logout')}</span>
+              <LogOut className="w-6 h-6" />
+              {!isCollapsed && (
+                <span className="font-medium">{t('common.logout')}</span>
+              )}
             </button>
           </div>
         </div>
