@@ -224,7 +224,7 @@ export default function AttendanceStatisticsPage() {
                 name="department" value={filters.department} onChange={handleChange}
                 className="w-full rounded-lg border px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">-- Tất cả --</option>
+                <option value="">Tất cả</option>
                 {DEPARTMENTS.map((d) => (<option key={d} value={d}>{d}</option>))}
               </select>
             </div>
@@ -234,7 +234,7 @@ export default function AttendanceStatisticsPage() {
                 name="teacher_id" value={filters.teacher_id} onChange={handleChange}
                 className="w-full rounded-lg border px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">-- Tất cả --</option>
+                <option value="">Tất cả</option>
                 {personnel.map((p) => (
                   <option key={p.id} value={p.id}>{p.full_name} ({p.teacher_code})</option>
                 ))}
@@ -247,7 +247,7 @@ export default function AttendanceStatisticsPage() {
                 disabled={!filters.teacher_id}
                 className="w-full rounded-lg border px-2 py-2 text-sm disabled:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">{filters.teacher_id ? "-- Tất cả --" : "Chọn GV trước"}</option>
+                <option value="">{filters.teacher_id ? "Tất cả" : "Chọn GV trước"}</option>
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
                 ))}
