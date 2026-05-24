@@ -624,12 +624,11 @@ const AdminResultQRPage = () => {
                 <th className="px-6 py-4">MSSV</th>
                 <th className="px-6 py-4">Họ tên</th>
                 <th className="px-6 py-4">Ngày sinh</th>
-                <th className="px-6 py-4">Thời gian tạo QR</th>
-                <th className="px-6 py-4">Thời gian </th>
+                <th className="px-6 py-4">Thời gian QR tạo</th>
+                <th className="px-6 py-4">Thời gian quét</th>
                 <th className="px-6 py-4">ID thiết bị</th>
                 <th className="px-6 py-4">Vị trí ghi nhận</th>
                 <th className="px-6 py-4">Ghi chú</th>
-                <th className="px-6 py-4 text-center">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -648,7 +647,6 @@ const AdminResultQRPage = () => {
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-black p-2 rounded-lg border w-fit bg-slate-50 text-slate-600 border-slate-200"><Monitor className="w-3.5 h-3.5" /> {student.deviceID}</div></td>
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600"><MapPin className="w-3.5 h-3.5 text-indigo-400" />{student.location}</div></td>
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600">{student.note}</div></td>
-                  <td className="px-6 py-4"><div className="flex justify-center"><button className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-colors"><Edit3 className="w-5 h-5" /></button></div></td>
                 </tr>
               ))}
 

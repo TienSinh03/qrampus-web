@@ -108,16 +108,24 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       roles: [ROLES.TEACHER]
     },
     {
-      icon: Bell,
-      label: 'Tạo thông báo',
-      path: '/dashboard/notifications',
-      roles: [ROLES.TEACHER]
-    },
-    {
-      icon:   ListChecks,
+      icon: ListChecks,
       label: 'Quản lý thông báo',
-      path: '/dashboard/manage-notifications',
-      roles: [ROLES.TEACHER]
+      key: 'teacher-notifications',
+      roles: [ROLES.TEACHER],
+      children: [
+        {
+          icon: Bell,
+          label: 'Tạo thông báo',
+          path: '/dashboard/notifications',
+          roles: [ROLES.TEACHER],
+        },
+        {
+          icon: ListChecks,
+          label: 'Danh sách thông báo',
+          path: '/dashboard/manage-notifications',
+          roles: [ROLES.TEACHER],
+        },
+      ],
     },
     { 
       icon: Settings, 
@@ -128,16 +136,24 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
     // ==================== ADMIN DASHBOARD & MENU ====================
     {
-      icon: Bell,
-      label: 'Tạo thông báo',
-      path: '/dashboard/admin/announcement',
-      roles: [ROLES.ADMIN]
-    },
-    {
-      icon:   ListChecks,
+      icon: ListChecks,
       label: 'Quản lý thông báo',
-      path: '/dashboard/admin/notifications',
-      roles: [ROLES.ADMIN]
+      key: 'admin-notifications',
+      roles: [ROLES.ADMIN],
+      children: [
+        {
+          icon: Bell,
+          label: 'Tạo thông báo',
+          path: '/dashboard/admin/announcemen',
+          roles: [ROLES.ADMIN],
+        },
+        {
+          icon: ListChecks,
+          label: 'Danh sách thông báo',
+          path: '/dashboard/admin/notifications',
+          roles: [ROLES.ADMIN],
+        },
+      ],
     },
     { 
       icon: LayoutDashboard, 

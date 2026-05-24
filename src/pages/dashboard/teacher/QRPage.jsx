@@ -155,11 +155,10 @@ const QRPage = () => {
 
     return () => clearInterval(timer);
   }, []);
-
   const sessionTiming = getSessionTiming(classSessionId, sessionClockTick, { fallbackToAny: false });
   const anyActiveSessionTiming = getSessionTiming(null, sessionClockTick);
   const anyActiveClassSessionId = anyActiveSessionTiming?.session?.class_session_id || null;
-  const hasActiveSession = Boolean(sessionTiming?.session);
+  const hasActiveSession = Boolean(currentSchedule?.first_attendance_session_id) || Boolean(anyActiveSessionTiming);
   const sessionTotalSeconds = sessionTiming?.totalSeconds ?? 0;
   const sessionElapsedSeconds = sessionTiming?.elapsedSeconds ?? 0;
   const sessionRemainingSeconds = sessionTiming?.remainingSeconds ?? 0;
@@ -262,7 +261,6 @@ const QRPage = () => {
   const semesterLabel = currentSchedule?.courseSection?.semester || "Chưa cập nhật học kỳ";
   const teacherName = currentSchedule?.personnel?.full_name || "Chưa cập nhật giảng viên";
   const courseDescription = currentSchedule?.courseSection?.description || "Học phần đang được cập nhật mô tả.";
-
   const classDateRaw = sessionClassInfo?.class_date || currentSchedule?.class_date || currentSchedule?.classDate;
   const startHourRaw = sessionClassInfo?.start_hour || currentSchedule?.start_hour || "";
   const endHourRaw = sessionClassInfo?.end_hour || currentSchedule?.end_hour || "";

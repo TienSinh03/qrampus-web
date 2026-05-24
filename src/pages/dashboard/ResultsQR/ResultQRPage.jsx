@@ -639,10 +639,8 @@ const ResultQRPage = () => {
                 <th className="px-6 py-4">MSSV</th>
                 <th className="px-6 py-4">Họ tên</th>
                 <th className="px-6 py-4">Ngày sinh</th>
-                <th className="px-6 py-4">Thời gian tạo QR</th>
-                <th className="px-6 py-4">Thời gian </th>
-                <th className="px-6 py-4">ID thiết bị</th>
-                <th className="px-6 py-4">Vị trí ghi nhận</th>
+                <th className="px-6 py-4">Thời gian QR tạo</th>
+                <th className="px-6 py-4">Thời gian quét</th>
                 <th className="px-6 py-4">Ghi chú</th>
                 <th className="px-6 py-4 text-center">Hành động</th>
               </tr>
@@ -660,8 +658,6 @@ const ResultQRPage = () => {
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-black text-slate-700"><Calendar className="w-3 h-3" /> {student.dob}</div></td>
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-500"><Calendar className="w-3 h-3" /> {student.qrGenerated}</div></td>
                   <td className="px-6 py-4"><div className="flex flex-col gap-1 text-xs text-slate-700"><div className="flex items-center gap-2 font-black"><Clock className="w-3 h-3" /> {student.scanTime}</div><span className="text-slate-400">{student.updatedDate}</span></div></td>
-                  <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-black p-2 rounded-lg border w-fit bg-slate-50 text-slate-600 border-slate-200"><Monitor className="w-3.5 h-3.5" /> {student.deviceID}</div></td>
-                  <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600"><MapPin className="w-3.5 h-3.5 text-indigo-400" />{student.location}</div></td>
                   <td className="px-6 py-4"><div className="flex items-center gap-2 text-xs font-bold text-slate-600">{student.note}</div></td>
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-1">
