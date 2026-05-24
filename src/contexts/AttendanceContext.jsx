@@ -183,7 +183,7 @@ export const AttendanceProvider = ({ children }) => {
   /**
    * Tạo phiên điểm danh mới
    */
-  const createSession = useCallback(async (classSessionId, durationMinutes, qrInterval = 10) => {
+  const createSession = useCallback(async (classSessionId, durationMinutes, qrInterval = 5) => {
     setCreateLoading(true);
     try {
       const response = await AttendanceService.createAttendanceSession({

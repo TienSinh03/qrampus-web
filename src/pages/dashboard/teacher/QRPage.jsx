@@ -673,7 +673,7 @@ const QRPage = () => {
               onClick={() => navigate('/dashboard/results-qr')}
               className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               title="Xem danh sách điểm danh hôm nay"
-              disabled={!hasActiveSession}
+              disabled={!hasActiveSession && !isSessionEnded}
             >
               <View className="h-4 w-4" />
               Xem danh sách

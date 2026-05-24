@@ -223,7 +223,7 @@ export default function TeacherAttendancePage() {
                   {isLoadingDashboard ? "..." : dashboardSummary.onTimeSessions}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Tiết tạo QR đúng giờ
+                  Tiết đúng giờ
                 </p>
               </div>
 
@@ -233,7 +233,7 @@ export default function TeacherAttendancePage() {
                   <Star size={18} />
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Tiết tạo QR muộn
+                  Tiết chấm muộn
                 </p>
               </div>
             </div>

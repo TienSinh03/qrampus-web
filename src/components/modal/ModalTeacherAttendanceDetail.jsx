@@ -246,7 +246,7 @@ export default function ModalTeacherAttendanceDetail({
       case "late":
         return (
           <span className="flex items-center text-orange-700 bg-orange-100 px-3 py-1 rounded-full text-sm font-medium">
-            <AlertTriangle size={16} className="mr-1" /> Tạo QR muộn
+            <AlertTriangle size={16} className="mr-1" /> Chấm muộn
           </span>
         );
       case "absent":
@@ -617,7 +617,7 @@ export default function ModalTeacherAttendanceDetail({
                     {visibleCols.time && <th className="px-6 py-4">Thời gian</th>}
                     {visibleCols.course && <th className="px-6 py-4">Môn học</th>}
                     {visibleCols.room && <th className="px-6 py-4">Phòng</th>}
-                    {visibleCols.createdAt && <th className="px-6 py-4">Giờ tạo QR</th>}
+                    {visibleCols.createdAt && <th className="px-6 py-4">Giờ chấm công</th>}
                     {visibleCols.creator && <th className="px-6 py-4">Người tạo</th>}
                     {visibleCols.group && <th className="px-6 py-4">Nhóm thực hành</th>}
                     {visibleCols.status && (

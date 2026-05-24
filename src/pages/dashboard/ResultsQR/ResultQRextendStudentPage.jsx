@@ -27,7 +27,7 @@ const FinalAttendancePage = () => {
     const [isStarted, setIsStarted] = useState(false);
     const [sessionClockTick, setSessionClockTick] = useState(0);
     const [duration, setDuration] = useState(5); 
-    const QR_INTERVAL = 10; 
+    const QR_INTERVAL = 5; 
 
     const isRefreshingQR = useRef(false);
     const isEndingSession = useRef(false);
