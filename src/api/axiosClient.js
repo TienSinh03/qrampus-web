@@ -37,6 +37,14 @@ axiosClient.interceptors.request.use(
 let isRefreshing = false;
 let failedQueue = [];
 
+const redirectToLogin = () => {
+  if (window.location.pathname !== '/login') {
+    // Navigate without full reload so React Router can handle the route change.
+    window.history.pushState({}, '', '/login');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }
+};
+
 const processQueue = (error, token = null) => {
   failedQueue.forEach(prom => {
     if (error) {
@@ -71,7 +79,7 @@ axiosClient.interceptors.response.use(
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      redirectToLogin();
       return Promise.reject(error);
     }
 
@@ -98,7 +106,7 @@ axiosClient.interceptors.response.use(
       isRefreshing = false;
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      redirectToLogin();
       return Promise.reject(error);
     }
 
@@ -139,7 +147,7 @@ axiosClient.interceptors.response.use(
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      redirectToLogin();
 
       return Promise.reject(refreshError);
     }
