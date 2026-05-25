@@ -313,11 +313,17 @@ const AdminQRPage = () => {
 
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-3 max-w-[240px]">
-                          <img
-                            src={gv.avatar_url}
-                            alt={gv.full_name}
-                            className="w-9 h-9 rounded-full object-cover border shrink-0"
-                          />
+                          {gv.avatar_url ? (
+                            <img
+                              src={gv.avatar_url}
+                              alt={gv.full_name}
+                              className="w-9 h-9 rounded-full object-cover border shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full border shrink-0 bg-[#153898] text-white flex items-center justify-center font-semibold uppercase">
+                              {gv.full_name?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                          )}
                           <div className="truncate" title={gv.full_name}>
                             <div className="font-medium text-slate-800 truncate">
                               {gv.full_name}

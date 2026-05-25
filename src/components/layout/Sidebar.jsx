@@ -144,7 +144,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         {
           icon: Bell,
           label: 'Tạo thông báo',
-          path: '/dashboard/admin/announcemen',
+          path: '/dashboard/admin/announcement',
           roles: [ROLES.ADMIN],
         },
         {
@@ -362,7 +362,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             {/* Logo */}
             {isCollapsed ? (
               <img
-                src="/src/assets/logo-rutgon.png" // ← Đổi thành img-1 của bạn
+                src="/assets/images/logo-rutgon.png"
                 alt="Logo Small"
                 className="w-10 h-10 rounded-xl bg-white p-1.5 shadow-md"
               />
