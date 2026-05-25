@@ -45,6 +45,8 @@ const formatDateTime = (iso) => {
   });
 };
 
+const MINIO_BASE_URL = 'https://api.diemdanhiuh.io.vn/minio-files/qrampus-avatars/';
+
 const FaceCard = ({ record, onZoom }) => {
   const statusCfg = STATUS_CONFIG[record.status] || STATUS_CONFIG.error;
   const StatusIcon = statusCfg.icon;
@@ -52,9 +54,12 @@ const FaceCard = ({ record, onZoom }) => {
   const similarity = metadata.cosine_similarity;
   const similarityPct = similarity != null ? (Math.abs(similarity) * 100).toFixed(1) : null;
   const isMatch = record.status === 'match';
+  const isError = record.status === 'error';
 
-  const anh1 = metadata.anh_1 || null;
-  const anh2 = metadata.anh_2 || null;
+  const anh1 = metadata.anh_1 || (isError ? record.student?.avatar_url : null);
+  const anh2 = metadata.anh_2 || (isError && metadata.minio?.objectName
+    ? `${MINIO_BASE_URL}${metadata.minio.objectName}`
+    : null);
 
   const zoomImages = [
     ...(anh1 ? [{ src: anh1, label: 'Ảnh đăng ký' }] : []),
@@ -119,6 +124,12 @@ const FaceCard = ({ record, onZoom }) => {
             </span>
           )}
         </div>
+
+        {isError && metadata.error && (
+          <p className="text-[10px] text-amber-600 leading-tight bg-amber-50 border border-amber-100 rounded-lg px-2 py-1">
+            {metadata.error}
+          </p>
+        )}
 
         <p className="text-[10px] text-slate-400 leading-tight">
           {formatDateTime(record.verified_at)}
